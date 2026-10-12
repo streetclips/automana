@@ -25,6 +25,8 @@
 .pw-card .c-flavor { font-style: italic; opacity: .78; color: #f0dfc6; }
 .pw-card .c-text .c-flavor { font-size: 1.05em; }
 .pw-card.no-flavor .c-flavor { display: none; }
+.pw-card.pw-back .c-art { left: 0; }
+.pw-card.pw-back .c-emoji { padding-bottom: 0; color: #ffb15c; }
 
 .col-R { --c-p: #d8452b; --c-s: #f2a541; --c-d: #3d0f05; }
 .col-G { --c-p: #3c8d3f; --c-s: #a6d36b; --c-d: #10301a; }

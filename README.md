@@ -9,8 +9,21 @@ A solo, in-hand dueling card game. This repo holds the complete game: the rules 
 | `npm run typecheck` | Type-checks everything in `src/` |
 | `npm run cards` | `dist/palmwalker-cards-en.html` and `palmwalker-cards-es.html`: all 126 cards, one section per component, ready to print |
 | `npm run build` | Both of the above |
+| `npm run pnp` | `dist/palmwalker-pnp-en.pdf` and `palmwalker-pnp-es.pdf`: print-and-play PDFs for [Imprenta Soriano](https://imprentasoriano.com/producto/baraja-de-cartas) |
 
-Requirements: Node 22+.
+Requirements: Node 22+. `npm run pnp` also needs Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`.
+
+## Print and play
+
+`npm run pnp` lays out every physical card (126) for Imprenta Soriano's poker deck:
+
+1. A4 pages, 9 cards per sheet (3 × 3), crop marks in the margins.
+2. Cards at 63 × 88 mm with 3 mm bleed per side (69 × 94 mm); text kept 3 mm inside the cut.
+3. Odd pages are fronts, even pages are backs, mirrored for long-edge duplex.
+4. Square corners: order the 3 mm rounded corners option instead.
+5. CMYK, converted with Ghostscript.
+
+Backs: Grimoire cards show their land, Kael, the Nemeses and the quick reference show Face B, and Threat cards share a plain back.
 
 ## Structure
 
@@ -28,6 +41,7 @@ src/
 ├── i18n/               UI strings per locale + current locale
 ├── render/             HTML components: card.ts (Grimoire and Threat cards), faces.ts (4-state Kael, Nemesis and reference cards)
 ├── sheet/              builds the printable card sheet
+├── pnp/                builds the print-and-play PDFs for the print shop
 └── lib/                filesystem helpers
 ```
 

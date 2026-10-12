@@ -28,3 +28,7 @@ export function renderCard(idOrCard: string | Card): string {
   <div class="c-text"><p class="c-rules">${pips(tx.text || "&nbsp;")}</p><p class="c-flavor">${tx.flavor ?? ""}</p></div>
 </div>`;
 }
+
+export function renderThreatBack(): string {
+  return `<div class="pw-card pw-back col-T"><div class="c-art"><div class="c-emoji">✹</div></div></div>`;
+}

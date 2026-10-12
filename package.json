@@ -7,6 +7,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "cards": "tsx src/sheet/build.ts",
+    "pnp": "tsx src/pnp/build.ts",
     "build": "npm run typecheck && npm run cards"
   },
   "devDependencies": {
