@@ -1,34 +1,5 @@
-.pw-card { position: relative; width: 250px; height: 350px; border-radius: 12px; overflow: hidden; flex: none;
-  box-shadow: 0 10px 26px rgba(0,0,0,.45); font-family: Palatino, "Book Antiqua", Georgia, serif; color: #1d140c; text-align: left; }
-.pw-card > div { position: absolute; box-sizing: border-box; }
-.pw-card .c-art svg { width: 100%; height: 100%; display: block; }
-.pixel-art { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; }
-.pw-card .c-cmc, .pw-card .c-num, .pw-card .c-deco { display: none; }
-.pw-card .c-index { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.pw-card .c-cost { display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.pw-card .c-ipt { margin-top: auto; font-weight: bold; }
-.pw-card .c-text p { margin: 0 0 5px; }
-.pw-card .c-flavor { font-style: italic; opacity: .75; }
-.pw-card.no-pt .c-pt, .pw-card.no-pt .c-ipt { display: none; }
-.pw-card.no-flavor .c-flavor { display: none; }
-
-.col-R { --c-p: #d8452b; --c-s: #f2a541; --c-d: #3d0f05; --c-l: #ffe9d2; }
-.col-G { --c-p: #3c8d3f; --c-s: #a6d36b; --c-d: #10301a; --c-l: #eef8dc; }
-.col-W { --c-p: #c9a43c; --c-s: #fff1c4; --c-d: #5a4720; --c-l: #fffaf0; }
-.col-U { --c-p: #2f6fb5; --c-s: #7fc4f0; --c-d: #0b1f3a; --c-l: #e3f3ff; }
-.col-B { --c-p: #5b3f78; --c-s: #a98bc9; --c-d: #120a18; --c-l: #efe6f7; }
-.col-T { --c-p: #9b1f0c; --c-s: #ff8a3d; --c-d: #1a0604; --c-l: #ffd7a8; }
-
-.pip { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; flex: none;
-  font: bold 10px Georgia, serif; color: #222; box-shadow: inset 0 -2px 3px rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.55); }
-.pip-R { background: radial-gradient(circle at 35% 30%, #ffb199, #e0492b 60%, #9c2412); }
-.pip-G { background: radial-gradient(circle at 35% 30%, #c4f0bc, #3c9a48 60%, #1d5c27); }
-.pip-W { background: radial-gradient(circle at 35% 30%, #ffffff, #f0dc9a 60%, #b89a4a); }
-.pip-U { background: radial-gradient(circle at 35% 30%, #d6edff, #3f86d1 60%, #1d4f87); }
-.pip-B { background: radial-gradient(circle at 35% 30%, #e2d4ef, #6d4c8f 60%, #2e1a40); }
-.pip-N { background: radial-gradient(circle at 35% 30%, #ffffff, #cfc6b5 60%, #9b917f); }
-.pip-T { background: radial-gradient(circle at 35% 30%, #fff8e6, #d9c296 60%, #8f7444); }
-.pip-X { background: #2a1612; color: #ffb15c; font-size: 11px; }
+[class*="skin-f"] .pip { width: 16px; height: 16px; font-size: 10px; }
+[class*="skin-f"] { color: #1d140c; }
 
 /* 1 · Pergamino clásico */
 .f1 { background: linear-gradient(160deg, var(--c-s), var(--c-p) 45%, var(--c-d)); box-shadow: 0 10px 26px rgba(0,0,0,.45), inset 0 0 0 2px rgba(0,0,0,.6); }

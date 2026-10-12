@@ -1,9 +1,3 @@
 node_modules/
 dist/
-*.pdf
-*.mp4
-__pycache__/
 .DS_Store
-video/work/
-rulebook.html
-reglamento.html

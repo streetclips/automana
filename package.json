@@ -1,0 +1,21 @@
+{
+  "name": "palmwalker",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Palmwalker: a solo in-hand dueling card game. Content, rulebooks, guide video and card lab.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "rulebook": "tsx src/rulebook/build.ts",
+    "lab": "tsx src/lab/build.ts",
+    "video": "tsx src/video/build.ts",
+    "video:preview": "tsx src/video/build.ts --preview=0,12,30,67,83",
+    "build": "npm run typecheck && npm run rulebook && npm run lab && npm run video"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "esbuild": "^0.28.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

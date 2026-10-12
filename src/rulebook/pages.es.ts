@@ -1,145 +1,22 @@
-from pathlib import Path
+import { EMBERKIN, VORTHRAX_THREATS, WILDWOOD } from "../content";
+import { renderCard, land } from "../render/card";
+import { nemesisFace, otherNemesis, threatDeckBack, walkerFace } from "../render/faces";
+import { fan } from "../render/layout";
+import { pips } from "../render/pips";
+import { board, cardListRows, chip, landChip, page, status, turn } from "./components";
 
-import build as b
-from build import (board, card, chip, fan, land, landchip, nemesis_face, other_nemesis, page, pips, status, turn,
-                   walker_face)
-
-ROOT = Path(__file__).resolve().parent
-OUT_HTML = ROOT / "reglamento.html"
-OUT_PDF = ROOT / "palmwalker-reglamento.pdf"
-
-b.TX.update(
-    type_label={"Creature": "Criatura", "Instant": "Instantáneo", "Sorcery": "Conjuro", "Aura": "Aura", "Spell": "Hechizo"},
-    threat_prefix="Amenaza · ",
-    land_word="Tierra",
-    add_word="Añade",
-    back_of="Dorso de todas las cartas de {family}",
-    lands={"Mountain": ("Montaña", "Clan Ascua"), "Forest": ("Bosque", "Monteverde")},
-    walker_name="Kael, Piromante Errante",
-    face="Cara",
-    charge="<b>CARGAR</b> (+1 estado): una criatura tuya obtiene +1/+0 hasta el final del turno.",
-    discharge="<b>DESCARGAR</b> (−2 estados): Kael hace 2 de daño a una criatura.",
-    ultimate="<b>DEFINITIVA</b> (vuelve a I): Kael hace 3 de daño a la Némesis. Tus criaturas obtienen +1/+0 hasta el final del turno.",
-    nem_name="Vorthrax, el Tirano de Ceniza",
-    phase1="FASE 1",
-    phase2="FASE 2",
-    heroic_tag="HEROICO",
-    nem_a=("<p><b>PIEL DE CENIZA</b> — Previene los primeros 2 puntos de daño que recibe Vorthrax cada turno.</p>"
-           "<p><b>RESCOLDO</b> — Al final de cada turno de la Némesis, Vorthrax te hace 1 de daño.</p>"
-           "<p class='trig'>Cuando al mazo de Amenaza le queden <b>7 o menos</b> cartas boca abajo, voltea a Vorthrax. "
-           "<b>REAVIVAR</b>: devuelve boca abajo al fondo las 3 últimas cartas de la Ruina.</p>"),
-    nem_b=("<p><b>INFIERNO</b> — Las criaturas de la Némesis tienen <b>Prisa</b>.</p>"
-           "<p>Al final de cada turno de la Némesis, Vorthrax te hace 2 de daño.</p>"
-           "<p class='trig'>La Piel de Ceniza desaparece. Derrota a Vorthrax vaciando sus cartas de Amenaza boca abajo.</p>"),
-    heroic="<p><b>HEROICO</b> — Todo lo anterior, y además las criaturas de la Némesis obtienen +1/+0.</p>",
-    omen="PRESAGIO",
-    no_creatures="sin criaturas",
-    you="Tú",
-    hand="Mano",
-    omen_label="Presagio:",
-    lowered="↓ bajada",
-    why="¿Por qué?",
-)
-
-RED = [
-    dict(name="Trasgo Temerario", cost="{R}", type="Creature", sub="Trasgo", pt="2/1", art="👺",
-         text="<b>Prisa</b>", flavor="El primero en entrar, el primero en salir, el primero en arder.", qty=2),
-    dict(name="Descarga de Ascuas", cost="{R}", type="Instant", art="⚡",
-         text="Descarga de Ascuas hace 3 de daño a una criatura o a la Némesis.", flavor="Palabras rápidas, sílabas ardientes.", qty=2),
-    dict(name="Sabueso de Ceniza", cost="{1}{R}", type="Creature", sub="Sabueso", pt="2/2", art="🐺",
-         text="Cuando el Sabueso de Ceniza entra, hace 1 de daño a una criatura.", flavor="Caza siguiendo el olor del humo.", qty=1),
-    dict(name="Saqueador Incendiario", cost="{2}{R}", type="Creature", sub="Guerrero humano", pt="3/2", art="🏇",
-         text="<b>Prisa</b>", flavor="Saquea al alba. Quema a mediodía.", qty=1),
-    dict(name="Furia de Batalla", cost="{R}", type="Instant", art="💢",
-         text="Una criatura obtiene +3/+0 hasta el final del turno.", flavor="La rabia es el arma más barata.", qty=1),
-    dict(name="Hoja Fundida", cost="{1}{R}", type="Aura", art="🗡️",
-         text="Métela detrás de una criatura tuya. Obtiene +2/+0 y <b>Arrollar</b>.", flavor="", qty=1),
-    dict(name="Prender", cost="{R}", type="Sorcery", art="🔥",
-         text="Prender hace 2 de daño a una criatura o a la Némesis.", flavor="Todo incendio empieza pequeño.", qty=1),
-    dict(name="Rugido Volcánico", cost="{2}{R}", type="Sorcery", art="🌋",
-         text="Rugido Volcánico hace 2 de daño a cada criatura de la Némesis.", flavor="", qty=1),
-    dict(name="Draco Alaceniza", cost="{3}{R}", type="Creature", sub="Draco", pt="3/3", art="🐉",
-         text="<b>Volar</b>", flavor="Su sombra quema.", qty=1),
-    dict(name="Titán de la Pira", cost="{4}{R}", type="Creature", sub="Gigante", pt="5/4", art="🗿",
-         text="<b>Arrollar</b>. Cuando el Titán de la Pira entra, hace 2 de daño a la Némesis.", flavor="", qty=1),
-]
-
-GREEN = [
-    dict(name="Oso de la Espesura", cost="{1}{G}", type="Creature", sub="Oso", pt="2/2", art="🐻",
-         text="", flavor="El bosque no necesita motivos para enfadarse.", qty=2),
-    dict(name="Oleada de Vigor", cost="{G}", type="Instant", art="🌿",
-         text="Una criatura obtiene +3/+3 hasta el final del turno.", flavor="Las raíces recuerdan cómo crecer.", qty=2),
-    dict(name="Guardabosques Élfico", cost="{G}", type="Creature", sub="Druida elfo", pt="1/1", art="🧝",
-         text="{T}: Añade {G}.", flavor="", qty=1),
-    dict(name="Fuerza Salvaje", cost="{1}{G}", type="Aura", art="💪",
-         text="Métela detrás de una criatura tuya. Obtiene +2/+2 y <b>Arrollar</b>.", flavor="", qty=1),
-    dict(name="Araña del Dosel", cost="{1}{G}", type="Creature", sub="Araña", pt="1/4", art="🕷️",
-         text="<b>Alcance</b>", flavor="El cielo es solo un piso más alto.", qty=1),
-    dict(name="Muro de Corteza Férrea", cost="{1}{G}", type="Creature", sub="Muro planta", pt="0/5", art="🌳",
-         text="<b>Defensor</b>", flavor="", qty=1),
-    dict(name="Floración Vital", cost="{1}{G}", type="Sorcery", art="🌸",
-         text="Ganas 4 vidas.", flavor="Lo que cayó, vuelve a crecer.", qty=1),
-    dict(name="Jabalí Lomomusgo", cost="{2}{G}", type="Creature", sub="Jabalí", pt="3/3", art="🐗",
-         text="<b>Arrollar</b>", flavor="", qty=1),
-    dict(name="Druida Cantoarboleda", cost="{2}{G}", type="Creature", sub="Druida elfo", pt="2/3", art="🍃",
-         text="Cuando el Druida Cantoarboleda entra, ganas 2 vidas.", flavor="", qty=1),
-    dict(name="Cuernochoque Ancestral", cost="{4}{G}", type="Creature", sub="Bestia", pt="6/6", art="🦏",
-         text="<b>Arrollar</b>", flavor="Más viejo que los árboles que pisotea.", qty=1),
-]
-
-THREATS = [
-    dict(name="Diablillo de Ceniza", type="Creature", sub="Diablillo", pt="1/1", art="😈", text="<b>Volar</b>", qty=2),
-    dict(name="Bruto Garrascua", type="Creature", sub="Demonio", pt="3/2", art="👹", text="", qty=2),
-    dict(name="Centinela de Magma", type="Creature", sub="Elemental", pt="1/4", art="🪨", text="<b>Defensor</b>", qty=2),
-    dict(name="Dragoncillo de Ascuas", type="Creature", sub="Dragón", pt="2/2", art="🐲", text="<b>Volar</b>", qty=1),
-    dict(name="Demonio Abrasador", type="Creature", sub="Demonio", pt="4/3", art="👿", text="<b>Arrollar</b>", qty=1),
-    dict(name="Heraldo de Vorthrax", type="Creature", sub="Sectario", pt="3/3", art="📯",
-         text="Cuando entra, te hace 1 de daño.", qty=1),
-    dict(name="Behemot de Lava", type="Creature", sub="Elemental", pt="5/5", art="🦣", text="", qty=1),
-    dict(name="Aliento Abrasador", type="Spell", art="🔥",
-         text="Hace 2 de daño a tu criatura de mayor fuerza. Si no tienes ninguna, te hace 2 de daño a ti.", qty=2),
-    dict(name="Lluvia de Pavesas", type="Spell", art="☄️",
-         text="Hace 1 de daño a cada una de tus criaturas y 1 de daño a ti.", qty=1),
-    dict(name="Rugido del Tirano", type="Spell", art="🗯️",
-         text="Las criaturas de la Némesis obtienen +1/+0 hasta el final del turno.", qty=1),
-    dict(name="Renacer de Ceniza", type="Spell", art="🪦",
-         text="Devuelve a la Mesa la criatura de mayor fuerza de la Ruina. Si no hay ninguna, te hace 2 de daño.", qty=1),
-]
-
-for c in RED:
-    c["color"] = "red"
-for c in GREEN:
-    c["color"] = "green"
-for c in THREATS:
-    c["color"] = "threat"
-
-b.CARDS = {c["name"]: c for c in RED + GREEN + THREATS}
-
-
-def rows(cards):
-    out = []
-    for c in cards:
-        cost = pips(c["cost"]) if c.get("cost") else "—"
-        t = b.TX["type_label"][c["type"]] + (f" — {c['sub']}" if c.get("sub") else "")
-        out.append(f"<tr><td>{c['qty']}</td><td><b>{c['name']}</b></td><td>{cost}</td><td>{t}</td><td>{c.get('pt', '')}</td><td>{pips(c.get('text', ''))}</td></tr>")
-    return "".join(out)
-
-
-def build():
-    pages = []
-
-    cover_fan = fan([card("Oso de la Espesura", "lg"), walker_face("B", "lg"), nemesis_face("A", "lg"), card("Descarga de Ascuas", "lg")],
-                    [-20, -7, 7, 20], spread=22)
-    pages.append(page(f"""
+export function buildPages(): string[] {
+  const pages: string[] = [];
+  const coverFan = fan([renderCard("thicket-bear", "lg"), walkerFace("B", "lg"), nemesisFace("A", "lg"), renderCard("ember-bolt", "lg")], [-20, -7, 7, 20], 22);
+  pages.push(page(`
 <h1>PALMWALKER</h1>
 <div class="sub">UN DUELO DE CARTAS EN SOLITARIO QUE SE JUEGA EN LAS MANOS</div>
 <div class="tagline">Sin mesa. Sin fichas. Sin rival al otro lado.<br>Solo tus manos, tus hechizos y una Némesis que quiere reducir tu biblioteca a cenizas.</div>
-<div class="fan">{cover_fan}</div>
+<div class="fan">${coverFan}</div>
 <div class="meta"><span>1 JUGADOR</span><span>15–20 MIN</span><span>39 CARTAS</span><span>12+ AÑOS</span></div>
 <div class="ver">REGLAMENTO · PROTOTIPO v0.1</div>
-""", cls="cover"))
-
-    pages.append(page(f"""
+`, undefined, "cover"));
+  pages.push(page(`
 <h2>Bienvenido, Caminante</h2>
 <p class="lead">Palmwalker toma el corazón de un juego de cartas de duelo clásico —tierras, criaturas, instantáneos, combate y un caminante
 a tu lado— y lo convierte en algo que puedes jugar de pie en el tren. Todo ocurre en tus dos manos.</p>
@@ -183,28 +60,27 @@ siguiendo unas pocas reglas fijas, así que nunca tienes que decidir por ella.</
 </div>
 </div>
 </div>
-""", 2))
-
-    pages.append(page(f"""
+`, 2));
+  pages.push(page(`
 <h2>Componentes <small>39 CARTAS</small></h2>
 <table>
 <tr><th>Cant.</th><th>Componente</th><th>Para qué sirve</th></tr>
-<tr><td>12</td><td>Medio grimorio <b>Clan Ascua</b> (rojo)</td><td>Criaturas rápidas y daño directo. Todos los dorsos son <b>Montaña</b> {pips('{R}')}.</td></tr>
-<tr><td>12</td><td>Medio grimorio <b>Monteverde</b> (verde)</td><td>Criaturas grandes y trucos de refuerzo. Todos los dorsos son <b>Bosque</b> {pips('{G}')}.</td></tr>
+<tr><td>12</td><td>Medio grimorio <b>Clan Ascua</b> (rojo)</td><td>Criaturas rápidas y daño directo. Todos los dorsos son <b>Montaña</b> ${pips("{R}")}.</td></tr>
+<tr><td>12</td><td>Medio grimorio <b>Monteverde</b> (verde)</td><td>Criaturas grandes y trucos de refuerzo. Todos los dorsos son <b>Bosque</b> ${pips("{G}")}.</td></tr>
 <tr><td>1</td><td><b>Kael</b>, Piromante Errante</td><td>Tu Caminante. Una carta de 4 estados que registra la lealtad girándola y volteándola.</td></tr>
 <tr><td>1</td><td><b>Vorthrax</b>, el Tirano de Ceniza</td><td>La Némesis. Cara A = Fase 1, Cara B = Fase 2. Gírala para el modo Heroico.</td></tr>
 <tr><td>15</td><td>Mazo de <b>Amenaza</b></td><td>Las criaturas y hechizos de Vorthrax. También es su vida.</td></tr>
 <tr><td>1</td><td>Carta de referencia rápida</td><td>Orden del turno y reglas de la Némesis.</td></tr>
 </table>
 <div class="row center" style="gap:6mm; margin-top:4mm">
-<div class="fig">{card("Trasgo Temerario", "md")}<div class="cap">Carta de Clan Ascua (frente)</div></div>
-<div class="fig">{land("Mountain", "md")}<div class="cap">…y su dorso</div></div>
-<div class="fig">{card("Oso de la Espesura", "md")}<div class="cap">Carta de Monteverde (frente)</div></div>
+<div class="fig">${renderCard("reckless-goblin", "md")}<div class="cap">Carta de Clan Ascua (frente)</div></div>
+<div class="fig">${land("Mountain", "md")}<div class="cap">…y su dorso</div></div>
+<div class="fig">${renderCard("thicket-bear", "md")}<div class="cap">Carta de Monteverde (frente)</div></div>
 </div>
 <div class="row center" style="gap:4mm; margin-top:4mm; flex-wrap:nowrap">
-<div class="fig">{land("Forest", "sm")}<div class="cap">Dorso de Monteverde</div></div>
-<div class="fig">{card("Bruto Garrascua", "sm")}<div class="cap">Criatura de Amenaza</div></div>
-<div class="fig">{card("Aliento Abrasador", "sm")}<div class="cap">Hechizo de Amenaza</div></div>
+<div class="fig">${land("Forest", "sm")}<div class="cap">Dorso de Monteverde</div></div>
+<div class="fig">${renderCard("cinderclaw-brute", "sm")}<div class="cap">Criatura de Amenaza</div></div>
+<div class="fig">${renderCard("searing-breath", "sm")}<div class="cap">Hechizo de Amenaza</div></div>
 <div class="box" style="width:58mm; margin:0">
 <h3>Medios grimorios</h3>
 <p class="mini">Como un sobre preconstruido, cada color viene en una mitad de 12 cartas. Baraja dos mitades cualesquiera y tendrás un Grimorio de 24 cartas.
@@ -213,28 +89,27 @@ Las futuras mitades (blanca, azul, negra…) se combinan con estas: 5 colores da
 <p class="mini">El mazo de Amenaza usa un dorso liso. Las Amenazas boca abajo son la vida de Vorthrax; las boca arriba son el <b>Presagio</b> (delante) y la <b>Ruina</b> (detrás).</p>
 </div>
 </div>
-""", 3))
-
-    pages.append(page(f"""
+`, 3));
+  pages.push(page(`
 <h2>Anatomía de una Carta</h2>
 <p>Las cartas de Palmwalker se leen en <b>abanico</b>. Cuando se solapan, solo se ve su borde izquierdo, igual que el índice de la esquina
 de una baraja de naipes. Por eso cada carta lleva su información clave en la <b>franja índice</b> de su lado izquierdo.</p>
-<div style="position:relative; height:118mm; margin-top:6mm">
-  <div style="position:absolute; left:58mm; top:4mm">{card("Sabueso de Ceniza", "lg")}</div>
-  <div class="callout" data-n="1" style="left:4mm; top:6mm"><b>Coste</b>: el maná que pagas. {pips('{1}')} es maná de cualquier color; {pips('{R}')} tiene que ser rojo.</div>
-  <div class="callout" data-n="2" style="left:4mm; top:30mm"><b>Símbolo de tipo</b>: ⚔ criatura, ϟ instantáneo, ✶ conjuro, ◈ aura, ✹ hechizo de Amenaza.</div>
-  <div class="callout" data-n="3" style="left:4mm; top:56mm"><b>Fuerza/resistencia del índice</b>: se lee aunque la carta esté tapada en el abanico.</div>
-  <div class="callout" data-n="4" style="left:126mm; top:6mm"><b>Nombre</b> e <b>ilustración</b>.</div>
-  <div class="callout" data-n="5" style="left:126mm; top:40mm"><b>Línea de tipo</b>: tipo de carta y tipo de criatura.</div>
-  <div class="callout" data-n="6" style="left:126mm; top:62mm"><b>Texto de reglas</b>: lo que hace la carta. La cursiva es ambientación.</div>
-  <div class="callout" data-n="7" style="left:126mm; top:88mm"><b>Fuerza / Resistencia</b>: el daño que hace / el daño que aguanta en un turno.</div>
-  <div class="marker" style="left:59mm; top:7mm">1</div>
-  <div class="marker" style="left:59mm; top:22mm">2</div>
-  <div class="marker" style="left:59mm; top:70mm">3</div>
-  <div class="marker" style="left:112mm; top:6mm">4</div>
-  <div class="marker" style="left:62mm; top:44mm">5</div>
-  <div class="marker" style="left:112mm; top:58mm">6</div>
-  <div class="marker" style="left:113mm; top:82mm">7</div>
+<div style="position:relative; height:96mm; margin-top:6mm">
+  <div style="position:absolute; left:58mm; top:4mm">${renderCard("cinder-hound", "lg")}</div>
+  <div class="callout" data-n="1" style="left:4mm; top:6mm"><b>Coste</b>: el número grande es el maná total; los símbolos dicen de qué color. La franja tiene el color de la carta.</div>
+  <div class="callout" data-n="2" style="left:4mm; top:32mm"><b>Símbolo de tipo</b>: ⚔ criatura, ϟ instantáneo, ✶ conjuro, ◈ aura, ▲ tierra, ✹ Amenaza.</div>
+  <div class="callout" data-n="3" style="left:4mm; top:62mm"><b>Fuerza / Resistencia</b>: en grande al pie de la franja; se lee aunque la carta esté tapada en el abanico.</div>
+  <div class="callout" data-n="4" style="left:126mm; top:4mm"><b>Nombre</b> sobre la ilustración.</div>
+  <div class="callout" data-n="5" style="left:126mm; top:24mm"><b>Ilustración a sangre</b> en estilo papel recortado.</div>
+  <div class="callout" data-n="6" style="left:126mm; top:48mm"><b>Línea de tipo</b>: tipo de carta y tipo de criatura.</div>
+  <div class="callout" data-n="7" style="left:126mm; top:68mm"><b>Texto de reglas</b> sobre un panel de cristal. La cursiva es ambientación.</div>
+  <div class="marker" style="left:56mm; top:6mm">1</div>
+  <div class="marker" style="left:56mm; top:21mm">2</div>
+  <div class="marker" style="left:56mm; top:74mm">3</div>
+  <div class="marker" style="left:113mm; top:5mm">4</div>
+  <div class="marker" style="left:113mm; top:28mm">5</div>
+  <div class="marker" style="left:113mm; top:56mm">6</div>
+  <div class="marker" style="left:113mm; top:70mm">7</div>
 </div>
 <div class="cols">
 <div class="box">
@@ -244,26 +119,25 @@ La tierra es permanente; el hechizo de su frente se pierde para siempre. Elegir 
 </div>
 <div class="box">
 <h3>Maná</h3>
-<p class="mini">Cada tierra produce un maná de su color: Montaña {pips('{R}')}, Bosque {pips('{G}')}.
+<p class="mini">Cada tierra produce un maná de su color: Montaña ${pips("{R}")}, Bosque ${pips("{G}")}.
 Para usarla, <b>bájala</b> (gírala). Las tierras se alzan al empezar tu turno, así que el maná que gastas en tu turno <b>no</b> está disponible durante el turno de la Némesis.</p>
 </div>
 </div>
-""", 4))
-
-    pages.append(page(f"""
+`, 4));
+  pages.push(page(`
 <h2>Tipos de Carta y Habilidades</h2>
 <div class="row center" style="gap:4mm">
-<div class="fig">{card("Jabalí Lomomusgo", "md")}<div class="cap"><b>Criatura</b>: se queda en la Mesa. Ataca y bloquea.</div></div>
-<div class="fig">{card("Descarga de Ascuas", "md")}<div class="cap"><b>Instantáneo</b>: lánzalo cuando quieras, incluso en el turno de la Némesis.</div></div>
-<div class="fig">{card("Rugido Volcánico", "md")}<div class="cap"><b>Conjuro</b>: solo en tu fase principal.</div></div>
+<div class="fig">${renderCard("mossback-boar", "md")}<div class="cap"><b>Criatura</b>: se queda en la Mesa. Ataca y bloquea.</div></div>
+<div class="fig">${renderCard("ember-bolt", "md")}<div class="cap"><b>Instantáneo</b>: lánzalo cuando quieras, incluso en el turno de la Némesis.</div></div>
+<div class="fig">${renderCard("volcanic-roar", "md")}<div class="cap"><b>Conjuro</b>: solo en tu fase principal.</div></div>
 </div>
 <div class="row center" style="gap:4mm; margin-top:3mm">
-<div class="fig">{card("Fuerza Salvaje", "md")}<div class="cap"><b>Aura</b>: métela detrás de una de tus criaturas.</div></div>
-<div class="fig">{land("Forest", "md")}<div class="cap"><b>Tierra</b>: el dorso de cada carta.</div></div>
+<div class="fig">${renderCard("wild-strength", "md")}<div class="cap"><b>Aura</b>: métela detrás de una de tus criaturas.</div></div>
+<div class="fig">${land("Forest", "md")}<div class="cap"><b>Tierra</b>: el dorso de cada carta.</div></div>
 <div class="box" style="width:56mm">
 <h3>Reglas de criaturas</h3>
 <ol class="mini">
-<li><b>Mareo de invocación:</b> una criatura no puede atacar ni usar habilidades {pips('{T}')} el turno en que entra, salvo que tenga Prisa. <b>Sí</b> puede bloquear.</li>
+<li><b>Mareo de invocación:</b> una criatura no puede atacar ni usar habilidades ${pips("{T}")} el turno en que entra, salvo que tenga Prisa. <b>Sí</b> puede bloquear.</li>
 <li><b>El daño se borra</b> al final de cada turno. Una criatura solo muere si recibe en un mismo turno un daño igual o mayor que su resistencia.</li>
 <li><b>Límite:</b> 4 criaturas por bando y 5 tierras.</li>
 <li>Un Aura va al cementerio junto con su criatura.</li>
@@ -280,15 +154,14 @@ Para usarla, <b>bájala</b> (gírala). Las tierras se alzan al empezar tu turno,
 <div class="k">Defensor</div><div>Nunca ataca. Sí bloquea.</div>
 </div>
 </div>
-""", 5))
-
-    pages.append(page(f"""
+`, 5));
+  pages.push(page(`
 <h2>Kael, tu Caminante</h2>
 <p>Kael está en el extremo derecho de tu abanico. Su carta tiene <b>cuatro estados</b>, uno en cada mitad de cada cara, al estilo de Palm Island.
 El estado que se lee al derecho, mirando hacia ti, es el activo. Cada estado indica las habilidades que puedes usar desde él.</p>
 <div class="row center" style="gap:10mm; margin:3mm 0 2mm">
-<div class="fig">{walker_face("A")}<div class="cap">Cara A: estado I al derecho, estado II del revés</div></div>
-<div class="fig">{walker_face("B")}<div class="cap">Cara B: estado III al derecho, estado IV del revés</div></div>
+<div class="fig">${walkerFace("A")}<div class="cap">Cara A: estado I al derecho, estado II del revés</div></div>
+<div class="fig">${walkerFace("B")}<div class="cap">Cara B: estado III al derecho, estado IV del revés</div></div>
 </div>
 <div class="box" style="text-align:center; font-family:Copperplate,serif; color:#6b2d14; font-size:10pt">
 I &nbsp;—<i>girar 180°</i>→&nbsp; II &nbsp;—<i>voltear</i>→&nbsp; III &nbsp;—<i>girar 180°</i>→&nbsp; IV
@@ -309,15 +182,14 @@ I &nbsp;—<i>girar 180°</i>→&nbsp; II &nbsp;—<i>voltear</i>→&nbsp; III &
 momento justo (por ejemplo, hasta que Vorthrax pierda su Piel de Ceniza) puede ser la mejor jugada de la partida. A Kael no se le puede atacar.</p>
 </div>
 </div>
-""", 6))
-
-    pages.append(page(f"""
+`, 6));
+  pages.push(page(`
 <h2>La Némesis</h2>
 <p>La Némesis es tu rival. Su carta está a la izquierda de tu abanico y su <b>mazo de Amenaza</b> va detrás. No tiene mano ni maná:
 cada turno simplemente ejecuta la carta boca arriba que hay encima de su mazo, el <b>Presagio</b>.</p>
 <div class="row center" style="gap:10mm; margin:3mm 0">
-<div class="fig">{nemesis_face("A")}<div class="cap">Cara A: Fase 1 (gírala 180° para el modo Heroico)</div></div>
-<div class="fig">{nemesis_face("B")}<div class="cap">Cara B: Fase 2</div></div>
+<div class="fig">${nemesisFace("A")}<div class="cap">Cara A: Fase 1 (gírala 180° para el modo Heroico)</div></div>
+<div class="fig">${nemesisFace("B")}<div class="cap">Cara B: Fase 2</div></div>
 </div>
 <div class="cols">
 <div>
@@ -338,23 +210,15 @@ Rompe la coraza y luego sobrevive a la furia.</div>
 </div>
 </div>
 <div class="row center" style="gap:4mm">
-{card("Diablillo de Ceniza", "sm")}{card("Centinela de Magma", "sm")}{card("Demonio Abrasador", "sm")}{card("Renacer de Ceniza", "sm")}
+${renderCard("ash-imp", "sm")}${renderCard("magma-sentinel", "sm")}${renderCard("scorch-fiend", "sm")}${renderCard("cinder-rebirth", "sm")}
 </div>
-""", 7))
-
-    left_fan = fan([
-        '<div class="card threat sm" style="background:repeating-linear-gradient(45deg,#3a1d12,#3a1d12 2mm,#4a2618 2mm,#4a2618 4mm)"><div style="margin:auto;color:#ffb15c;font-family:Copperplate,serif;text-align:center;font-size:1.5em">MAZO DE<br>AMENAZA<br><span style="font-size:.7em">Presagio encima</span></div></div>',
-        nemesis_face("A", "sm"),
-        card("Bruto Garrascua", "sm"),
-        card("Oso de la Espesura", "sm"),
-        walker_face("A", "sm"),
-    ], [-16, -8, 0, 8, 16], spread=9)
-
-    pages.append(page(f"""
+`, 7));
+  const leftFan = fan([threatDeckBack("sm", "MAZO DE<br>AMENAZA<br><span style='font-size:.7em'>Presagio encima</span>"), nemesisFace("A", "sm"), renderCard("cinderclaw-brute", "sm"), renderCard("thicket-bear", "sm"), walkerFace("A", "sm")], [-16, -8, 0, 8, 16], 9);
+  pages.push(page(`
 <h2>Cómo se Sujeta</h2>
 <h3>Mano izquierda: LA MESA</h3>
 <div class="row" style="align-items:center; gap:6mm; flex-wrap:nowrap">
-<div class="fan" style="width:92mm; height:58mm; margin:0 0 0 8mm; flex:none">{left_fan}</div>
+<div class="fan" style="width:92mm; height:58mm; margin:0 0 0 8mm; flex:none">${leftFan}</div>
 <div style="flex:1">
 <p class="mini">Un solo abanico, de izquierda a derecha:</p>
 <ol class="mini">
@@ -369,11 +233,11 @@ Rompe la coraza y luego sobrevive a la furia.</div>
 <h3>Mano derecha: EL GRIMORIO</h3>
 <div class="row" style="align-items:center; gap:5mm; flex-wrap:nowrap">
 <div class="exploded" style="flex:none">
-<div class="layer">{card("Descarga de Ascuas", "sm")}<div class="lbl">MANO<br><span style="font-size:7pt">lado hechizo · en abanico</span></div></div>
+<div class="layer">${renderCard("ember-bolt", "sm")}<div class="lbl">MANO<br><span style="font-size:7pt">lado hechizo · en abanico</span></div></div>
 <div class="arrow">›</div>
-<div class="layer">{land("Mountain", "sm")}<div class="lbl">BIBLIOTECA = VIDA<br><span style="font-size:7pt">lado tierra · cuadrada</span></div></div>
+<div class="layer">${land("Mountain", "sm")}<div class="lbl">BIBLIOTECA = VIDA<br><span style="font-size:7pt">lado tierra · cuadrada</span></div></div>
 <div class="arrow">›</div>
-<div class="layer">{card("Prender", "sm")}<div class="lbl">CEMENTERIO<br><span style="font-size:7pt">lado hechizo · al fondo</span></div></div>
+<div class="layer">${renderCard("kindle", "sm")}<div class="lbl">CEMENTERIO<br><span style="font-size:7pt">lado hechizo · al fondo</span></div></div>
 </div>
 <div class="box mini" style="flex:1">Un solo paquete con tres capas, de <b>delante</b> (hacia ti) a <b>atrás</b>.
 La biblioteca muestra su <b>lado de tierra</b>; la mano y el cementerio muestran el <b>lado de hechizo</b>. Así los límites entre zonas
@@ -381,16 +245,15 @@ se ven siempre, aunque el paquete esté cuadrado. (Sí: puedes ver el color de t
 </div>
 <h3>Alzada y bajada</h3>
 <div class="row" style="align-items:center; gap:8mm; flex-wrap:nowrap">
-<div class="updown" style="flex:none">{card("Oso de la Espesura", "sm")}{card("Saqueador Incendiario", "sm", "low")}</div>
+<div class="updown" style="flex:none">${renderCard("thicket-bear", "sm")}${renderCard("firebrand-raider", "sm", { extra: "low" })}</div>
 <div style="flex:1">
 <p><b>Alzada</b> (alineada con el abanico) = enderezada. <b>Bajada</b> (deslizada unos 2 cm hacia abajo) = girada.</p>
 <p>Una <b>tierra</b> bajada desaparece detrás de Kael: los símbolos de maná que ves son exactamente el maná que te queda.</p>
 <p class="mini">¿Prefieres el giro clásico de 90°? Funciona con abanicos pequeños. Bajar la carta es más cómodo de sujetar.</p>
 </div>
 </div>
-""", 8))
-
-    pages.append(page(f"""
+`, 8));
+  pages.push(page(`
 <h2>Vida, Zonas y Movimientos</h2>
 <div class="box dark">
 <h3>Tu biblioteca es tu vida</h3>
@@ -416,9 +279,8 @@ Curarte recupera hechizos gastados. Y como robar cuesta vida, esperar nunca sale
 <div class="box mini"><h3>Contar</h3>La vida es un recuento de cartas. Cuenta tu biblioteca cuando lo necesites; con 20 cartas o menos se tarda segundos.
 Los jugadores con experiencia la llevan de cabeza: −1 por robo, −N por golpe.</div>
 </div>
-""", 9))
-
-    pages.append(page(f"""
+`, 9));
+  pages.push(page(`
 <h2>Preparación <small>UN MINUTO, MÁS O MENOS</small></h2>
 <div class="flow">
 <div class="step"><div class="num">1</div><div class="sbody"><b>Arma tu Grimorio.</b> Elige dos medios grimorios (en esta caja: Clan Ascua + Monteverde) y baraja juntas las 24 cartas. Sujétalas con el lado de tierra hacia ti.</div></div>
@@ -430,16 +292,15 @@ Los jugadores con experiencia la llevan de cabeza: −1 por robo, −N por golpe
 <div class="step"><div class="num">7</div><div class="sbody"><b>Empieza.</b> Juegas tú primero y en ese turno no robas.</div></div>
 </div>
 <div class="row center" style="margin-top:6mm; gap:5mm; align-items:flex-end">
-<div class="fig">{card("Trasgo Temerario", "sm")}</div>
-<div class="fig">{card("Oso de la Espesura", "sm")}</div>
-<div class="fig">{card("Oleada de Vigor", "sm")}</div>
-<div class="fig">{card("Cuernochoque Ancestral", "sm")}</div>
+<div class="fig">${renderCard("reckless-goblin", "sm")}</div>
+<div class="fig">${renderCard("thicket-bear", "sm")}</div>
+<div class="fig">${renderCard("surge-of-vigor", "sm")}</div>
+<div class="fig">${renderCard("ancient-crashhorn", "sm")}</div>
 <div class="box mini" style="width:60mm"><h3>Una mano inicial típica</h3>Cuatro cartas, y cuatro tierras en potencia.
 Aquí solo el Trasgo es rojo, así que convertirlo en Montaña sería perder tu única criatura de coste 1. Las decisiones empiezan antes del primer turno.</div>
 </div>
-""", 10))
-
-    pages.append(page(f"""
+`, 10));
+  pages.push(page(`
 <h2>Estructura del Turno</h2>
 <div class="cols">
 <div>
@@ -470,9 +331,8 @@ primero se elige su objetivo y después puedes responder antes de que se resuelv
 <div class="box mini"><h3>Desbordamiento</h3>Si el Presagio es una criatura pero la Némesis ya tiene 4, la nueva criatura te hace un daño igual a su fuerza
 y después va boca abajo al fondo del mazo de Amenaza.</div>
 </div>
-""", 11))
-
-    pages.append(page(f"""
+`, 11));
+  pages.push(page(`
 <h2>Combate y la Mente de la Némesis</h2>
 <div class="cols">
 <div>
@@ -505,136 +365,55 @@ reforzar después de los bloqueos, eliminar primero al único bloqueador seguro 
 </div>
 </div>
 <h3>Ejemplo: un bloqueo seguro y luego un truco</h3>
-{board("TU ATAQUE · TURNO 5 DE LA PARTIDA DE EJEMPLO", 12, 8, "Fase 1", "IV", "Dragoncillo de Ascuas",
-       [chip("Demonio Abrasador", "4/3", "nem", note="Arrollar")],
-       [chip("Sabueso de Ceniza", "2/2", "you", True, "atacando"), chip("Saqueador Incendiario", "3/2", "you", True, "atacando")],
-       [landchip("F"), landchip("M"), landchip("F")], 1)}
+${board("TU ATAQUE · TURNO 5 DE LA PARTIDA DE EJEMPLO", 12, 8, "Fase 1", "IV", "Dragoncillo de Ascuas", [chip("Demonio Abrasador", "4/3", "nem", undefined, "Arrollar")], [chip("Sabueso de Ceniza", "2/2", "you", true, "atacando"), chip("Saqueador Incendiario", "3/2", "you", true, "atacando")], [landChip("F"), landChip("M"), landChip("F")], 1)}
 <p class="mini">El Demonio Abrasador puede matar al Sabueso y sobrevivir (2 &lt; 3), pero no al Saqueador (3 ≥ 3): <b>bloqueo seguro al Sabueso</b>. Respondes con Furia de Batalla: el Sabueso pasa a 5/2 y se lleva al Demonio por delante.</p>
-""", 12))
-
-    ex1 = f"""
+`, 12));
+  const ex1 = `
 <h2>Partida de Ejemplo <small>vs. VORTHRAX</small></h2>
 <p class="mini">Clan Ascua + Monteverde. Puedes seguirla con las cartas en la mano. Mano inicial: <b>Trasgo Temerario, Oso de la Espesura, Oleada de Vigor, Cuernochoque Ancestral</b>.
 Primer Presagio: <b>Bruto Garrascua</b>. Tú: 20 vidas · Vorthrax: 14 vidas.</p>
 <div class="round">RONDA 1</div>
-{status(20, 14, "Fase 1", "I", "Bruto Garrascua")}
-{turn("Turno 1 — Tú", "you", [
-    "En el primer turno no robas.",
-    "Tierra: volteas el <b>Cuernochoque Ancestral</b> a su lado de Bosque y lo metes detrás de Kael.",
-    "No puedes lanzar nada: el Trasgo necesita {R} y el Oso necesita dos manás.",
-    "Kael: <b>Cargar</b> (I → II). No hay criatura que reforzar, pero la lealtad sube.",
-], "Una criatura de 5 manás en un mazo con 5 tierras como mucho es un sueño para más adelante. Las tierras ganan partidas ahora, y el Trasgo y el Oso son baratos.")}
-{turn("Turno 1 — Vorthrax", "nem", [
-    "Ejecuta el Presagio: entra el <b>Bruto Garrascua</b> (3/2), con mareo de invocación.",
-    "Revela el nuevo Presagio: <b>Diablillo de Ceniza</b>. Vorthrax 14 → 13.",
-    "No ataca. <b>Rescoldo</b>: 1 de daño, y la Descarga de Ascuas sale de tu biblioteca al cementerio. Tú 20 → 19.",
-])}
-{board("FINAL DE LA RONDA 1", 19, 13, "Fase 1", "II", "Diablillo de Ceniza<br>1/1 Volar",
-       [chip("Bruto Garrascua", "3/2", "nem", note="mareo")], [], [landchip("F")], 3)}
+${status(20, 14, "Fase 1", "I", "Bruto Garrascua")}
+${turn("Turno 1 — Tú", "you", ["En el primer turno no robas.", "Tierra: volteas el <b>Cuernochoque Ancestral</b> a su lado de Bosque y lo metes detrás de Kael.", "No puedes lanzar nada: el Trasgo necesita {R} y el Oso necesita dos manás.", "Kael: <b>Cargar</b> (I → II). No hay criatura que reforzar, pero la lealtad sube."], "Una criatura de 5 manás en un mazo con 5 tierras como mucho es un sueño para más adelante. Las tierras ganan partidas ahora, y el Trasgo y el Oso son baratos.")}
+${turn("Turno 1 — Vorthrax", "nem", ["Ejecuta el Presagio: entra el <b>Bruto Garrascua</b> (3/2), con mareo de invocación.", "Revela el nuevo Presagio: <b>Diablillo de Ceniza</b>. Vorthrax 14 → 13.", "No ataca. <b>Rescoldo</b>: 1 de daño, y la Descarga de Ascuas sale de tu biblioteca al cementerio. Tú 20 → 19."])}
+${board("FINAL DE LA RONDA 1", 19, 13, "Fase 1", "II", "Diablillo de Ceniza<br>1/1 Volar", [chip("Bruto Garrascua", "3/2", "nem", undefined, "mareo")], [], [landChip("F")], 3)}
 <div class="round">RONDA 2</div>
-{status(19, 13, "Fase 1", "II", "Diablillo de Ceniza")}
-{turn("Turno 2 — Tú", "you", [
-    "Robas el <b>Sabueso de Ceniza</b> (19 → 18).",
-    "El Presagio avisa de que llega un Diablillo de Ceniza (1/1 volador). El daño de entrada del Sabueso lo matará, así que <b>te guardas el Sabueso</b>.",
-    "Tierra: Trasgo Temerario → Montaña. Lanzas el <b>Oso de la Espesura</b> {1}{G}.",
-    "Kael: Cargar (II → III).",
-], "Leer el Presagio un turno antes te dice qué carta guardar. Esperar con el Sabueso lo convierte en un dos por uno el turno que viene.")}
-{turn("Turno 2 — Vorthrax", "nem", [
-    "Ejecuta el <b>Diablillo de Ceniza</b> (con mareo). Nuevo Presagio: <b>Aliento Abrasador</b>. 13 → 12.",
-    "Comprobación de ataque: ¿podría tu Oso bloquear al Bruto, matarlo <i>y sobrevivir</i>? Lo mata, pero muere → <b>el Bruto ataca</b>.",
-    "Bloqueas con el Oso. Mueren los dos: el Oso va a tu cementerio y el Bruto a la Ruina.",
-    "Rescoldo: pierdes el Trasgo Temerario. 18 → 17.",
-], "Tus tierras siguen bajadas porque las usaste para el Oso, así que no puedes lanzar Oleada de Vigor. Un Oso de 2 manás por un Bruto de fuerza 3 es buen cambio.")}
-"""
-    pages.append(page(ex1, 13, cls="dense"))
-
-    ex2 = f"""
-{board("FINAL DE LA RONDA 2", 17, 12, "Fase 1", "III", "Aliento Abrasador<br>2 de daño a tu mejor criatura",
-       [chip("Diablillo de Ceniza", "1/1", "nem", note="Volar")], [], [landchip("F", True), landchip("M", True)], 2)}
+${status(19, 13, "Fase 1", "II", "Diablillo de Ceniza")}
+${turn("Turno 2 — Tú", "you", ["Robas el <b>Sabueso de Ceniza</b> (19 → 18).", "El Presagio avisa de que llega un Diablillo de Ceniza (1/1 volador). El daño de entrada del Sabueso lo matará, así que <b>te guardas el Sabueso</b>.", "Tierra: Trasgo Temerario → Montaña. Lanzas el <b>Oso de la Espesura</b> {1}{G}.", "Kael: Cargar (II → III)."], "Leer el Presagio un turno antes te dice qué carta guardar. Esperar con el Sabueso lo convierte en un dos por uno el turno que viene.")}
+${turn("Turno 2 — Vorthrax", "nem", ["Ejecuta el <b>Diablillo de Ceniza</b> (con mareo). Nuevo Presagio: <b>Aliento Abrasador</b>. 13 → 12.", "Comprobación de ataque: ¿podría tu Oso bloquear al Bruto, matarlo <i>y sobrevivir</i>? Lo mata, pero muere → <b>el Bruto ataca</b>.", "Bloqueas con el Oso. Mueren los dos: el Oso va a tu cementerio y el Bruto a la Ruina.", "Rescoldo: pierdes el Trasgo Temerario. 18 → 17."], "Tus tierras siguen bajadas porque las usaste para el Oso, así que no puedes lanzar Oleada de Vigor. Un Oso de 2 manás por un Bruto de fuerza 3 es buen cambio.")}
+`;
+  pages.push(page(ex1, 13, "dense"));
+  const ex2 = `
+${board("FINAL DE LA RONDA 2", 17, 12, "Fase 1", "III", "Aliento Abrasador<br>2 de daño a tu mejor criatura", [chip("Diablillo de Ceniza", "1/1", "nem", undefined, "Volar")], [], [landChip("F", true), landChip("M", true)], 2)}
 <div class="round">RONDA 3</div>
-{status(17, 12, "Fase 1", "III", "Aliento Abrasador")}
-{turn("Turno 3 — Tú", "you", [
-    "Robas <b>Fuerza Salvaje</b> (17 → 16). Tierra: Fuerza Salvaje → Bosque (3 tierras).",
-    "Lanzas el <b>Sabueso de Ceniza</b> {1}{R}: su daño de entrada mata al Diablillo de Ceniza → Ruina.",
-    "Kael: Cargar (III → IV).",
-    "Dejas <b>un Bosque alzado</b>: viene un Aliento Abrasador y tienes Oleada de Vigor en la mano.",
-], "Dejar maná libre a propósito es la esencia del juego con instantáneos. El Presagio lo convierte en una decisión calculada, no en una apuesta.")}
-{turn("Turno 3 — Vorthrax", "nem", [
-    "Ejecuta el <b>Aliento Abrasador</b>: el objetivo es tu criatura de mayor fuerza, el Sabueso.",
-    "Respondes con <b>Oleada de Vigor</b> {G}. El Sabueso pasa a 5/5 y aguanta los 2 de daño sin problema.",
-    "El Aliento Abrasador va boca abajo al fondo del mazo de Amenaza: 12 → 13. Nuevo Presagio: <b>Demonio Abrasador</b>: 13 → 12.",
-    "No hay atacantes. Rescoldo: pierdes el Oso de la Espesura. 16 → 15.",
-])}
-{board("FINAL DE LA RONDA 3", 15, 12, "Fase 1", "IV", "Demonio Abrasador<br>4/3 Arrollar",
-       [], [chip("Sabueso de Ceniza", "2/2", "you")], [landchip("F", True), landchip("M", True), landchip("F", True)], 0)}
+${status(17, 12, "Fase 1", "III", "Aliento Abrasador")}
+${turn("Turno 3 — Tú", "you", ["Robas <b>Fuerza Salvaje</b> (17 → 16). Tierra: Fuerza Salvaje → Bosque (3 tierras).", "Lanzas el <b>Sabueso de Ceniza</b> {1}{R}: su daño de entrada mata al Diablillo de Ceniza → Ruina.", "Kael: Cargar (III → IV).", "Dejas <b>un Bosque alzado</b>: viene un Aliento Abrasador y tienes Oleada de Vigor en la mano."], "Dejar maná libre a propósito es la esencia del juego con instantáneos. El Presagio lo convierte en una decisión calculada, no en una apuesta.")}
+${turn("Turno 3 — Vorthrax", "nem", ["Ejecuta el <b>Aliento Abrasador</b>: el objetivo es tu criatura de mayor fuerza, el Sabueso.", "Respondes con <b>Oleada de Vigor</b> {G}. El Sabueso pasa a 5/5 y aguanta los 2 de daño sin problema.", "El Aliento Abrasador va boca abajo al fondo del mazo de Amenaza: 12 → 13. Nuevo Presagio: <b>Demonio Abrasador</b>: 13 → 12.", "No hay atacantes. Rescoldo: pierdes el Oso de la Espesura. 16 → 15."])}
+${board("FINAL DE LA RONDA 3", 15, 12, "Fase 1", "IV", "Demonio Abrasador<br>4/3 Arrollar", [], [chip("Sabueso de Ceniza", "2/2", "you")], [landChip("F", true), landChip("M", true), landChip("F", true)], 0)}
 <div class="round">RONDA 4</div>
-{status(15, 12, "Fase 1", "IV", "Demonio Abrasador")}
-{turn("Turno 4 — Tú", "you", [
-    "Robas el <b>Saqueador Incendiario</b> (15 → 14). Es tu única carta, así que este turno no juegas tierra.",
-    "Lanzas el Saqueador {2}{R} (3/2 con Prisa).",
-    "Atacas con el Sabueso y el Saqueador. No hay bloqueadores: 5 de daño, la <b>Piel de Ceniza</b> previene 2 → 3 de daño.",
-    "El Centinela de Magma, el Heraldo de Vorthrax y la Lluvia de Pavesas van a la Ruina. 12 → 9.",
-    "Kael se queda en IV: una Definitiva ahora perdería 2 de sus 3 puntos de daño por la Piel de Ceniza.",
-], "La Piel de Ceniza solo absorbe los 2 primeros puntos de daño de cada turno. Golpéala con todo a la vez y guarda la Definitiva para cuando la coraza caiga.")}
-"""
-    pages.append(page(ex2, 14, cls="dense"))
-
-    ex3 = f"""
-{turn("Turno 4 — Vorthrax", "nem", [
-    "Ejecuta el <b>Demonio Abrasador</b> (4/3 Arrollar), con mareo. Nuevo Presagio: <b>Dragoncillo de Ascuas</b>. 9 → 8.",
-    "No hay atacantes. Rescoldo: pierdes el Jabalí Lomomusgo. 14 → 13.",
-])}
-{board("FINAL DE LA RONDA 4", 13, 8, "Fase 1", "IV", "Dragoncillo de Ascuas<br>2/2 Volar",
-       [chip("Demonio Abrasador", "4/3", "nem", note="Arrollar")],
-       [chip("Sabueso de Ceniza", "2/2", "you", True), chip("Saqueador Incendiario", "3/2", "you", True)],
-       [landchip("F", True), landchip("M", True), landchip("F", True)], 0)}
+${status(15, 12, "Fase 1", "IV", "Demonio Abrasador")}
+${turn("Turno 4 — Tú", "you", ["Robas el <b>Saqueador Incendiario</b> (15 → 14). Es tu única carta, así que este turno no juegas tierra.", "Lanzas el Saqueador {2}{R} (3/2 con Prisa).", "Atacas con el Sabueso y el Saqueador. No hay bloqueadores: 5 de daño, la <b>Piel de Ceniza</b> previene 2 → 3 de daño.", "El Centinela de Magma, el Heraldo de Vorthrax y la Lluvia de Pavesas van a la Ruina. 12 → 9.", "Kael se queda en IV: una Definitiva ahora perdería 2 de sus 3 puntos de daño por la Piel de Ceniza."], "La Piel de Ceniza solo absorbe los 2 primeros puntos de daño de cada turno. Golpéala con todo a la vez y guarda la Definitiva para cuando la coraza caiga.")}
+`;
+  pages.push(page(ex2, 14, "dense"));
+  const ex3 = `
+${turn("Turno 4 — Vorthrax", "nem", ["Ejecuta el <b>Demonio Abrasador</b> (4/3 Arrollar), con mareo. Nuevo Presagio: <b>Dragoncillo de Ascuas</b>. 9 → 8.", "No hay atacantes. Rescoldo: pierdes el Jabalí Lomomusgo. 14 → 13."])}
+${board("FINAL DE LA RONDA 4", 13, 8, "Fase 1", "IV", "Dragoncillo de Ascuas<br>2/2 Volar", [chip("Demonio Abrasador", "4/3", "nem", undefined, "Arrollar")], [chip("Sabueso de Ceniza", "2/2", "you", true), chip("Saqueador Incendiario", "3/2", "you", true)], [landChip("F", true), landChip("M", true), landChip("F", true)], 0)}
 <div class="round">RONDA 5</div>
-{status(13, 8, "Fase 1", "IV", "Dragoncillo de Ascuas")}
-{turn("Turno 5 — Tú", "you", [
-    "Robas <b>Furia de Batalla</b> (13 → 12). Atacas con el Sabueso (2/2) y el Saqueador (3/2).",
-    "Bloqueo de la Némesis, paso 1 (bloqueo seguro): el Demonio Abrasador puede matar al Sabueso y sobrevivir, pero no al Saqueador → <b>bloquea al Sabueso</b>.",
-    "Tras los bloqueos: <b>Furia de Batalla</b> {R} sobre el Sabueso → 5/2. El Sabueso y el Demonio se matan entre sí.",
-    "El Saqueador no está bloqueado: 3 de daño − 2 (Piel de Ceniza) = 1. El Bruto Garrascua va a la Ruina. 8 → 7.",
-    "<b>¡FASE 2!</b> Vorthrax se voltea. <b>Reavivar</b> devuelve boca abajo las 3 últimas cartas de la Ruina (Bruto Garrascua, Demonio Abrasador, Lluvia de Pavesas): 7 → 10. La Piel de Ceniza desaparece.",
-    "Segunda fase principal: <b>DEFINITIVA</b> de Kael (IV → I): 3 de daño completos. 10 → 7.",
-], "La paciencia en IV ha dado fruto: la Definitiva ha llegado justo el turno en que se rompió la coraza. Han contado los 3 puntos de daño.")}
-{turn("Turno 5 — Vorthrax (Fase 2)", "nem", [
-    "Ejecuta el <b>Dragoncillo de Ascuas</b> (2/2 Volar). Infierno le da Prisa. Nuevo Presagio: <b>Centinela de Magma</b>. 7 → 6.",
-    "Tu Saqueador está bajado porque atacó: nadie puede bloquear. El Dragoncillo golpea por 2 y pierdes Floración Vital y Draco Alaceniza. 12 → 10.",
-    "<b>Infierno</b>: 2 de daño más; pierdes Prender y el Druida Cantoarboleda. 10 → 8.",
-], "La Fase 2 te cuesta 3 o 4 vidas por ronda. Además, el daño ha quemado una Floración Vital que te habría encantado robar. Empieza la carrera.")}
-{board("FINAL DE LA RONDA 5", 8, 6, "Fase 2", "I", "Centinela de Magma<br>1/4 Defensor",
-       [chip("Dragoncillo de Ascuas", "2/2", "nem", True, "Volar")],
-       [chip("Saqueador Incendiario", "3/2", "you", True)],
-       [landchip("F"), landchip("M", True), landchip("F")], 0)}
-"""
-    pages.append(page(ex3, 15, cls="dense"))
-
-    ex4 = f"""
+${status(13, 8, "Fase 1", "IV", "Dragoncillo de Ascuas")}
+${turn("Turno 5 — Tú", "you", ["Robas <b>Furia de Batalla</b> (13 → 12). Atacas con el Sabueso (2/2) y el Saqueador (3/2).", "Bloqueo de la Némesis, paso 1 (bloqueo seguro): el Demonio Abrasador puede matar al Sabueso y sobrevivir, pero no al Saqueador → <b>bloquea al Sabueso</b>.", "Tras los bloqueos: <b>Furia de Batalla</b> {R} sobre el Sabueso → 5/2. El Sabueso y el Demonio se matan entre sí.", "El Saqueador no está bloqueado: 3 de daño − 2 (Piel de Ceniza) = 1. El Bruto Garrascua va a la Ruina. 8 → 7.", "<b>¡FASE 2!</b> Vorthrax se voltea. <b>Reavivar</b> devuelve boca abajo las 3 últimas cartas de la Ruina (Bruto Garrascua, Demonio Abrasador, Lluvia de Pavesas): 7 → 10. La Piel de Ceniza desaparece.", "Segunda fase principal: <b>DEFINITIVA</b> de Kael (IV → I): 3 de daño completos. 10 → 7."], "La paciencia en IV ha dado fruto: la Definitiva ha llegado justo el turno en que se rompió la coraza. Han contado los 3 puntos de daño.")}
+${turn("Turno 5 — Vorthrax (Fase 2)", "nem", ["Ejecuta el <b>Dragoncillo de Ascuas</b> (2/2 Volar). Infierno le da Prisa. Nuevo Presagio: <b>Centinela de Magma</b>. 7 → 6.", "Tu Saqueador está bajado porque atacó: nadie puede bloquear. El Dragoncillo golpea por 2 y pierdes Floración Vital y Draco Alaceniza. 12 → 10.", "<b>Infierno</b>: 2 de daño más; pierdes Prender y el Druida Cantoarboleda. 10 → 8."], "La Fase 2 te cuesta 3 o 4 vidas por ronda. Además, el daño ha quemado una Floración Vital que te habría encantado robar. Empieza la carrera.")}
+${board("FINAL DE LA RONDA 5", 8, 6, "Fase 2", "I", "Centinela de Magma<br>1/4 Defensor", [chip("Dragoncillo de Ascuas", "2/2", "nem", true, "Volar")], [chip("Saqueador Incendiario", "3/2", "you", true)], [landChip("F"), landChip("M", true), landChip("F")], 0)}
+`;
+  pages.push(page(ex3, 15, "dense"));
+  const ex4 = `
 <div class="round">RONDA 6</div>
-{status(8, 6, "Fase 2", "I", "Centinela de Magma")}
-{turn("Turno 6 — Tú", "you", [
-    "Robas la <b>Araña del Dosel</b> (8 → 7). La lanzas {1}{G}: una 1/4 con Alcance para frenar al Dragoncillo.",
-    "Kael: Cargar (I → II): el Saqueador obtiene +1/+0 → 4/2.",
-    "Atacas con el Saqueador. El Dragoncillo está bajado (atacó), así que no hay bloqueadores: 4 de daño. 6 → 2.",
-])}
-{turn("Turno 6 — Vorthrax", "nem", [
-    "Ejecuta el <b>Centinela de Magma</b> (1/4 Defensor). Nuevo Presagio: <b>Demonio Abrasador</b>, el que trajo de vuelta Reavivar. 2 → 1.",
-    "Comprobación de ataque del Dragoncillo: tu Araña sobreviviría, pero no puede matarlo → <b>el Dragoncillo ataca</b>. Bloqueas con la Araña y no muere nadie.",
-    "Infierno: pierdes Rugido Volcánico y Titán de la Pira. 7 → 5.",
-], "El próximo turno, un Demonio Abrasador con Prisa (4 arrollando) más Infierno (2) suman 6 de daño. Después de robar tendrás 4 vidas. Este es tu último turno.")}
-{board("FINAL DE LA RONDA 6", 5, 1, "Fase 2", "II", "Demonio Abrasador<br>4/3 Arrollar",
-       [chip("Dragoncillo de Ascuas", "2/2", "nem", True, "Volar"), chip("Centinela de Magma", "1/4", "nem", note="Defensor")],
-       [chip("Saqueador Incendiario", "3/2", "you", True), chip("Araña del Dosel", "1/4", "you", note="Alcance")],
-       [landchip("F", True), landchip("M", True), landchip("F")], 0)}
+${status(8, 6, "Fase 2", "I", "Centinela de Magma")}
+${turn("Turno 6 — Tú", "you", ["Robas la <b>Araña del Dosel</b> (8 → 7). La lanzas {1}{G}: una 1/4 con Alcance para frenar al Dragoncillo.", "Kael: Cargar (I → II): el Saqueador obtiene +1/+0 → 4/2.", "Atacas con el Saqueador. El Dragoncillo está bajado (atacó), así que no hay bloqueadores: 4 de daño. 6 → 2."])}
+${turn("Turno 6 — Vorthrax", "nem", ["Ejecuta el <b>Centinela de Magma</b> (1/4 Defensor). Nuevo Presagio: <b>Demonio Abrasador</b>, el que trajo de vuelta Reavivar. 2 → 1.", "Comprobación de ataque del Dragoncillo: tu Araña sobreviviría, pero no puede matarlo → <b>el Dragoncillo ataca</b>. Bloqueas con la Araña y no muere nadie.", "Infierno: pierdes Rugido Volcánico y Titán de la Pira. 7 → 5."], "El próximo turno, un Demonio Abrasador con Prisa (4 arrollando) más Infierno (2) suman 6 de daño. Después de robar tendrás 4 vidas. Este es tu último turno.")}
+${board("FINAL DE LA RONDA 6", 5, 1, "Fase 2", "II", "Demonio Abrasador<br>4/3 Arrollar", [chip("Dragoncillo de Ascuas", "2/2", "nem", true, "Volar"), chip("Centinela de Magma", "1/4", "nem", undefined, "Defensor")], [chip("Saqueador Incendiario", "3/2", "you", true), chip("Araña del Dosel", "1/4", "you", undefined, "Alcance")], [landChip("F", true), landChip("M", true), landChip("F")], 0)}
 <div class="round">RONDA 7</div>
-{status(5, 1, "Fase 2", "II", "Demonio Abrasador")}
-{turn("Turno 7 — Tú", "you", [
-    "Robas el <b>Guardabosques Élfico</b> (5 → 4). Atacas con el Saqueador (3/2) y la Araña (1/4).",
-    "Bloqueos de la Némesis: paso 1, el Centinela no puede matar a ninguno. Paso 2, no hay intercambio posible. Paso 3, <b>desesperación</b>: 4 de daño sin bloquear acabarían con Vorthrax, así que el Centinela bloquea al atacante de mayor fuerza, el Saqueador.",
-    "La Araña no está bloqueada: 1 de daño. La Lluvia de Pavesas, la última carta boca abajo de Vorthrax, va a la Ruina. 1 → 0.",
-    "<b>VICTORIA</b>, con 4 cartas en tu biblioteca.",
-])}
+${status(5, 1, "Fase 2", "II", "Demonio Abrasador")}
+${turn("Turno 7 — Tú", "you", ["Robas el <b>Guardabosques Élfico</b> (5 → 4). Atacas con el Saqueador (3/2) y la Araña (1/4).", "Bloqueos de la Némesis: paso 1, el Centinela no puede matar a ninguno. Paso 2, no hay intercambio posible. Paso 3, <b>desesperación</b>: 4 de daño sin bloquear acabarían con Vorthrax, así que el Centinela bloquea al atacante de mayor fuerza, el Saqueador.", "La Araña no está bloqueada: 1 de daño. La Lluvia de Pavesas, la última carta boca abajo de Vorthrax, va a la Ruina. 1 → 0.", "<b>VICTORIA</b>, con 4 cartas en tu biblioteca."])}
 <div class="box dark">
 <h3>Resumen: cinco decisiones que ganaron el duelo</h3>
 <ol class="mini" style="margin:0">
@@ -645,17 +424,15 @@ Primer Presagio: <b>Bruto Garrascua</b>. Tú: 20 vidas · Vorthrax: 14 vidas.</p
 <li><b>La Araña</b>: bloqueadora en su turno y golpe final en el tuyo.</li>
 </ol>
 </div>
-"""
-    pages.append(page(ex4, 16, cls="dense"))
-
-    gallery = "".join(card(c["name"], "xs") for c in RED + GREEN)
-    pages.append(page(f"""
+`;
+  pages.push(page(ex4, 16, "dense"));
+  const gallery = [...EMBERKIN, ...WILDWOOD].map((c) => renderCard(c, "xs")).join("");
+  pages.push(page(`
 <h2>Galería de Cartas <small>LAS 20 CARTAS DISTINTAS DEL GRIMORIO</small></h2>
-<div class="row center" style="gap:2.5mm; padding:0 2mm">{gallery}</div>
+<div class="row center" style="gap:2.5mm; padding:0 2mm">${gallery}</div>
 <p class="cap" style="margin-top:3mm">Dos filas de arriba: Clan Ascua (rojo). Dos filas de abajo: Monteverde (verde). Trasgo Temerario, Descarga de Ascuas, Oso de la Espesura y Oleada de Vigor vienen con dos copias.</p>
-""", 17))
-
-    pages.append(page(f"""
+`, 17));
+  pages.push(page(`
 <h2>Modos, otras Némesis y Ajustes</h2>
 <div class="cols">
 <div>
@@ -675,12 +452,8 @@ Primer Presagio: <b>Bruto Garrascua</b>. Tú: 20 vidas · Vorthrax: 14 vidas.</p
 </div>
 <h3>Próximas Némesis</h3>
 <div class="row" style="gap:5mm; flex-wrap:nowrap; align-items:center">
-{other_nemesis("Morwen, la Reina Liche", "💀", "black",
-               "<b>DIEZMO DE TUMBA</b> — Al final de cada turno, si la Ruina tiene 3+ criaturas, devuelve a la Mesa la de mayor fuerza.",
-               "<b>MARCHITEZ</b> — Tus criaturas obtienen −1/−1.")}
-{other_nemesis("El Archimago Espejo", "🪞", "blue",
-               "<b>REFRACCIÓN</b> — El primer hechizo que lanzas cada turno cuesta " + pips("{1}") + " más.",
-               "<b>GUARDA ESPECULAR</b> — El primer hechizo que lanzas cada turno se contrarresta salvo que pagues " + pips("{2}") + ".")}
+${otherNemesis("Morwen, la Reina Liche", "💀", "black", "<b>DIEZMO DE TUMBA</b> — Al final de cada turno, si la Ruina tiene 3+ criaturas, devuelve a la Mesa la de mayor fuerza.", "<b>MARCHITEZ</b> — Tus criaturas obtienen −1/−1.")}
+${otherNemesis("El Archimago Espejo", "🪞", "blue", "<b>REFRACCIÓN</b> — El primer hechizo que lanzas cada turno cuesta " + pips("{1}") + " más.", "<b>GUARDA ESPECULAR</b> — El primer hechizo que lanzas cada turno se contrarresta salvo que pagues " + pips("{2}") + ".")}
 <div class="box" style="flex:1">
 <p><b>Vorthrax</b> es agresivo: te gana la carrera con Prisa y daño directo.</p>
 <p><b>Morwen</b> es desgaste: sus criaturas muertas vuelven una y otra vez, así que eliminar criaturas no basta.</p>
@@ -698,20 +471,18 @@ Primer Presagio: <b>Bruto Garrascua</b>. Tú: 20 vidas · Vorthrax: 14 vidas.</p
 <tr><td>Reavivar</td><td>3 cartas</td><td>la Fase 2 dura un turno</td><td>la Fase 2 se eterniza</td></tr>
 </table>
 </div>
-""", 18))
-
-    head = "<tr><th>#</th><th>Nombre</th><th>Coste</th><th>Tipo</th><th>F/R</th><th>Texto</th></tr>"
-    pages.append(page(f"""
+`, 18));
+  const head = "<tr><th>#</th><th>Nombre</th><th>Coste</th><th>Tipo</th><th>F/R</th><th>Texto</th></tr>";
+  pages.push(page(`
 <h2>Listas de Cartas</h2>
 <h3>Clan Ascua (rojo) · dorso: Montaña</h3>
-<table class="lists">{head}{rows(RED)}</table>
+<table class="lists">${head}${cardListRows(EMBERKIN)}</table>
 <h3>Monteverde (verde) · dorso: Bosque</h3>
-<table class="lists">{head}{rows(GREEN)}</table>
+<table class="lists">${head}${cardListRows(WILDWOOD)}</table>
 <h3>Mazo de Amenaza de Vorthrax</h3>
-<table class="lists">{head}{rows(THREATS)}</table>
-""", 19, cls="dense"))
-
-    pages.append(page(f"""
+<table class="lists">${head}${cardListRows(VORTHRAX_THREATS)}</table>
+`, 19, "dense"));
+  pages.push(page(`
 <h2>Referencia Rápida</h2>
 <div class="quickref cols">
 <div>
@@ -739,10 +510,6 @@ Primer Presagio: <b>Bruto Garrascua</b>. Tú: 20 vidas · Vorthrax: 14 vidas.</p
 <li>Una vez por turno, en una fase principal.</li></ol></div>
 </div>
 </div>
-""", 20))
-
-    b.write_pdf(pages, OUT_HTML, OUT_PDF, "es", "Palmwalker — Reglamento")
-
-
-if __name__ == "__main__":
-    build()
+`, 20));
+  return pages;
+}
