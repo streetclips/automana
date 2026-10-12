@@ -6,19 +6,6 @@ export type ManaSymbol = "R" | "G" | "W" | "U" | "B" | `${number}`;
 
 export type CardType = "creature" | "instant" | "sorcery" | "aura" | "land" | "spell";
 
-export type ShapeId = "goblin" | "bear" | "bolt" | "sprout" | "shield" | "hawk" | "skull" | "demon" | "mountain" | "forest";
-
-export type SceneId = "peaks" | "forest" | "storm" | "sun" | "dawn" | "sea" | "crypt" | "lava" | "sky";
-
-export type Subject = { shape: ShapeId } | { emoji: string };
-
-export interface CardArt {
-  subject: Subject;
-  scene: SceneId;
-  tint?: string;
-  detail?: string;
-}
-
 export interface CardText {
   name: string;
   sub?: string;
@@ -34,16 +21,7 @@ export interface Card {
   qty: number;
   pt?: string;
   threat?: boolean;
-  art: CardArt;
+  emoji: string;
   en: CardText;
   es: CardText;
-}
-
-export interface Palette {
-  p: string;
-  s: string;
-  d: string;
-  l: string;
-  sky1: string;
-  sky2: string;
 }

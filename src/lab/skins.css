@@ -55,7 +55,7 @@
 .f4 .c-name { left: 46px; right: 16px; top: 17px; text-align: center; font-family: Copperplate, serif; font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: #d4af37; white-space: nowrap; overflow: hidden; }
 .f4 .c-art { left: 50px; right: 20px; top: 40px; height: 142px; padding: 2px; background: #d4af37;
   clip-path: polygon(12% 0, 88% 0, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0 88%, 0 12%); }
-.f4 .c-art svg, .f4 .c-art img { clip-path: polygon(12% 0, 88% 0, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0 88%, 0 12%); }
+.f4 .c-art .c-emoji { clip-path: polygon(12% 0, 88% 0, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0 88%, 0 12%); }
 .f4 .c-type { left: 46px; right: 16px; top: 190px; text-align: center; font-family: Copperplate, serif; font-size: 9.5px; letter-spacing: .14em; color: #d4af37; }
 .f4 .c-type::before, .f4 .c-type::after { content: "◆"; font-size: 6px; margin: 0 6px; vertical-align: middle; }
 .f4 .c-text { left: 50px; right: 20px; top: 208px; bottom: 40px; text-align: center; font-family: Didot, "Bodoni 72", serif; font-size: 11.5px; line-height: 1.3; }
@@ -112,7 +112,7 @@
 .f8 { background: #1a1410; color: #f1e6d0; border-radius: 10px; box-shadow: 0 10px 26px rgba(0,0,0,.45), inset 0 0 0 3px #3a2f25; }
 .f8 .c-art { left: 44px; right: 12px; top: 12px; height: 194px; padding: 3px; background: #4a3c2e;
   clip-path: polygon(0 100%, 0 40%, 6% 24%, 16% 12%, 30% 4%, 50% 0, 70% 4%, 84% 12%, 94% 24%, 100% 40%, 100% 100%); }
-.f8 .c-art svg, .f8 .c-art img { clip-path: polygon(0 100%, 0 40%, 6% 24%, 16% 12%, 30% 4%, 50% 0, 70% 4%, 84% 12%, 94% 24%, 100% 40%, 100% 100%); }
+.f8 .c-art .c-emoji { clip-path: polygon(0 100%, 0 40%, 6% 24%, 16% 12%, 30% 4%, 50% 0, 70% 4%, 84% 12%, 94% 24%, 100% 40%, 100% 100%); }
 .f8 .c-name { left: 44px; right: 12px; top: 212px; text-align: center; font-family: Herculanum, Copperplate, serif; font-size: 14px; color: var(--c-s); white-space: nowrap; overflow: hidden; }
 .f8 .c-type { left: 44px; right: 12px; top: 232px; text-align: center; font-size: 8.5px; text-transform: uppercase; letter-spacing: .18em; color: #c9b38a; }
 .f8 .c-text { left: 44px; right: 12px; top: 248px; bottom: 12px; padding: 7px 9px; font-size: 10.5px; line-height: 1.3; border-radius: 4px;

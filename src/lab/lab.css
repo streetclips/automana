@@ -14,11 +14,7 @@ body { margin: 0; background: radial-gradient(ellipse at 30% 0%, #3a2214, #160b0
   .tile h3 { margin: 0; font-family: Copperplate, serif; color: #ffcf7a; font-size: 20px; letter-spacing: .05em; }
   .tile > p { color: #d9c3a0; margin: 8px 0 14px; min-height: 40px; }
   .badge { font-family: Copperplate, serif; background: #ffcf7a; color: #3a1d0a; border-radius: 8px; padding: 4px 10px; font-size: 15px; }
-  .badge.art { background: #7afcff; color: #0d1a2a; }
   .pair { display: flex; gap: 18px; justify-content: center; }
-  .arts3 { display: flex; gap: 12px; justify-content: center; }
-  .artbox { width: 160px; height: 160px; border-radius: 12px; overflow: hidden; box-shadow: 0 6px 16px rgba(0,0,0,.5); }
-  .artbox svg, .artbox img { width: 100%; height: 100%; display: block; }
   button { font-family: inherit; cursor: pointer; }
   .pick { margin-top: 14px; width: 100%; padding: 9px; border-radius: 10px; border: 1px solid #8a5a1a; background: #2a160b; color: #ffcf7a; font-size: 14px; }
   .pick:hover { background: #4a2614; }
@@ -38,14 +34,6 @@ body { margin: 0; background: radial-gradient(ellipse at 30% 0%, #3a2214, #160b0
   .favchip { padding: 6px 12px; border-radius: 16px; border: 1px solid #ffcf7a; background: #3a2214; color: #ffcf7a; font-family: Copperplate, serif; }
   .muted { color: #9c8466; font-style: italic; }
   #combo { display: flex; gap: 20px; flex-wrap: wrap; }
-  .matrix { display: grid; grid-template-columns: 120px repeat(10, 112px); gap: 8px; }
-  .mx-col, .mx-row { font-family: Copperplate, serif; color: #ffcf7a; font-size: 14px; display: flex; flex-direction: column; justify-content: center; }
-  .mx-col { align-items: center; text-align: center; }
-  .mx-col small, .mx-row small { font-family: Palatino, serif; color: #c9ad86; font-size: 10.5px; }
-  .mx-cell { width: 112px; height: 157px; padding: 0; border: 2px solid transparent; border-radius: 8px; background: none; overflow: hidden; }
-  .mx-cell:hover { border-color: #ffcf7a; }
-  .mx-scale { transform: scale(.44); transform-origin: top left; width: 250px; height: 350px; }
-  select { font-size: 15px; padding: 6px 10px; border-radius: 8px; background: #241309; color: #ffcf7a; border: 1px solid #6b4a2a; }
   .how { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
   .how div { background: rgba(255,240,215,.06); border: 1px solid #5a3d24; border-radius: 12px; padding: 10px 14px; color: #e8d3b0; }
   .how b { color: #ffcf7a; }

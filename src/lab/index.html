@@ -8,47 +8,34 @@
 <body>
 <header>
   <h1>PALMWALKER · LABORATORIO DE CARTAS</h1>
-  <p class="lead">11 diseños de carta (D1–D10 más el elegido, D11) y 10 estilos de arte (A1–A10), todo hecho con HTML, CSS y SVG. Cada diseño mantiene la regla del juego en mano: coste, tipo y fuerza en la franja izquierda, para leerse en abanico.</p>
+  <p class="lead">11 diseños de carta (D1–D10 más el elegido, D11), todo hecho con HTML y CSS. El arte es provisional: un emoji por carta. Cada diseño mantiene la regla del juego en mano: coste, tipo y fuerza en la franja izquierda, para leerse en abanico.</p>
   <div class="how">
-    <div><b>1.</b> Mira los diseños y los estilos de arte por separado.</div>
-    <div><b>2.</b> Combínalos en el combinador y marca tus favoritos ☆.</div>
-    <div><b>3.</b> Usa la matriz para comparar todo de un vistazo.</div>
-    <div><b>4.</b> Dime tu elección, por ejemplo: <b>D2+A7</b>.</div>
+    <div><b>1.</b> Mira los diseños.</div>
+    <div><b>2.</b> Pruébalos con las cartas de muestra en el combinador y marca tus favoritos ☆.</div>
+    <div><b>3.</b> Dime tu elección, por ejemplo: <b>D2</b>.</div>
   </div>
 </header>
 <nav>
-  <a href="#disenos">1 · Diseños</a><a href="#artes">2 · Arte</a><a href="#combinador">3 · Combinador</a><a href="#matriz">4 · Matriz</a>
+  <a href="#disenos">1 · Diseños</a><a href="#combinador">2 · Combinador</a>
 </nav>
 <section id="disenos">
   <h2>1 · Diseños de carta</h2>
-  <p class="sub">Todos con el mismo arte (A7 Papel recortado) para comparar solo el marco. A la izquierda, una criatura; a la derecha, un instantáneo con más texto.</p>
+  <p class="sub">A la izquierda, una criatura; a la derecha, un instantáneo con más texto.</p>
   <div class="grid" id="frames"></div>
 </section>
-<section id="artes">
-  <h2>2 · Diez estilos de arte</h2>
-  <p class="sub">Cada estilo dibuja tres cartas distintas: Trasgo Temerario (rojo), Oso de la Espesura (verde) y Bruto Garrascua (Amenaza).</p>
-  <div class="grid" id="arts"></div>
-</section>
 <section id="combinador">
-  <h2>3 · Combinador</h2>
-  <p class="sub">Elige un diseño y un arte: verás las 9 cartas de muestra (los 5 colores, una Amenaza y una tierra).</p>
+  <h2>2 · Combinador</h2>
+  <p class="sub">Elige un diseño: verás las 9 cartas de muestra (los 5 colores, una Amenaza y una tierra).</p>
   <div class="controls">
     <div class="lbl">Diseño</div><div class="opts" id="frame-opts"></div>
-    <div class="lbl">Arte</div><div class="opts" id="art-opts"></div>
   </div>
   <div class="bar">
     <span id="combo-label"></span>
     <button class="big" id="fav">☆ Añadir a favoritos</button>
-    <button class="ghost" id="random">🎲 Combinación al azar</button>
+    <button class="ghost" id="random">🎲 Diseño al azar</button>
   </div>
   <div class="favs"><span class="lbl" style="font-family:Copperplate,serif;color:#ffb15c">Favoritos:</span><span id="favs"></span></div>
   <div id="combo"></div>
-</section>
-<section id="matriz">
-  <h2>4 · Matriz de combinaciones</h2>
-  <p class="sub">Las 110 combinaciones de una misma carta. Haz clic en cualquiera para abrirla en el combinador.
-    Carta: <select id="matrix-card"></select></p>
-  <div class="matrix" id="matrix"></div>
 </section>
 <script src="app.js"></script>
 </body>

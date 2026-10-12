@@ -99,8 +99,8 @@ de una baraja de naipes. Por eso cada carta lleva su información clave en la <b
   <div class="callout" data-n="1" style="left:4mm; top:6mm"><b>Coste</b>: el número grande es el maná total; los símbolos dicen de qué color. La franja tiene el color de la carta.</div>
   <div class="callout" data-n="2" style="left:4mm; top:32mm"><b>Símbolo de tipo</b>: ⚔ criatura, ϟ instantáneo, ✶ conjuro, ◈ aura, ▲ tierra, ✹ Amenaza.</div>
   <div class="callout" data-n="3" style="left:4mm; top:62mm"><b>Fuerza / Resistencia</b>: en grande al pie de la franja; se lee aunque la carta esté tapada en el abanico.</div>
-  <div class="callout" data-n="4" style="left:126mm; top:4mm"><b>Nombre</b> sobre la ilustración.</div>
-  <div class="callout" data-n="5" style="left:126mm; top:24mm"><b>Ilustración a sangre</b> en estilo papel recortado.</div>
+  <div class="callout" data-n="4" style="left:126mm; top:4mm"><b>Nombre</b> sobre el arte.</div>
+  <div class="callout" data-n="5" style="left:126mm; top:24mm"><b>Arte</b>: de momento, un emoji provisional.</div>
   <div class="callout" data-n="6" style="left:126mm; top:48mm"><b>Línea de tipo</b>: tipo de carta y tipo de criatura.</div>
   <div class="callout" data-n="7" style="left:126mm; top:68mm"><b>Texto de reglas</b> sobre un panel de cristal. La cursiva es ambientación.</div>
   <div class="marker" style="left:56mm; top:6mm">1</div>

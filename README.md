@@ -20,16 +20,14 @@ Requirements: Node 22+, macOS `say` (voice `Mónica`, override with `PALMWALKER_
 ```
 src/
 ├── content/            game data, bilingual (en/es), no rendering
-│   ├── types.ts        Card, Color, Subject, Scene…
+│   ├── types.ts        Card, Color, CardType…
 │   ├── grimoires/      half-grimoires (red.ts, green.ts…)
 │   ├── nemeses/        Threat decks
 │   ├── lands.ts        land cards (card backs)
 │   ├── previews.ts     expansion preview cards (W/U/B)
-│   ├── subjects.ts     SVG silhouettes and background scenes
 │   └── index.ts        catalog: getCard(id), findCardByName(name, locale)
 ├── i18n/               UI strings per locale + current locale
 ├── render/             HTML/SVG components shared by every output
-│   ├── art/            10 art styles; "paper" (cut paper) is the default
 │   ├── card.ts/.css    the card component; skin "palm" is the production design
 │   ├── faces.ts/.css   Walker and Nemesis 4-state cards
 │   └── pips.ts, layout.ts
@@ -42,9 +40,9 @@ docs/expansion-design.md  design of the 5-colour, 4-Nemesis expansion
 
 ## Card design
 
-Production cards use skin `palm` with art style `paper`:
+Production cards use skin `palm`:
 
-- full-bleed cut-paper art,
+- a placeholder emoji as art, on a gradient of the card's colour,
 - a slim colour strip on the left with total mana, mana symbols, type glyph and power/toughness (readable in a fan),
 - rules text on a dark glass panel.
 
@@ -52,6 +50,6 @@ Cards are sized in `em`, so the same component scales through `size-*` classes: 
 
 ## Adding content
 
-1. Add the card to the right file in `src/content/` with a unique `id`, both `en` and `es` texts, and `art` (`{ shape }` for a drawn silhouette or `{ emoji }` for a sticker, plus a `scene`).
+1. Add the card to the right file in `src/content/` with a unique `id`, both `en` and `es` texts, and an `emoji` as placeholder art.
 2. Reference it from pages or the video by `id` (`renderCard("ember-bolt", "md")`) or by localized name in the video script.
 3. Run `npm run typecheck`, then rebuild the output you need.

@@ -1,7 +1,8 @@
 .pw-card { position: relative; width: 25em; height: 35em; border-radius: 1.2em; overflow: hidden; flex: none; box-sizing: border-box;
   box-shadow: 0 .8em 2em rgba(0,0,0,.42); font-family: Palatino, "Book Antiqua", Georgia, serif; color: #1d140c; text-align: left; line-height: 1.3; }
 .pw-card > div { position: absolute; box-sizing: border-box; }
-.pw-card .c-art svg, .pw-card .c-art img { width: 100%; height: 100%; display: block; }
+.pw-card .c-emoji { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 9em; line-height: 1;
+  background: radial-gradient(circle at 50% 45%, var(--c-s), var(--c-p) 60%, var(--c-d)); }
 .pw-card .c-cmc, .pw-card .c-num, .pw-card .c-deco { display: none; }
 .pw-card .c-index { display: flex; flex-direction: column; align-items: center; gap: .4em; }
 .pw-card .c-cost { display: flex; flex-direction: column; align-items: center; gap: .3em; }
@@ -10,7 +11,6 @@
 .pw-card .c-flavor { font-style: italic; opacity: .78; }
 .pw-card.no-pt .c-pt, .pw-card.no-pt .c-ipt { display: none; }
 .pw-card.no-flavor .c-flavor { display: none; }
-.pixel-art { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; }
 
 .size-xs { font-size: 1.28mm; }
 .size-sm { font-size: 1.36mm; }
@@ -42,7 +42,7 @@
 
 .skin-palm { background: #120c08; color: #fff; }
 .skin-palm .c-art { left: 4em; right: 0; top: 0; bottom: 0; }
-.skin-palm .c-art svg, .skin-palm .c-art img { height: 80%; }
+.skin-palm .c-emoji { padding-bottom: calc(12em / 9); box-sizing: border-box; }
 .skin-palm .c-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.55), transparent 22%, transparent 46%, rgba(0,0,0,.4)); }
 .skin-palm .c-index { left: 0; top: 0; bottom: 0; width: 4em; padding: 1em 0 1.1em; background: var(--c-p); color: #fff;
   box-shadow: inset -.18em 0 0 rgba(0,0,0,.28); font-family: "Avenir Next", "Helvetica Neue", sans-serif; z-index: 2; }

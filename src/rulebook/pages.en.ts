@@ -99,8 +99,8 @@ playing cards. That is why every card carries its key information in the <b>inde
   <div class="callout" data-n="1" style="left:4mm; top:6mm"><b>Cost</b>: the big number is the total mana; the symbols show its colours. The strip has the card's colour.</div>
   <div class="callout" data-n="2" style="left:4mm; top:32mm"><b>Type glyph</b>: ⚔ creature, ϟ instant, ✶ sorcery, ◈ aura, ▲ land, ✹ Threat.</div>
   <div class="callout" data-n="3" style="left:4mm; top:62mm"><b>Power / Toughness</b>: large at the foot of the strip, readable even when the card is buried in the fan.</div>
-  <div class="callout" data-n="4" style="left:126mm; top:4mm"><b>Name</b>, over the artwork.</div>
-  <div class="callout" data-n="5" style="left:126mm; top:24mm"><b>Full-bleed art</b> in cut-paper style.</div>
+  <div class="callout" data-n="4" style="left:126mm; top:4mm"><b>Name</b>, over the art.</div>
+  <div class="callout" data-n="5" style="left:126mm; top:24mm"><b>Art</b>: a placeholder emoji for now.</div>
   <div class="callout" data-n="6" style="left:126mm; top:48mm"><b>Type line</b>: card type and creature type.</div>
   <div class="callout" data-n="7" style="left:126mm; top:68mm"><b>Rules text</b> on a glass panel. Italic text is flavour.</div>
   <div class="marker" style="left:56mm; top:6mm">1</div>

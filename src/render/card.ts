@@ -1,7 +1,6 @@
 import { getCard } from "../content";
 import type { Card } from "../content/types";
 import { getLocale, t } from "../i18n/locale";
-import { renderArt, type ArtStyleId } from "./art/styles";
 import { pip, pips } from "./pips";
 
 export type CardSize = "xs" | "sm" | "md" | "lg" | "vd" | "hd" | "big" | "lab";
@@ -10,7 +9,6 @@ export type Skin = "palm" | `f${number}`;
 
 export interface CardOptions {
   skin?: Skin;
-  art?: ArtStyleId;
   extra?: string;
   num?: string;
 }
@@ -37,7 +35,7 @@ export function renderCard(idOrCard: string | Card, size: CardSize = "md", opts:
     .join(" ");
   return `<div class="${cls}">
   <div class="c-deco"><i>❦</i><i>❦</i><i>❦</i><i>❦</i></div>
-  <div class="c-art">${renderArt(card, opts.art)}</div>
+  <div class="c-art"><div class="c-emoji">${card.emoji}</div></div>
   <div class="c-index"><div class="c-cmc">${manaValue(card)}</div><div class="c-cost">${cost}</div><div class="c-glyph">${glyph}</div><div class="c-ipt">${card.pt ?? ""}</div></div>
   <div class="c-name"><span>${tx.name}</span></div>
   <div class="c-num">${opts.num ?? ""}</div>
