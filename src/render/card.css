@@ -16,7 +16,6 @@
 .pw-card.type-xlong .c-type span { font-size: .92em; }
 .pw-card .c-index { left: .2em; top: .3em; bottom: .7em; width: 3em; padding: .6em 0; display: flex; flex-direction: column; align-items: center; gap: .45em;
   color: var(--f-mark, var(--c-d)); font-family: "Avenir Next", "Helvetica Neue", sans-serif; z-index: 2; }
-.pw-card .c-cmc { font-size: 2.6em; font-weight: 800; line-height: 1; text-shadow: 0 .03em 0 var(--f-emboss, rgba(255,255,255,.7)); }
 .pw-card .c-cost { display: flex; flex-direction: column; align-items: center; gap: .2em; font-size: 1.25em; }
 .pw-card .c-glyph { font-size: 1.6em; line-height: 1; }
 .pw-card .c-ipt { margin-top: auto; font-size: 2.1em; font-weight: 800; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: .04em; text-shadow: 0 .03em 0 var(--f-emboss, rgba(255,255,255,.7)); }

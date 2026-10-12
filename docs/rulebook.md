@@ -58,10 +58,10 @@ Cards are read in a **fan**. When cards overlap, only their left edge shows, lik
 
 ```
 ┌──┬──────────────────────┐
-│2 │ [ Cinder Hound     ] │  1. Cost: big number = total mana; symbols = colours.
-│● │ ┌──────────────────┐ │     The frame has the card's colour; Threats have a dark strip.
-│● │ │                  │ │  2. Type glyph: ⚔ creature, ϟ instant, ✶ sorcery,
-│⚔ │ │      (art)       │ │     ◈ aura, ▲ land, ✹ Threat.
+│● │ [ Cinder Hound     ] │  1. Cost: ● = coloured mana; number = generic mana. {1}{R} = cost 2.
+│1 │ ┌──────────────────┐ │     The frame has the card's colour; Threats have a dark strip.
+│⚔ │ │                  │ │  2. Type glyph: ⚔ creature, ϟ instant, ✶ sorcery,
+│  │ │      (art)       │ │     ◈ aura, ▲ land, ✹ Threat.
 │  │ │                  │ │  3. Power/Toughness at the foot of the strip.
 │  │ └──────────────────┘ │  4. Name bar, above the art.
 │  │ [ Creature — Hound ] │  5. Type line, below the art.
