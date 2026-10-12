@@ -506,6 +506,7 @@ Five showcase pairs:
 
 1. Kael is the only Walker, for every colour pair. Colour-specific Walkers are out of scope.
 2. Banish into Light keeps the +1 life drawback and costs {1}{W}. At {2}{W} it was strictly worse than Assassinate; now it is cheap removal with a price, and the key anti-Morwen tool because the creature never reaches the Ruin.
+3. Morwen's Grave Tithe ends in Phase 2. Phase 1 punishes you for killing her creatures, Phase 2 (Withering) for having creatures; Uprising already gives the undead burst at the flip. Keeping Grave Tithe active would push her well past ★★★.
 
 Open questions: none.
 
