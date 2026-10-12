@@ -1,0 +1,1172 @@
+import { type Action, type Agent, CHARGE, DISCHARGE, ULTIMATE } from "./agent";
+import { DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, type Mana, REACH, TRAMPLE, VIGILANCE } from "./defs";
+import { type Rng, shuffle } from "./rng";
+import {
+  FACE, FLIP_AT, HAND_LIMIT, MAX_CREATURES, MAX_LANDS, OPENING_HAND, T,
+  type Ctx, type Perm, type State, type Task, type Window, defOf, newPerm,
+} from "./state";
+
+const COLOR_INDEX: Record<Mana, number> = { W: 0, U: 1, B: 2, R: 3, G: 4 };
+export const GROVEKEEPER = "elvish-grovekeeper";
+export const ARCHIVIST = "learned-archivist";
+
+const WINDOW_TASK: Record<Window, number> = { upkeep: 0, start: T.START, spell: T.SPELL, pre: T.PRE, blocks: T.AFTER_BLOCKS, end: T.END };
+
+export function windowTask(w: Window): number {
+  return WINDOW_TASK[w];
+}
+
+export function log(s: State, msg: string): void {
+  if (s.log) s.log.push(`R${s.round} ${s.active ? "Nemesis" : "You"}: ${msg}`);
+}
+
+export function count(s: State, key: string): void {
+  if (s.tally) s.tally.set(key, (s.tally.get(key) ?? 0) + 1);
+}
+
+export function nm(s: State, uid: number): string {
+  return defOf(s, uid).name;
+}
+
+export function life(s: State): number {
+  return s.library.length;
+}
+
+export function nemLife(s: State): number {
+  return s.faceDown.length;
+}
+
+export function kwOf(s: State, p: Perm): number {
+  let k = p.def.kw | p.akw;
+  if (p.uid >= s.ctx.players && s.phase === 2) {
+    if (s.ctx.nemesis === "vaskara") k |= TRAMPLE;
+    else if (s.ctx.nemesis === "vorthrax") k |= HASTE;
+  }
+  return k;
+}
+
+export function pw(s: State, p: Perm): number {
+  let v = p.def.power + p.ap + p.tp;
+  if (p.uid < s.ctx.players) {
+    if (s.phase === 2 && s.ctx.nemesis === "morwen") v -= 1;
+  } else {
+    if (s.ctx.heroic) v += 1;
+    if (s.phase === 2 && s.ctx.nemesis === "vaskara") v += 1;
+  }
+  return v;
+}
+
+export function tg(s: State, p: Perm): number {
+  let v = p.def.toughness + p.at + p.tt;
+  if (p.uid < s.ctx.players && s.phase === 2 && s.ctx.nemesis === "morwen") v -= 1;
+  return v;
+}
+
+export function hp(s: State, p: Perm): number {
+  return tg(s, p) - p.damage;
+}
+
+export function canBlock(s: State, blocker: Perm, attacker: Perm): boolean {
+  return !(kwOf(s, attacker) & FLYING) || (kwOf(s, blocker) & (FLYING | REACH)) !== 0;
+}
+
+export function kills(s: State, a: Perm, b: Perm): boolean {
+  const pa = pw(s, a);
+  if (pa <= 0 || b.shield) return false;
+  return (kwOf(s, a) & DEATHTOUCH) !== 0 || pa >= hp(s, b);
+}
+
+export function lethalFor(s: State, a: Perm, b: Perm): number {
+  const rest = Math.max(0, hp(s, b));
+  return kwOf(s, a) & DEATHTOUCH ? Math.min(1, rest) : rest;
+}
+
+export function findMine(s: State, uid: number): Perm | undefined {
+  for (const p of s.mine) if (p.uid === uid) return p;
+  return undefined;
+}
+
+export function findNem(s: State, uid: number): Perm | undefined {
+  for (const p of s.nem) if (p.uid === uid) return p;
+  return undefined;
+}
+
+export function ashActive(s: State): boolean {
+  return s.ctx.nemesis === "vorthrax" && s.phase === 1;
+}
+
+export function overflowPower(s: State, uid: number): number {
+  return defOf(s, uid).power + (s.ctx.heroic ? 1 : 0) + (s.phase === 2 && s.ctx.nemesis === "vaskara" ? 1 : 0);
+}
+
+export function nemTarget(s: State): Perm | undefined {
+  let best: Perm | undefined;
+  for (const p of s.mine) {
+    if (!best) { best = p; continue; }
+    const a = pw(s, p), b = pw(s, best);
+    if (a > b || (a === b && tg(s, p) > tg(s, best))) best = p;
+  }
+  return best;
+}
+
+export function bestRuinCreature(s: State): number {
+  let best = -1;
+  for (let i = 0; i < s.ruin.length; i++) {
+    const d = defOf(s, s.ruin[i]);
+    if (d.kind !== "creature") continue;
+    if (best < 0) { best = i; continue; }
+    const b = defOf(s, s.ruin[best]);
+    if (d.power > b.power || (d.power === b.power && d.toughness >= b.toughness)) best = i;
+  }
+  return best;
+}
+
+export function ruinCreatures(s: State): number {
+  let n = 0;
+  for (const uid of s.ruin) if (defOf(s, uid).kind === "creature") n++;
+  return n;
+}
+
+export function loseLife(s: State, n: number): void {
+  if (n > 0) log(s, `you lose ${n} life (${Math.max(0, s.library.length - n)} left)`);
+  for (let i = 0; i < n && !s.over; i++) {
+    const uid = s.library.shift();
+    if (uid === undefined) break;
+    s.known[uid] = 0;
+    s.grave.push(uid);
+    if (s.library.length === 0) s.over = 2;
+  }
+}
+
+export function gainLife(s: State, n: number): void {
+  for (let i = 0; i < n && s.grave.length; i++) {
+    const uid = s.grave.pop()!;
+    s.library.push(uid);
+    s.known[uid] = 1;
+  }
+}
+
+export function draw(s: State, n: number): void {
+  for (let i = 0; i < n && !s.over; i++) {
+    const uid = s.library.shift();
+    if (uid === undefined) { s.over = 2; break; }
+    s.known[uid] = 0;
+    s.hand.push(uid);
+    log(s, `draws ${nm(s, uid)} (${s.library.length} life)`);
+    if (s.library.length === 0) s.over = 2;
+  }
+}
+
+export function scry(s: State, n: number, agent: Agent): void {
+  const cards = s.library.slice(0, n);
+  if (!cards.length) return;
+  const top = agent.scry(s, cards);
+  const bottom = cards.filter((c) => !top.includes(c));
+  s.library.splice(0, cards.length);
+  s.library = [...top, ...s.library, ...bottom];
+  for (const c of cards) s.known[c] = 1;
+  log(s, `scry ${n}: keeps ${top.map((u) => nm(s, u)).join(", ") || "nothing"}, bottoms ${bottom.map((u) => nm(s, u)).join(", ") || "nothing"}`);
+}
+
+export function nemGain(s: State, n: number): void {
+  for (let i = 0; i < n && s.ruin.length; i++) {
+    const uid = s.ruin.pop()!;
+    s.faceDown.push(uid);
+    s.known[uid] = 1;
+  }
+}
+
+export function toBottom(s: State, uid: number): void {
+  s.faceDown.push(uid);
+  s.known[uid] = 1;
+}
+
+export function damageNemesis(s: State, n: number, agent: Agent): number {
+  if (s.over || n <= 0) return 0;
+  if (ashActive(s) && s.ash > 0) {
+    const prevented = Math.min(s.ash, n);
+    s.ash -= prevented;
+    n -= prevented;
+    log(s, `Ash Hide prevents ${prevented}`);
+  }
+  if (n <= 0) return 0;
+  const k = Math.min(n, s.faceDown.length);
+  for (let i = 0; i < k; i++) {
+    const uid = s.faceDown.shift()!;
+    s.known[uid] = 0;
+    s.ruin.push(uid);
+  }
+  log(s, `Nemesis takes ${n} (${nemLife(s)} left)`);
+  if (s.faceDown.length === 0) { s.over = 1; return n; }
+  checkFlip(s, agent);
+  return n;
+}
+
+export function reveal(s: State, agent: Agent): void {
+  if (s.over || s.omen >= 0) return;
+  const uid = s.faceDown.shift();
+  if (uid === undefined) { s.over = 1; return; }
+  s.omen = uid;
+  s.known[uid] = 0;
+  log(s, `reveals Omen ${nm(s, uid)} (${nemLife(s)} left)`);
+  if (s.faceDown.length === 0) { s.over = 1; return; }
+  checkFlip(s, agent);
+}
+
+function runNow(s: State, agent: Agent, tasks: Task[]): void {
+  const until = s.q.length;
+  s.q.unshift(...tasks);
+  drain(s, agent, until);
+}
+
+export function checkFlip(s: State, agent: Agent): void {
+  if (s.phase !== 1 || s.over || s.faceDown.length > FLIP_AT) return;
+  s.phase = 2;
+  s.flipRound = s.round;
+  log(s, "Phase 2!");
+  switch (s.ctx.nemesis) {
+    case "vorthrax":
+      nemGain(s, 3);
+      break;
+    case "vaskara":
+      runNow(s, agent, [{ k: T.EXEC_OMEN, u: -1 }, { k: T.REVEAL, u: -1 }]);
+      break;
+    case "morwen":
+      for (let i = 0; i < 2; i++) if (!returnFromRuin(s)) break;
+      break;
+    case "mirror-archmage": {
+      const p = nemTarget(s);
+      if (p) bounceMine(s, p);
+      nemGain(s, 2);
+      break;
+    }
+  }
+  sba(s, agent);
+}
+
+function returnFromRuin(s: State): boolean {
+  const i = bestRuinCreature(s);
+  if (i < 0 || s.nem.length >= MAX_CREATURES) return false;
+  const uid = s.ruin.splice(i, 1)[0];
+  enterNem(s, uid, false);
+  return true;
+}
+
+export function bounceMine(s: State, p: Perm): void {
+  s.mine.splice(s.mine.indexOf(p), 1);
+  s.grave.push(...p.auras);
+  s.hand.push(p.uid);
+  log(s, `${p.def.name} returns to your hand`);
+}
+
+export function removeNem(s: State, p: Perm): void {
+  s.nem.splice(s.nem.indexOf(p), 1);
+  s.grave.push(...p.auras);
+}
+
+export function damageCreature(p: Perm, n: number, deathtouch: boolean): number {
+  if (n <= 0 || p.shield) return 0;
+  p.damage += n;
+  if (deathtouch) p.dt = true;
+  return n;
+}
+
+export function sba(s: State, agent: Agent): void {
+  for (;;) {
+    const deadMine: Perm[] = [];
+    const deadNem: Perm[] = [];
+    for (const p of s.mine) {
+      const t = tg(s, p);
+      if (t <= 0 || p.damage >= t || p.dt) deadMine.push(p);
+    }
+    for (const p of s.nem) {
+      const t = tg(s, p);
+      if (t <= 0 || p.damage >= t || p.dt) deadNem.push(p);
+    }
+    if (!deadMine.length && !deadNem.length) return;
+    for (const p of deadMine) {
+      s.mine.splice(s.mine.indexOf(p), 1);
+      s.grave.push(p.uid, ...p.auras);
+      log(s, `${p.def.name} dies`);
+    }
+    for (const p of deadNem) {
+      removeNem(s, p);
+      if (p.def.id === "wandering-skeleton") toBottom(s, p.uid);
+      else s.ruin.push(p.uid);
+      log(s, `${p.def.name} dies`);
+    }
+    for (const p of deadMine) {
+      if (p.def.id !== "hungry-ghoul" || !s.grave.length) continue;
+      const uid = agent.ghoul(s);
+      const i = s.grave.indexOf(uid);
+      if (i >= 0) {
+        s.grave.splice(i, 1);
+        s.hand.push(uid);
+        log(s, `Hungry Ghoul returns ${nm(s, uid)} to hand`);
+      }
+    }
+  }
+}
+
+export function enterNem(s: State, uid: number, executed: boolean): void {
+  const d = defOf(s, uid);
+  if (s.nem.length >= MAX_CREATURES) {
+    if (executed) {
+      const dmg = overflowPower(s, uid);
+      log(s, `Overflow: ${d.name} deals ${dmg}`);
+      loseLife(s, dmg);
+      toBottom(s, uid);
+    } else s.ruin.push(uid);
+    return;
+  }
+  const p = newPerm(uid, d);
+  s.nem.push(p);
+  log(s, `${d.name} enters (${pw(s, p)}/${tg(s, p)})`);
+  switch (d.id) {
+    case "vorthraxs-herald":
+    case "crypt-horror":
+      loseLife(s, 1);
+      break;
+    case "mantis-queen":
+      for (const o of s.nem) if (o !== p) o.tp += 1;
+      break;
+  }
+}
+
+export function enterMine(s: State, uid: number, agent: Agent, target: number): void {
+  const d = defOf(s, uid);
+  if (s.mine.length >= MAX_CREATURES) { s.grave.push(uid); return; }
+  const p = newPerm(uid, d);
+  s.mine.push(p);
+  log(s, `${d.name} enters`);
+  sba(s, agent);
+  switch (d.id) {
+    case "tide-apprentice":
+      scry(s, 2, agent);
+      break;
+    case "blood-acolyte":
+      loseLife(s, 1);
+      damageNemesis(s, 1, agent);
+      break;
+    case "cinder-hound": {
+      const t = findAny(s, target >= 0 ? target : agent.hound(s));
+      if (t) {
+        damageCreature(t, 1, false);
+        log(s, `Cinder Hound pings ${t.def.name}`);
+        sba(s, agent);
+      }
+      break;
+    }
+    case "pyre-titan":
+      damageNemesis(s, 2, agent);
+      break;
+    case "grovesinger-druid":
+      gainLife(s, 2);
+      break;
+    case "crypt-lord": {
+      const options = s.grave.filter((u) => defOf(s, u).kind === "creature" && defOf(s, u).mv <= 2);
+      if (!options.length || s.mine.length >= MAX_CREATURES) break;
+      const pick = options.includes(target) ? target : agent.cryptLord(s, options);
+      const i = s.grave.indexOf(pick);
+      if (i >= 0) {
+        s.grave.splice(i, 1);
+        enterMine(s, pick, agent, -1);
+      }
+      break;
+    }
+  }
+}
+
+export function findAny(s: State, uid: number): Perm | undefined {
+  return findMine(s, uid) ?? findNem(s, uid);
+}
+
+export function sources(s: State): number[] {
+  const have = [0, 0, 0, 0, 0, 0];
+  for (let i = 0; i < s.lands.length; i++) {
+    if (s.tapped & (1 << i)) continue;
+    have[COLOR_INDEX[defOf(s, s.lands[i]).color as Mana]]++;
+    have[5]++;
+  }
+  for (const p of s.mine) {
+    if (p.def.id === GROVEKEEPER && !p.tapped && !p.sick) { have[4]++; have[5]++; }
+  }
+  return have;
+}
+
+export function refraction(s: State): number {
+  return s.ctx.nemesis === "mirror-archmage" && s.phase === 1 && s.spells === 0 ? 1 : 0;
+}
+
+export function wardActive(s: State): boolean {
+  return s.ctx.nemesis === "mirror-archmage" && s.phase === 2 && s.spells === 0;
+}
+
+export function canAfford(s: State, uid: number, pay: boolean, have = sources(s)): boolean {
+  const d = defOf(s, uid);
+  const extra = refraction(s) + (pay && wardActive(s) ? 2 : 0);
+  if (have[5] < d.mv + extra) return false;
+  if (d.pips.length === 1) return have[COLOR_INDEX[d.pips[0]]] > 0;
+  const need = [0, 0, 0, 0, 0];
+  for (const c of d.pips) if (++need[COLOR_INDEX[c]] > have[COLOR_INDEX[c]]) return false;
+  return true;
+}
+
+function payMana(s: State, uid: number, extra: number): void {
+  const d = defOf(s, uid);
+  const tapLand = (c: number): boolean => {
+    for (let i = 0; i < s.lands.length; i++) {
+      if (s.tapped & (1 << i)) continue;
+      if (COLOR_INDEX[defOf(s, s.lands[i]).color as Mana] === c) { s.tapped |= 1 << i; return true; }
+    }
+    return false;
+  };
+  const tapElf = (): boolean => {
+    for (const p of s.mine) if (p.def.id === GROVEKEEPER && !p.tapped && !p.sick) { p.tapped = true; return true; }
+    return false;
+  };
+  for (const c of d.pips) {
+    const ci = COLOR_INDEX[c];
+    if (!tapLand(ci) && !(ci === 4 && tapElf())) throw new Error(`Cannot pay ${d.name}`);
+  }
+  const need = [0, 0, 0, 0, 0];
+  for (const h of s.hand) {
+    const hd = defOf(s, h);
+    if (hd.kind === "instant") for (const c of hd.pips) need[COLOR_INDEX[c]]++;
+  }
+  for (let n = d.generic + extra; n > 0; n--) {
+    const left = sources(s);
+    let best = -1;
+    let bestScore = Infinity;
+    for (let i = 0; i < s.lands.length; i++) {
+      if (s.tapped & (1 << i)) continue;
+      const ci = COLOR_INDEX[defOf(s, s.lands[i]).color as Mana];
+      const score = need[ci] * 10 - left[ci];
+      if (score < bestScore) { bestScore = score; best = i; }
+    }
+    if (best >= 0) s.tapped |= 1 << best;
+    else if (!tapElf()) throw new Error(`Cannot pay ${d.name}`);
+  }
+}
+
+export function targets(s: State, uid: number): number[] {
+  const d = defOf(s, uid);
+  const nem = s.nem.map((p) => p.uid);
+  const mine = s.mine.map((p) => p.uid);
+  switch (d.id) {
+    case "cinder-hound":
+      return [...nem, ...mine, uid];
+    case "crypt-lord": {
+      const g = s.grave.filter((u) => defOf(s, u).kind === "creature" && defOf(s, u).mv <= 2);
+      return g.length ? g : [-1];
+    }
+    case "reanimate":
+      return s.grave.filter((u) => defOf(s, u).kind === "creature");
+    case "ember-bolt":
+    case "kindle":
+      return [...nem, FACE];
+    case "lethal-whisper":
+    case "assassinate":
+    case "deep-freeze":
+    case "return-to-the-tide":
+      return nem;
+    case "serene-judgment":
+      return s.nem.filter((p) => !p.pacified).map((p) => p.uid);
+    case "banish-into-light":
+      return s.active === 1 ? s.atk.filter((u) => findNem(s, u)) : [];
+    case "battle-fury":
+    case "surge-of-vigor":
+    case "luminous-aegis":
+    case "molten-blade":
+    case "wild-strength":
+      return mine;
+    case "bend-fate":
+      return s.omen >= 0 ? [1, 0] : [0];
+    case "rising-tide":
+      return nem.length ? [-1] : [];
+    default:
+      return [-1];
+  }
+}
+
+export function sorcerySpeed(d: { kind: string }): boolean {
+  return d.kind !== "instant";
+}
+
+export function castable(s: State, uid: number, main: boolean, pay: boolean, have = sources(s)): boolean {
+  const d = defOf(s, uid);
+  if (sorcerySpeed(d) && !main) return false;
+  if (d.kind === "creature" && s.mine.length >= MAX_CREATURES) return false;
+  return canAfford(s, uid, pay, have);
+}
+
+function castSpell(s: State, a: Extract<Action, { t: "cast" }>, agent: Agent): void {
+  const d = defOf(s, a.uid);
+  const i = s.hand.indexOf(a.uid);
+  if (i < 0) throw new Error(`${d.name} is not in hand`);
+  s.hand.splice(i, 1);
+  const ward = wardActive(s);
+  payMana(s, a.uid, refraction(s) + (ward && a.pay ? 2 : 0));
+  s.spells++;
+  let countered = false;
+  if (s.counters.length) {
+    toBottom(s, s.counters.shift()!);
+    countered = true;
+  }
+  if (ward && !a.pay) countered = true;
+  if (countered) {
+    s.grave.push(a.uid);
+    log(s, `casts ${d.name}: countered`);
+    count(s, `countered:${d.id}`);
+    return;
+  }
+  count(s, `cast:${d.id}`);
+  log(s, `casts ${d.name}${a.target === FACE ? " at the Nemesis" : a.target >= 0 && d.id !== "bend-fate" ? ` on ${nm(s, a.target)}` : ""}`);
+  if (d.kind === "creature") { enterMine(s, a.uid, agent, a.target); return; }
+  if (d.kind === "aura") { attach(s, a.uid, a.target, agent); return; }
+  resolveSpell(s, a.uid, a.target, agent);
+  s.grave.push(a.uid);
+}
+
+function attach(s: State, uid: number, target: number, agent: Agent): void {
+  const d = defOf(s, uid);
+  const p = d.id === "serene-judgment" ? findNem(s, target) : findMine(s, target);
+  if (!p) { s.grave.push(uid); return; }
+  p.auras.push(uid);
+  if (d.id === "serene-judgment") p.pacified = true;
+  else if (d.id === "molten-blade") { p.ap += 2; p.akw |= TRAMPLE; }
+  else if (d.id === "wild-strength") { p.ap += 2; p.at += 2; p.akw |= TRAMPLE; }
+  sba(s, agent);
+}
+
+function resolveSpell(s: State, uid: number, target: number, agent: Agent): void {
+  const d = defOf(s, uid);
+  const nemT = target >= 0 ? findNem(s, target) : undefined;
+  const mineT = target >= 0 ? findMine(s, target) : undefined;
+  switch (d.id) {
+    case "luminous-aegis":
+      if (mineT) mineT.shield = true;
+      break;
+    case "prayer-of-restoration": {
+      const cards = s.grave.slice(-3).reverse();
+      const pick = cards.length ? agent.prayer(s, cards) : -1;
+      for (const c of cards) {
+        s.grave.splice(s.grave.lastIndexOf(c), 1);
+        if (c === pick) { s.hand.push(c); log(s, `takes ${nm(s, c)} into hand`); }
+        else { s.library.push(c); s.known[c] = 1; }
+      }
+      break;
+    }
+    case "shield-formation":
+      for (const p of s.mine) { p.tp += 1; p.tt += 1; }
+      break;
+    case "banish-into-light":
+      if (nemT && s.atk.includes(nemT.uid)) {
+        removeNem(s, nemT);
+        toBottom(s, nemT.uid);
+      }
+      break;
+    case "bend-fate":
+      if (target === 1 && s.omen >= 0) {
+        toBottom(s, s.omen);
+        s.omen = -1;
+        reveal(s, agent);
+      }
+      if (!s.over) scry(s, 1, agent);
+      break;
+    case "deep-freeze":
+      if (nemT) { nemT.tapped = true; nemT.frozen = true; }
+      break;
+    case "return-to-the-tide":
+      if (nemT) {
+        removeNem(s, nemT);
+        if (s.omen >= 0) { s.faceDown.unshift(s.omen); s.known[s.omen] = 1; }
+        s.omen = nemT.uid;
+      }
+      break;
+    case "arcane-study":
+      scry(s, 2, agent);
+      draw(s, 2);
+      break;
+    case "rising-tide": {
+      if (!s.nem.length) break;
+      const order = agent.tideOrder(s, s.nem.map((p) => p.uid));
+      for (const p of s.nem.slice()) removeNem(s, p);
+      if (s.omen >= 0) { s.faceDown.unshift(s.omen); s.known[s.omen] = 1; }
+      for (let i = order.length - 1; i >= 1; i--) { s.faceDown.unshift(order[i]); s.known[order[i]] = 1; }
+      s.omen = order[0];
+      break;
+    }
+    case "lethal-whisper":
+      if (nemT) { nemT.tp -= 2; nemT.tt -= 2; sba(s, agent); }
+      break;
+    case "forbidden-pact":
+      draw(s, 2);
+      break;
+    case "assassinate":
+      if (nemT) { nemT.dt = true; sba(s, agent); }
+      break;
+    case "reanimate": {
+      const i = s.grave.indexOf(target);
+      if (i >= 0 && s.mine.length < MAX_CREATURES) {
+        s.grave.splice(i, 1);
+        enterMine(s, target, agent, -1);
+      }
+      break;
+    }
+    case "drain-essence":
+      damageNemesis(s, 2, agent);
+      gainLife(s, 2);
+      break;
+    case "ember-bolt":
+    case "kindle": {
+      const n = d.id === "ember-bolt" ? 3 : 2;
+      if (target === FACE) damageNemesis(s, n, agent);
+      else {
+        const p = findAny(s, target);
+        if (p) { damageCreature(p, n, false); sba(s, agent); }
+      }
+      break;
+    }
+    case "battle-fury":
+      if (mineT) mineT.tp += 3;
+      break;
+    case "volcanic-roar":
+      for (const p of s.nem) damageCreature(p, 2, false);
+      sba(s, agent);
+      break;
+    case "surge-of-vigor":
+      if (mineT) { mineT.tp += 3; mineT.tt += 3; }
+      break;
+    case "bloom-of-life":
+      gainLife(s, 4);
+      break;
+    default:
+      throw new Error(`No resolution for ${d.id}`);
+  }
+}
+
+function kael(s: State, a: Extract<Action, { t: "kael" }>, agent: Agent): void {
+  if (s.kaelUsed) throw new Error("Kael already used");
+  s.kaelUsed = true;
+  if (a.ab === CHARGE) {
+    if (s.kael >= 4) throw new Error("Kael cannot charge at IV");
+    s.kael++;
+    count(s, "kael:charge");
+    const p = findMine(s, a.target);
+    if (p) p.tp += 1;
+    log(s, `Kael charges to ${s.kael}${p ? ` (+1/+0 ${p.def.name})` : ""}`);
+  } else if (a.ab === DISCHARGE) {
+    if (s.kael < 3) throw new Error("Kael cannot discharge");
+    s.kael -= 2;
+    count(s, "kael:discharge");
+    const p = findMine(s, a.target) ?? findNem(s, a.target);
+    log(s, `Kael discharges at ${p ? p.def.name : "nothing"}`);
+    if (p) { damageCreature(p, 2, false); sba(s, agent); }
+  } else if (a.ab === ULTIMATE) {
+    if (s.kael !== 4) throw new Error("Kael cannot ultimate");
+    s.kael = 1;
+    log(s, "Kael ultimate");
+    count(s, "kael:ultimate");
+    for (const p of s.mine) p.tp += 1;
+    damageNemesis(s, 3, agent);
+  }
+}
+
+export function applyAction(s: State, a: Action, agent: Agent): void {
+  switch (a.t) {
+    case "land": {
+      if (s.landPlayed || s.lands.length >= MAX_LANDS) throw new Error("Illegal land drop");
+      const i = s.hand.indexOf(a.uid);
+      if (i < 0) throw new Error("Land card not in hand");
+      s.hand.splice(i, 1);
+      s.lands.push(a.uid);
+      s.landPlayed = true;
+      log(s, `plays ${defOf(s, a.uid).color} land (${nm(s, a.uid)})`);
+      count(s, `land:${defOf(s, a.uid).id}`);
+      break;
+    }
+    case "cast":
+      castSpell(s, a, agent);
+      break;
+    case "kael":
+      kael(s, a, agent);
+      break;
+    case "archivist": {
+      const p = s.mine.find((m) => m.def.id === ARCHIVIST && !m.tapped && !m.sick);
+      if (!p) throw new Error("No Archivist ready");
+      p.tapped = true;
+      scry(s, 1, agent);
+      break;
+    }
+    case "pass":
+      break;
+  }
+}
+
+export function nemAttackers(s: State): number[] {
+  const res: number[] = [];
+  for (const p of s.nem) {
+    if (p.tapped || p.pacified) continue;
+    const k = kwOf(s, p);
+    if (k & DEFENDER) continue;
+    if (p.sick && !(k & HASTE)) continue;
+    let deterred = false;
+    for (const b of s.mine) {
+      if (!b.tapped && canBlock(s, b, p) && kills(s, b, p) && !kills(s, p, b)) { deterred = true; break; }
+    }
+    if (!deterred) res.push(p.uid);
+  }
+  return res;
+}
+
+function strongest(s: State, list: Perm[], ok: (a: Perm) => boolean): number {
+  let best = -1;
+  for (let i = 0; i < list.length; i++) {
+    const a = list[i];
+    if (!ok(a)) continue;
+    if (best < 0) { best = i; continue; }
+    const b = list[best];
+    const pa = pw(s, a), pb = pw(s, b);
+    if (pa > pb || (pa === pb && tg(s, a) > tg(s, b))) best = i;
+  }
+  return best;
+}
+
+export function unblockedToNemesis(s: State, attackers: Perm[], blockers: (Perm | null)[]): number {
+  let dmg = 0;
+  for (let i = 0; i < attackers.length; i++) {
+    const a = attackers[i];
+    const pa = Math.max(0, pw(s, a));
+    const b = blockers[i];
+    if (!b) dmg += pa;
+    else if (kwOf(s, a) & TRAMPLE) dmg += Math.max(0, pa - lethalFor(s, a, b));
+  }
+  if (ashActive(s)) dmg = Math.max(0, dmg - s.ash);
+  return dmg;
+}
+
+export function nemBlocks(s: State): void {
+  const attackers = s.atk.map((u) => findMine(s, u)!).filter(Boolean);
+  const order = s.mine.filter((p) => attackers.includes(p));
+  const assigned: (Perm | null)[] = order.map(() => null);
+  const free = s.nem.filter((p) => !p.tapped && !p.pacified);
+  const used = new Set<Perm>();
+  const step = (ok: (b: Perm, a: Perm) => boolean): void => {
+    for (const b of free) {
+      if (used.has(b)) continue;
+      const i = strongest(s, order, (a) => assigned[order.indexOf(a)] === null && canBlock(s, b, a) && ok(b, a));
+      if (i >= 0) { assigned[i] = b; used.add(b); }
+    }
+  };
+  step((b, a) => kills(s, b, a) && !kills(s, a, b));
+  step((b, a) => kills(s, b, a));
+  if (unblockedToNemesis(s, order, assigned) >= nemLife(s)) step(() => true);
+  s.atk = order.map((p) => p.uid);
+  s.blk = assigned.map((b) => (b ? b.uid : -1));
+  if (s.atk.length) log(s, `attacks with ${order.map((p, i) => `${p.def.name}${assigned[i] ? ` (blocked by ${assigned[i]!.def.name})` : ""}`).join(", ")}`);
+}
+
+export function declareAttack(s: State, uids: number[]): void {
+  s.atk = [];
+  s.blk = [];
+  for (const uid of uids) {
+    const p = findMine(s, uid);
+    if (!p || p.tapped || (p.sick && !(kwOf(s, p) & HASTE)) || kwOf(s, p) & DEFENDER) throw new Error(`Illegal attacker ${uid}`);
+    if (!(kwOf(s, p) & VIGILANCE)) p.tapped = true;
+    s.atk.push(uid);
+    s.blk.push(-1);
+  }
+}
+
+interface Hit {
+  to: Perm;
+  n: number;
+  dt: boolean;
+}
+
+function fight(s: State, attackers: (Perm | undefined)[], defendersMine: boolean): { toPlayer: number; hits: Hit[]; gainMine: number; gainNem: number; perAttacker: number[] } {
+  const hits: Hit[] = [];
+  let toPlayer = 0;
+  let gainMine = 0;
+  let gainNem = 0;
+  const perAttacker: number[] = [];
+  for (let i = 0; i < attackers.length; i++) {
+    perAttacker.push(0);
+    const a = attackers[i];
+    if (!a) continue;
+    const pa = Math.max(0, pw(s, a));
+    const ka = kwOf(s, a);
+    const bu = s.blk[i];
+    const b = bu >= 0 ? (defendersMine ? findMine(s, bu) : findNem(s, bu)) : undefined;
+    let dealt = 0;
+    if (bu >= 0) {
+      if (b) {
+        const toB = ka & TRAMPLE ? Math.min(pa, lethalFor(s, a, b)) : pa;
+        const excess = pa - toB;
+        if (!b.shield) dealt += toB;
+        hits.push({ to: b, n: toB, dt: (ka & DEATHTOUCH) !== 0 });
+        toPlayer += excess;
+        perAttacker[i] = excess;
+        const pb = Math.max(0, pw(s, b));
+        hits.push({ to: a, n: pb, dt: (kwOf(s, b) & DEATHTOUCH) !== 0 });
+        if (kwOf(s, b) & LIFELINK && !a.shield) {
+          if (defendersMine) gainMine += pb;
+          else gainNem += pb;
+        }
+      } else if (ka & TRAMPLE) { toPlayer += pa; perAttacker[i] = pa; }
+    } else { toPlayer += pa; perAttacker[i] = pa; }
+    if (ka & LIFELINK && dealt) {
+      if (defendersMine) gainNem += dealt;
+      else gainMine += dealt;
+    }
+  }
+  return { toPlayer, hits, gainMine, gainNem, perAttacker };
+}
+
+export function playerCombatDamage(s: State, agent: Agent): void {
+  const attackers = s.atk.map((u) => findMine(s, u));
+  const r = fight(s, attackers, false);
+  let prevented = ashActive(s) ? Math.min(s.ash, r.toPlayer) : 0;
+  const order = attackers.map((_, i) => i).sort((x, y) => {
+    const lx = attackers[x] && kwOf(s, attackers[x]!) & LIFELINK ? 1 : 0;
+    const ly = attackers[y] && kwOf(s, attackers[y]!) & LIFELINK ? 1 : 0;
+    return lx - ly;
+  });
+  let gainMine = r.gainMine;
+  for (const i of order) {
+    const a = attackers[i];
+    let n = r.perAttacker[i];
+    const cut = Math.min(prevented, n);
+    prevented -= cut;
+    n -= cut;
+    if (a && kwOf(s, a) & LIFELINK) gainMine += n;
+  }
+  for (const h of r.hits) damageCreature(h.to, h.n, h.dt);
+  gainLife(s, gainMine);
+  nemGain(s, r.gainNem);
+  sba(s, agent);
+  damageNemesis(s, r.toPlayer, agent);
+  s.atk = [];
+  s.blk = [];
+}
+
+function nemCombatDamage(s: State, agent: Agent): void {
+  const attackers = s.atk.map((u) => findNem(s, u));
+  const r = fight(s, attackers, true);
+  let gainNem = r.gainNem;
+  attackers.forEach((a, i) => {
+    if (a && kwOf(s, a) & LIFELINK) gainNem += r.perAttacker[i];
+  });
+  for (const h of r.hits) damageCreature(h.to, h.n, h.dt);
+  nemGain(s, gainNem);
+  gainLife(s, r.gainMine);
+  sba(s, agent);
+  if (r.toPlayer) {
+    log(s, `combat deals ${r.toPlayer} to you`);
+    loseLife(s, r.toPlayer);
+  }
+  s.atk = [];
+  s.blk = [];
+}
+
+function executeCard(s: State, uid: number): void {
+  const d = defOf(s, uid);
+  if (d.kind === "creature") { enterNem(s, uid, true); return; }
+  log(s, `executes ${d.name}`);
+  s.pend = uid;
+  const t = d.id === "searing-breath" || d.id === "withering-touch" || d.id === "rebound" ? nemTarget(s) : undefined;
+  s.pendTarget = t ? t.uid : -1;
+  s.q.unshift({ k: T.SPELL, u: uid }, { k: T.RESOLVE, u: uid });
+}
+
+function resolveThreat(s: State, uid: number, agent: Agent): void {
+  const d = defOf(s, uid);
+  const target = s.pendTarget >= 0 ? findMine(s, s.pendTarget) : undefined;
+  s.pend = -1;
+  switch (d.id) {
+    case "searing-breath":
+      if (s.pendTarget < 0) loseLife(s, 2);
+      else if (target) { damageCreature(target, 2, false); sba(s, agent); }
+      break;
+    case "rain-of-cinders":
+      for (const p of s.mine) damageCreature(p, 1, false);
+      sba(s, agent);
+      loseLife(s, 1);
+      break;
+    case "tyrants-roar":
+      for (const p of s.nem) p.tp += 1;
+      break;
+    case "cinder-rebirth":
+    case "exhume":
+      if (bestRuinCreature(s) < 0) loseLife(s, 2);
+      else returnFromRuin(s);
+      break;
+    case "pheromones":
+      for (const p of s.nem) { p.tp += 1; p.tt += 1; }
+      break;
+    case "egg-laying": {
+      const next = s.faceDown.shift();
+      if (next === undefined) { s.over = 1; break; }
+      s.known[next] = 0;
+      log(s, `Egg Laying reveals ${nm(s, next)}`);
+      if (s.faceDown.length === 0) { s.over = 1; break; }
+      if (defOf(s, next).kind === "creature") enterNem(s, next, true);
+      else toBottom(s, next);
+      checkFlip(s, agent);
+      break;
+    }
+    case "insect-plague":
+      for (const p of s.mine) damageCreature(p, 1, false);
+      sba(s, agent);
+      break;
+    case "withering-touch":
+      if (s.pendTarget < 0) loseLife(s, 2);
+      else if (target) { target.tp -= 2; target.tt -= 2; sba(s, agent); }
+      break;
+    case "soul-drain":
+      loseLife(s, 2);
+      nemGain(s, 2);
+      break;
+    case "plague":
+      for (const p of s.mine) { p.tp -= 1; p.tt -= 1; }
+      for (const p of s.nem) { p.tp -= 1; p.tt -= 1; }
+      sba(s, agent);
+      break;
+    case "counterspell":
+      s.counters.push(uid);
+      return;
+    case "rebound":
+      if (s.pendTarget < 0) discardLeftmost(s);
+      else if (target) bounceMine(s, target);
+      break;
+    case "mind-theft":
+      if (s.hand.length) discardLeftmost(s);
+      else loseLife(s, 2);
+      break;
+    case "mass-illusion":
+      for (const p of s.mine) p.tapped = true;
+      break;
+    default:
+      throw new Error(`No resolution for threat ${d.id}`);
+  }
+  if (!s.over) toBottom(s, uid);
+}
+
+function discardLeftmost(s: State): void {
+  const uid = s.hand.shift();
+  if (uid === undefined) return;
+  count(s, `discard:${defOf(s, uid).id}`);
+  s.grave.push(uid);
+  log(s, `you discard ${nm(s, uid)}`);
+}
+
+function endStep(s: State): void {
+  switch (s.ctx.nemesis) {
+    case "vorthrax":
+      log(s, s.phase === 1 ? "Smolder" : "Inferno");
+      loseLife(s, s.phase === 1 ? 1 : 2);
+      break;
+    case "vaskara":
+      if (s.nem.length <= 2) {
+        log(s, "Brood");
+        s.q.unshift({ k: T.EXEC_OMEN, u: -1 }, { k: T.REVEAL, u: -1 });
+      }
+      break;
+    case "morwen":
+      if (s.phase === 1 && ruinCreatures(s) >= 3 && s.nem.length < MAX_CREATURES) {
+        log(s, "Grave Tithe");
+        returnFromRuin(s);
+      }
+      break;
+    case "mirror-archmage":
+      if (s.hand.length >= (s.phase === 1 ? 3 : 2)) {
+        log(s, "Mind Tide");
+        discardLeftmost(s);
+      }
+      break;
+  }
+}
+
+export function cleanup(s: State): void {
+  for (const p of s.mine) { p.damage = 0; p.dt = false; p.tp = 0; p.tt = 0; p.shield = false; }
+  for (const p of s.nem) { p.damage = 0; p.dt = false; p.tp = 0; p.tt = 0; p.shield = false; }
+  s.atk = [];
+  s.blk = [];
+}
+
+export function window(s: State, agent: Agent, w: Window): boolean {
+  const a = agent.respond(s, w);
+  if (a.t === "pass") return false;
+  applyAction(s, a, agent);
+  return true;
+}
+
+function process(s: State, task: Task, agent: Agent): void {
+  switch (task.k) {
+    case T.START:
+    case T.PRE:
+    case T.END:
+    case T.SPELL:
+    case T.AFTER_BLOCKS: {
+      const w: Window = task.k === T.START ? "start" : task.k === T.PRE ? "pre" : task.k === T.END ? "end" : task.k === T.SPELL ? "spell" : "blocks";
+      if (window(s, agent, w) && !s.over) s.q.unshift(task);
+      break;
+    }
+    case T.EXEC_OMEN: {
+      const uid = s.omen;
+      if (uid < 0) break;
+      s.omen = -1;
+      s.q.unshift({ k: T.EXEC, u: uid });
+      break;
+    }
+    case T.EXEC:
+      executeCard(s, task.u);
+      break;
+    case T.RESOLVE:
+      resolveThreat(s, task.u, agent);
+      break;
+    case T.REVEAL:
+      reveal(s, agent);
+      break;
+    case T.ATTACK: {
+      const atk = nemAttackers(s);
+      if (!atk.length) break;
+      for (const u of atk) findNem(s, u)!.tapped = true;
+      s.atk = atk;
+      s.blk = atk.map(() => -1);
+      s.q.unshift({ k: T.BLOCKS, u: -1 }, { k: T.AFTER_BLOCKS, u: -1 }, { k: T.DAMAGE, u: -1 });
+      break;
+    }
+    case T.BLOCKS: {
+      const blk = agent.block(s);
+      const used = new Set<number>();
+      s.blk = s.atk.map((u, i) => {
+        const b = findMine(s, blk[i] ?? -1);
+        const a = findNem(s, u);
+        if (!b || !a || b.tapped || used.has(b.uid) || !canBlock(s, b, a)) return -1;
+        used.add(b.uid);
+        return b.uid;
+      });
+      log(s, `attacks with ${s.atk.map((u, i) => `${nm(s, u)}${s.blk[i] >= 0 ? ` (blocked by ${nm(s, s.blk[i])})` : ""}`).join(", ")}`);
+      break;
+    }
+    case T.DAMAGE:
+      nemCombatDamage(s, agent);
+      break;
+    case T.EOT:
+      endStep(s);
+      break;
+    case T.CLEANUP:
+      cleanup(s);
+      break;
+  }
+}
+
+export function drain(s: State, agent: Agent, until = 0): void {
+  while (s.q.length > until && !s.over) process(s, s.q.shift()!, agent);
+  if (s.over) s.q.length = 0;
+}
+
+export function beginNemesisTurn(s: State): void {
+  s.active = 1;
+  s.spells = 0;
+  s.ash = 2;
+  for (const p of s.nem) {
+    p.sick = false;
+    if (p.frozen) p.frozen = false;
+    else p.tapped = false;
+  }
+  for (const p of s.mine) p.sick = false;
+  s.q.push(
+    { k: T.START, u: -1 }, { k: T.EXEC_OMEN, u: -1 }, { k: T.REVEAL, u: -1 }, { k: T.PRE, u: -1 },
+    { k: T.ATTACK, u: -1 }, { k: T.END, u: -1 }, { k: T.EOT, u: -1 }, { k: T.CLEANUP, u: -1 },
+  );
+}
+
+export function nemesisTurn(s: State, agent: Agent): void {
+  beginNemesisTurn(s);
+  drain(s, agent);
+}
+
+export function beginPlayerTurn(s: State, agent: Agent): void {
+  s.round++;
+  s.active = 0;
+  s.spells = 0;
+  s.ash = 2;
+  s.landPlayed = false;
+  s.kaelUsed = false;
+  s.tapped = 0;
+  for (const p of s.mine) { p.tapped = false; p.sick = false; }
+  if (!s.first) {
+    if (s.library.length <= 1) while (!s.over && window(s, agent, "upkeep"));
+    if (!s.over) draw(s, 1);
+  }
+  if (s.log && !s.over) {
+    const names = (uids: number[]): string => uids.map((u) => nm(s, u)).join(", ") || "—";
+    const board = (ps: Perm[]): string => ps.map((p) => `${p.def.name} ${pw(s, p)}/${tg(s, p)}${p.tapped ? " (tapped)" : ""}${p.pacified ? " (pacified)" : ""}`).join(", ") || "—";
+    log(s, `hand [${names(s.hand)}] · lands ${s.lands.map((u) => defOf(s, u).color).join("") || "—"} · Kael ${s.kael} · board [${board(s.mine)}] · Nemesis [${board(s.nem)}] · Omen ${s.omen >= 0 ? nm(s, s.omen) : "—"} · life ${s.library.length} vs ${s.faceDown.length}`);
+  }
+}
+
+export function endPlayerTurn(s: State, agent: Agent): void {
+  if (s.hand.length > HAND_LIMIT) {
+    for (const uid of agent.discard(s, s.hand.length - HAND_LIMIT)) {
+      const i = s.hand.indexOf(uid);
+      if (i < 0) continue;
+      s.hand.splice(i, 1);
+      s.grave.push(uid);
+      log(s, `discards ${nm(s, uid)}`);
+      count(s, `discard:${defOf(s, uid).id}`);
+    }
+  }
+  cleanup(s);
+  s.first = false;
+}
+
+export function playerTurn(s: State, agent: Agent): void {
+  beginPlayerTurn(s, agent);
+  for (let step = 1 as 1 | 2; !s.over; ) {
+    const a = agent.main(s, step);
+    if (a.t !== "pass") { applyAction(s, a, agent); continue; }
+    if (step === 2) break;
+    declareAttack(s, agent.attack(s));
+    if (s.atk.length) {
+      nemBlocks(s);
+      for (let t = agent.trick(s); t.t !== "pass" && !s.over; t = agent.trick(s)) applyAction(s, t, agent);
+      if (!s.over) playerCombatDamage(s, agent);
+    }
+    step = 2;
+  }
+  if (!s.over) endPlayerTurn(s, agent);
+}
+
+export function setup(ctx: Ctx, rp: Rng, rn: Rng): State {
+  const library = shuffle(Array.from({ length: ctx.players }, (_, i) => i), rp);
+  const hand = library.splice(0, OPENING_HAND);
+  const faceDown = shuffle(Array.from({ length: ctx.defs.length - ctx.players }, (_, i) => ctx.players + i), rn);
+  const omen = faceDown.shift()!;
+  return {
+    ctx, round: 0, active: 0, first: true, library, hand, grave: [], lands: [], tapped: 0, mine: [], kael: 1, kaelUsed: false,
+    landPlayed: false, spells: 0, omen, faceDown, ruin: [], nem: [], counters: [], phase: 1, ash: 2, atk: [], blk: [],
+    pend: -1, pendTarget: -1, q: [], known: new Uint8Array(ctx.defs.length), over: 0, flipRound: 0, mulligan: false, log: null, tally: null,
+  };
+}
+
+export function mulligan(s: State, agent: Agent, rp: Rng): void {
+  s.library.push(...s.hand);
+  shuffle(s.library, rp);
+  s.hand = s.library.splice(0, OPENING_HAND);
+  const uid = agent.mulliganDiscard(s);
+  s.hand.splice(s.hand.indexOf(uid), 1);
+  s.grave.push(uid);
+  s.known.fill(0);
+  s.mulligan = true;
+  log(s, `mulligan, discards ${nm(s, uid)}`);
+}
+
+export function stepTask(s: State, agent: Agent): void {
+  const t = s.q.shift();
+  if (t) process(s, t, agent);
+  if (s.over) s.q.length = 0;
+}
