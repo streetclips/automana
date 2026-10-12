@@ -1,0 +1,183 @@
+.pw-card { position: relative; width: 250px; height: 350px; border-radius: 12px; overflow: hidden; flex: none;
+  box-shadow: 0 10px 26px rgba(0,0,0,.45); font-family: Palatino, "Book Antiqua", Georgia, serif; color: #1d140c; text-align: left; }
+.pw-card > div { position: absolute; box-sizing: border-box; }
+.pw-card .c-art svg { width: 100%; height: 100%; display: block; }
+.pixel-art { width: 100%; height: 100%; display: block; object-fit: cover; image-rendering: pixelated; }
+.pw-card .c-cmc, .pw-card .c-num, .pw-card .c-deco { display: none; }
+.pw-card .c-index { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pw-card .c-cost { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.pw-card .c-ipt { margin-top: auto; font-weight: bold; }
+.pw-card .c-text p { margin: 0 0 5px; }
+.pw-card .c-flavor { font-style: italic; opacity: .75; }
+.pw-card.no-pt .c-pt, .pw-card.no-pt .c-ipt { display: none; }
+.pw-card.no-flavor .c-flavor { display: none; }
+
+.col-R { --c-p: #d8452b; --c-s: #f2a541; --c-d: #3d0f05; --c-l: #ffe9d2; }
+.col-G { --c-p: #3c8d3f; --c-s: #a6d36b; --c-d: #10301a; --c-l: #eef8dc; }
+.col-W { --c-p: #c9a43c; --c-s: #fff1c4; --c-d: #5a4720; --c-l: #fffaf0; }
+.col-U { --c-p: #2f6fb5; --c-s: #7fc4f0; --c-d: #0b1f3a; --c-l: #e3f3ff; }
+.col-B { --c-p: #5b3f78; --c-s: #a98bc9; --c-d: #120a18; --c-l: #efe6f7; }
+.col-T { --c-p: #9b1f0c; --c-s: #ff8a3d; --c-d: #1a0604; --c-l: #ffd7a8; }
+
+.pip { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; flex: none;
+  font: bold 10px Georgia, serif; color: #222; box-shadow: inset 0 -2px 3px rgba(0,0,0,.3), 0 0 0 1px rgba(0,0,0,.55); }
+.pip-R { background: radial-gradient(circle at 35% 30%, #ffb199, #e0492b 60%, #9c2412); }
+.pip-G { background: radial-gradient(circle at 35% 30%, #c4f0bc, #3c9a48 60%, #1d5c27); }
+.pip-W { background: radial-gradient(circle at 35% 30%, #ffffff, #f0dc9a 60%, #b89a4a); }
+.pip-U { background: radial-gradient(circle at 35% 30%, #d6edff, #3f86d1 60%, #1d4f87); }
+.pip-B { background: radial-gradient(circle at 35% 30%, #e2d4ef, #6d4c8f 60%, #2e1a40); }
+.pip-N { background: radial-gradient(circle at 35% 30%, #ffffff, #cfc6b5 60%, #9b917f); }
+.pip-T { background: radial-gradient(circle at 35% 30%, #fff8e6, #d9c296 60%, #8f7444); }
+.pip-X { background: #2a1612; color: #ffb15c; font-size: 11px; }
+
+/* 1 · Pergamino clásico */
+.f1 { background: linear-gradient(160deg, var(--c-s), var(--c-p) 45%, var(--c-d)); box-shadow: 0 10px 26px rgba(0,0,0,.45), inset 0 0 0 2px rgba(0,0,0,.6); }
+.f1 .c-index { left: 7px; top: 9px; bottom: 9px; width: 30px; color: #fff5dc; text-shadow: 0 0 4px #000; }
+.f1 .c-glyph { font-size: 15px; }
+.f1 .c-ipt { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 14px; letter-spacing: .1em; margin-bottom: 4px; }
+.f1 .c-name { left: 40px; right: 8px; top: 8px; height: 27px; padding: 5px 8px; font-weight: bold; font-size: 13.5px; white-space: nowrap; overflow: hidden;
+  background: linear-gradient(#fffaf0, #e6d3ad); border-radius: 7px 7px 0 0; box-shadow: inset 0 0 0 1px rgba(0,0,0,.45); }
+.f1 .c-art { left: 40px; right: 8px; top: 35px; height: 134px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.5); }
+.f1 .c-type { left: 40px; right: 8px; top: 169px; height: 21px; padding: 3px 8px; font-size: 10.5px; font-weight: bold;
+  background: linear-gradient(#efe0bf, #dcc59b); box-shadow: inset 0 0 0 1px rgba(0,0,0,.4); }
+.f1 .c-text { left: 40px; right: 8px; top: 190px; bottom: 8px; padding: 8px 9px; font-size: 11.5px; line-height: 1.3;
+  background: linear-gradient(#fbf4e4, #efe1c4); border-radius: 0 0 7px 7px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.45); }
+.f1 .c-pt { right: 13px; bottom: 12px; padding: 1px 8px; font-weight: bold; font-size: 15px; border-radius: 6px;
+  background: linear-gradient(#fffaf0, #d7bf92); border: 1.5px solid #3a2a10; }
+
+/* 2 · Índice audaz */
+.f2 { background: #f7f4ef; font-family: "Avenir Next", "Helvetica Neue", sans-serif; border-radius: 14px; }
+.f2 .c-index { left: 0; top: 0; bottom: 0; width: 54px; background: var(--c-p); color: #fff; padding: 10px 0 12px; }
+.f2 .c-cmc { display: block; font-size: 34px; font-weight: 800; line-height: 1; }
+.f2 .c-cost { flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 2px; padding: 0 6px; }
+.f2 .pip { width: 12px; height: 12px; font-size: 8px; }
+.f2 .c-glyph { font-size: 18px; margin-top: 8px; opacity: .9; }
+.f2 .c-ipt { font-size: 24px; font-weight: 800; writing-mode: vertical-rl; transform: rotate(180deg); }
+.f2 .c-name { left: 64px; right: 10px; top: 13px; font-size: 14.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .01em; color: var(--c-d); line-height: 1.1; }
+.f2 .c-type { left: 64px; right: 10px; top: 52px; font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .14em; color: #8a8278; }
+.f2 .c-art { left: 64px; right: 10px; top: 68px; height: 146px; border-radius: 10px; overflow: hidden; }
+.f2 .c-text { left: 64px; right: 10px; top: 224px; bottom: 12px; font-size: 11.5px; line-height: 1.35; color: #2b2622; }
+.f2 .c-flavor { color: #8a8278; }
+.f2 .c-pt { display: none; }
+
+/* 3 · Arte completo */
+.f3 { background: #111; color: #fff; border-radius: 14px; }
+.f3 .c-art { inset: 0; }
+.f3 .c-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,.55), transparent 22%, transparent 50%, rgba(0,0,0,.35)); }
+.f3 .c-index { left: 9px; top: 9px; width: 34px; height: 168px; padding: 8px 0; border-radius: 17px; background: rgba(255,255,255,.16);
+  backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,.45); color: #fff; text-shadow: 0 1px 3px #000; }
+.f3 .c-glyph { font-size: 15px; }
+.f3 .c-ipt { font-size: 14px; }
+.f3 .c-name { left: 52px; right: 12px; top: 13px; font-size: 16px; font-weight: bold; text-shadow: 0 2px 6px #000; white-space: nowrap; overflow: hidden; }
+.f3 .c-type { left: 12px; right: 12px; bottom: 120px; font-size: 9.5px; text-transform: uppercase; letter-spacing: .16em; text-shadow: 0 1px 4px #000; }
+.f3 .c-text { left: 10px; right: 10px; bottom: 10px; height: 104px; padding: 10px 12px; border-radius: 12px; font-size: 11.5px; line-height: 1.3;
+  background: rgba(15,10,8,.55); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.2); }
+.f3 .c-pt { right: 14px; bottom: 104px; width: 42px; height: 42px; border-radius: 50%; background: var(--c-p); color: #fff; font-weight: bold; font-size: 15px;
+  display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255,255,255,.8); box-shadow: 0 3px 10px rgba(0,0,0,.5); }
+
+/* 4 · Art déco */
+.f4 { background: #111; color: #eadfc2; border-radius: 6px;
+  box-shadow: 0 10px 26px rgba(0,0,0,.45), inset 0 0 0 5px #111, inset 0 0 0 6px #d4af37, inset 0 0 0 9px #111, inset 0 0 0 10px #d4af37; }
+.f4 .c-index { left: 15px; top: 18px; bottom: 18px; width: 26px; border-right: 1px solid #d4af37; padding-right: 3px; color: #d4af37; }
+.f4 .c-glyph { font-size: 14px; }
+.f4 .c-ipt { font-family: Copperplate, serif; font-size: 13px; writing-mode: vertical-rl; transform: rotate(180deg); }
+.f4 .c-name { left: 46px; right: 16px; top: 17px; text-align: center; font-family: Copperplate, serif; font-size: 12.5px; letter-spacing: .1em; text-transform: uppercase; color: #d4af37; white-space: nowrap; overflow: hidden; }
+.f4 .c-art { left: 50px; right: 20px; top: 40px; height: 142px; padding: 2px; background: #d4af37;
+  clip-path: polygon(12% 0, 88% 0, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0 88%, 0 12%); }
+.f4 .c-art svg, .f4 .c-art img { clip-path: polygon(12% 0, 88% 0, 100% 12%, 100% 88%, 88% 100%, 12% 100%, 0 88%, 0 12%); }
+.f4 .c-type { left: 46px; right: 16px; top: 190px; text-align: center; font-family: Copperplate, serif; font-size: 9.5px; letter-spacing: .14em; color: #d4af37; }
+.f4 .c-type::before, .f4 .c-type::after { content: "◆"; font-size: 6px; margin: 0 6px; vertical-align: middle; }
+.f4 .c-text { left: 50px; right: 20px; top: 208px; bottom: 40px; text-align: center; font-family: Didot, "Bodoni 72", serif; font-size: 11.5px; line-height: 1.3; }
+.f4 .c-pt { right: 18px; bottom: 15px; font-family: Copperplate, serif; font-size: 14px; color: #d4af37; border: 1px solid #d4af37; padding: 1px 10px; }
+
+/* 5 · Códice iluminado */
+.f5 { background: radial-gradient(ellipse at 40% 30%, #fbf2db, #efdfb8 70%, #e2cb98); border-radius: 8px;
+  box-shadow: 0 10px 26px rgba(0,0,0,.45), inset 0 0 0 4px var(--c-d), inset 0 0 0 6px #efdfb8, inset 0 0 0 7px var(--c-p); }
+.f5 .c-deco { display: block; inset: 0; pointer-events: none; }
+.f5 .c-deco i { position: absolute; font-style: normal; font-size: 22px; color: var(--c-p); line-height: 1; }
+.f5 .c-deco i:nth-child(1) { left: 10px; top: 8px; }
+.f5 .c-deco i:nth-child(2) { right: 10px; top: 8px; transform: scaleX(-1); }
+.f5 .c-deco i:nth-child(3) { left: 10px; bottom: 8px; transform: scaleY(-1); }
+.f5 .c-deco i:nth-child(4) { right: 10px; bottom: 8px; transform: scale(-1); }
+.f5 .c-index { left: 12px; top: 40px; bottom: 40px; width: 28px; color: var(--c-d); }
+.f5 .c-glyph { font-size: 15px; color: var(--c-p); }
+.f5 .c-ipt { font-family: Luminari, Palatino, serif; font-size: 13px; writing-mode: vertical-rl; transform: rotate(180deg); }
+.f5 .c-name { left: 40px; right: 34px; top: 13px; text-align: center; font-family: Luminari, Palatino, serif; font-size: 14px; color: var(--c-d); white-space: nowrap; overflow: hidden; }
+.f5 .c-art { left: 46px; right: 16px; top: 40px; height: 128px; border-radius: 70px 70px 6px 6px; overflow: hidden; box-shadow: 0 0 0 2px var(--c-d), 0 0 0 4px var(--c-s); }
+.f5 .c-type { left: 46px; right: 16px; top: 176px; font-family: Luminari, Palatino, serif; font-size: 10px; color: var(--c-p); text-align: center; }
+.f5 .c-text { left: 46px; right: 16px; top: 194px; bottom: 30px; font-size: 11.5px; line-height: 1.3; }
+.f5 .c-rules::first-letter { float: left; font-family: Luminari, Palatino, serif; font-size: 30px; line-height: .9; color: var(--c-p); margin: 1px 4px 0 0; }
+.f5 .c-pt { right: 34px; bottom: 9px; font-family: Luminari, Palatino, serif; font-size: 14px; color: var(--c-d); }
+
+/* 6 · Suizo minimal */
+.f6 { background: #ffffff; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; border-radius: 6px; box-shadow: 0 10px 26px rgba(0,0,0,.45), inset 0 0 0 1px #d8d8d8; }
+.f6 .c-index { left: 0; top: 0; bottom: 0; width: 46px; background: linear-gradient(var(--c-p) 0 118px, #ffffff 118px); border-right: 1px solid #111; color: #fff; padding: 8px 0 10px; }
+.f6 .c-cmc { display: block; font-size: 32px; font-weight: 700; line-height: 1; }
+.f6 .c-cost { flex-direction: row; gap: 2px; flex-wrap: wrap; justify-content: center; padding: 0 5px; }
+.f6 .pip { width: 11px; height: 11px; font-size: 7px; box-shadow: 0 0 0 1px #fff; }
+.f6 .c-glyph { font-size: 16px; margin-top: 6px; }
+.f6 .c-ipt { font-size: 18px; font-weight: 700; color: #111; }
+.f6 .c-name { left: 56px; right: 10px; top: 12px; font-size: 14.5px; font-weight: 700; color: #111; line-height: 1.15; }
+.f6 .c-type { left: 56px; right: 10px; top: 50px; font-size: 8.5px; text-transform: uppercase; letter-spacing: .12em; color: #888; }
+.f6 .c-art { left: 56px; right: 10px; top: 66px; height: 140px; }
+.f6 .c-text { left: 56px; right: 10px; top: 216px; bottom: 10px; font-size: 11px; line-height: 1.4; color: #222; border-top: 2px solid #111; padding-top: 8px; }
+.f6 .c-flavor { color: #888; }
+.f6 .c-pt { display: none; }
+
+/* 7 · Tarot */
+.f7 { background: #efe6d2; border-radius: 10px; box-shadow: 0 10px 26px rgba(0,0,0,.45), inset 0 0 0 8px #efe6d2, inset 0 0 0 9.5px #2a2118; }
+.f7 .c-num { display: block; left: 46px; right: 16px; top: 13px; text-align: center; font-family: Didot, serif; font-size: 12px; letter-spacing: .3em; color: #2a2118; }
+.f7 .c-index { left: 14px; top: 30px; bottom: 16px; width: 26px; border-right: 1px solid #2a2118; padding-right: 2px; color: #2a2118; }
+.f7 .c-glyph { font-size: 14px; }
+.f7 .c-ipt { font-family: Didot, serif; font-size: 13px; writing-mode: vertical-rl; transform: rotate(180deg); }
+.f7 .c-art { left: 48px; right: 18px; top: 32px; height: 170px; border-radius: 92px 92px 0 0; overflow: hidden; box-shadow: 0 0 0 1.5px #2a2118; }
+.f7 .c-name { left: 42px; right: 12px; top: 192px; height: 28px; padding-top: 5px; text-align: center; font-family: Didot, serif; font-size: 13px; color: #fff; background: var(--c-p);
+  clip-path: polygon(0 0, 100% 0, 96% 50%, 100% 100%, 0 100%, 4% 50%); white-space: nowrap; overflow: hidden; }
+.f7 .c-type { left: 48px; right: 18px; top: 226px; text-align: center; font-size: 8.5px; text-transform: uppercase; letter-spacing: .22em; color: #2a2118; }
+.f7 .c-text { left: 48px; right: 18px; top: 242px; bottom: 16px; text-align: center; font-family: Baskerville, serif; font-size: 11px; line-height: 1.3; color: #2a2118; }
+.f7 .c-pt { display: none; }
+
+/* 8 · Vitral gótico */
+.f8 { background: #1a1410; color: #f1e6d0; border-radius: 10px; box-shadow: 0 10px 26px rgba(0,0,0,.45), inset 0 0 0 3px #3a2f25; }
+.f8 .c-art { left: 44px; right: 12px; top: 12px; height: 194px; padding: 3px; background: #4a3c2e;
+  clip-path: polygon(0 100%, 0 40%, 6% 24%, 16% 12%, 30% 4%, 50% 0, 70% 4%, 84% 12%, 94% 24%, 100% 40%, 100% 100%); }
+.f8 .c-art svg, .f8 .c-art img { clip-path: polygon(0 100%, 0 40%, 6% 24%, 16% 12%, 30% 4%, 50% 0, 70% 4%, 84% 12%, 94% 24%, 100% 40%, 100% 100%); }
+.f8 .c-name { left: 44px; right: 12px; top: 212px; text-align: center; font-family: Herculanum, Copperplate, serif; font-size: 14px; color: var(--c-s); white-space: nowrap; overflow: hidden; }
+.f8 .c-type { left: 44px; right: 12px; top: 232px; text-align: center; font-size: 8.5px; text-transform: uppercase; letter-spacing: .18em; color: #c9b38a; }
+.f8 .c-text { left: 44px; right: 12px; top: 248px; bottom: 12px; padding: 7px 9px; font-size: 10.5px; line-height: 1.3; border-radius: 4px;
+  background: linear-gradient(color-mix(in srgb, var(--c-p) 35%, transparent), color-mix(in srgb, var(--c-d) 60%, transparent)); border: 2px solid #3a2f25; }
+.f8 .c-index { left: 10px; top: 12px; bottom: 12px; width: 26px; padding: 6px 0; border-radius: 13px; background: #2a2119; border: 2px solid #3a2f25; color: var(--c-s); }
+.f8 .c-glyph { font-size: 14px; }
+.f8 .c-ipt { font-family: Herculanum, serif; font-size: 13px; writing-mode: vertical-rl; transform: rotate(180deg); }
+.f8 .c-pt { display: none; }
+
+/* 9 · Holo foil */
+.f9 { background: conic-gradient(from 200deg, #ff6ec7, #7afcff, #feff9c, #ff6ec7, #a78bfa, #7afcff, #ff6ec7); border-radius: 14px; font-family: "Avenir Next", sans-serif; color: #dfe6ff; }
+.f9 .c-deco i { display: none; }
+.f9 .c-deco { display: block; inset: 4px; border-radius: 11px; background: radial-gradient(ellipse at 30% 0%, #1d2440, #0d0f17 60%); }
+.f9 .c-index { left: 12px; top: 14px; bottom: 14px; width: 30px; padding: 8px 0; border-radius: 9px; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.18); color: #7afcff; }
+.f9 .c-glyph { font-size: 15px; }
+.f9 .c-ipt { font-size: 14px; font-weight: 700; background: linear-gradient(#ff6ec7, #7afcff); -webkit-background-clip: text; color: transparent; writing-mode: vertical-rl; transform: rotate(180deg); }
+.f9 .c-name { left: 50px; right: 14px; top: 15px; font-size: 12.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #fff; white-space: nowrap; overflow: hidden; }
+.f9 .c-art { left: 50px; right: 14px; top: 38px; height: 152px; border-radius: 9px; overflow: hidden; box-shadow: 0 0 0 1px rgba(122,252,255,.5), 0 0 18px rgba(122,252,255,.25); }
+.f9 .c-art::after { content: ""; position: absolute; inset: 0; background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.35) 45%, rgba(255,110,199,.15) 52%, transparent 62%); }
+.f9 .c-type { left: 50px; right: 14px; top: 198px; font-size: 8.5px; text-transform: uppercase; letter-spacing: .2em; color: #8ea0c8; }
+.f9 .c-text { left: 50px; right: 14px; top: 214px; bottom: 14px; padding: 8px 9px; font-size: 11px; line-height: 1.35; border-radius: 9px; background: rgba(255,255,255,.04); border: 1px solid rgba(122,252,255,.25); }
+.f9 .c-flavor { color: #8ea0c8; }
+.f9 .c-pt { display: none; }
+
+/* 10 · Cómic pulp */
+.f10 { background: radial-gradient(rgba(0,0,0,.2) 1.3px, transparent 1.5px) 0 0 / 7px 7px, var(--c-s); border: 4px solid #111; border-radius: 12px; box-sizing: border-box;
+  font-family: Futura, "Avenir Next Condensed", sans-serif; }
+.f10 .c-index { left: 6px; top: 8px; bottom: 10px; width: 30px; padding: 6px 0; background: #fff; border: 3px solid #111; border-radius: 8px; }
+.f10 .c-glyph { font-size: 15px; }
+.f10 .c-ipt { font-weight: 900; font-size: 15px; writing-mode: vertical-rl; transform: rotate(180deg); }
+.f10 .c-name { left: 44px; right: 8px; top: 6px; height: 30px; padding: 4px 10px; background: #ffd23f; border: 3px solid #111; transform: skew(-8deg);
+  font-weight: 900; font-size: 13px; text-transform: uppercase; white-space: nowrap; overflow: hidden; box-shadow: 3px 3px 0 #111; }
+.f10 .c-name span { display: inline-block; transform: skew(8deg); }
+.f10 .c-art { left: 44px; right: 10px; top: 44px; height: 140px; border: 3px solid #111; box-shadow: 4px 4px 0 #111; background: #fff; }
+.f10 .c-type { left: 44px; top: 193px; padding: 1px 8px; background: #111; color: #fff; font-weight: 700; font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em; }
+.f10 .c-text { left: 44px; right: 10px; top: 216px; bottom: 8px; padding: 7px 9px; background: #fff; border: 3px solid #111; border-radius: 16px;
+  font-family: "Chalkboard SE", "Comic Sans MS", sans-serif; font-size: 10.5px; line-height: 1.3; }
+.f10 .c-pt { right: 0; top: 150px; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; background: #e8282a; color: #fff;
+  font-weight: 900; font-size: 15px; clip-path: polygon(50% 0, 61% 30%, 95% 20%, 72% 47%, 98% 72%, 64% 70%, 55% 100%, 42% 72%, 8% 84%, 28% 55%, 2% 30%, 36% 32%); }
