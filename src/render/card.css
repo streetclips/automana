@@ -44,14 +44,14 @@
 .col-T { --c-p: #9b1f0c; --c-s: #ff8a3d; --c-d: #1a0604; --f-1: #6e2012; --f-2: #170605; --f-bar: #3b1610; --f-box: #f0e2d6;
   --f-ink: #f6dcc4; --f-mark: #ffb15c; --f-sheen: .2; --f-emboss: rgba(0,0,0,.6); }
 
-.pip { display: inline-flex; align-items: center; justify-content: center; width: 1.3em; height: 1.3em; border-radius: 50%; flex: none;
-  font-size: .82em; font-weight: bold; font-family: Georgia, serif; color: #222; vertical-align: -0.18em; margin: 0 .05em;
-  box-shadow: inset 0 -.12em .2em rgba(0,0,0,.28), 0 0 0 .08em rgba(0,0,0,.55); }
-.pip-R { background: radial-gradient(circle at 35% 30%, #ffb199, #e0492b 60%, #9c2412); }
-.pip-G { background: radial-gradient(circle at 35% 30%, #c4f0bc, #3c9a48 60%, #1d5c27); }
-.pip-W { background: radial-gradient(circle at 35% 30%, #ffffff, #f0dc9a 60%, #b89a4a); }
-.pip-U { background: radial-gradient(circle at 35% 30%, #d6edff, #3f86d1 60%, #1d4f87); }
-.pip-B { background: radial-gradient(circle at 35% 30%, #e2d4ef, #6d4c8f 60%, #2e1a40); }
-.pip-N { background: radial-gradient(circle at 35% 30%, #ffffff, #cfc6b5 60%, #9b917f); }
-.pip-T { background: radial-gradient(circle at 35% 30%, #fff8e6, #d9c296 60%, #8f7444); color: #3a2a10; }
+.pip { display: inline-block; overflow: hidden; width: 1.3em; height: 1.3em; border-radius: 50%; flex: none; text-align: center; line-height: 1.3em;
+  font-size: .82em; font-weight: bold; font-family: Palatino, "Book Antiqua", Georgia, serif; color: #222; vertical-align: -0.18em; margin: 0 .05em;
+  box-shadow: 0 0 0 .08em rgba(0,0,0,.55); }
+.pip-R { background: #e0492b; }
+.pip-G { background: #3c9a48; }
+.pip-W { background: #f0dc9a; }
+.pip-U { background: #3f86d1; }
+.pip-B { background: #6d4c8f; }
+.pip-N { background: #cfc6b5; }
+.pip-T { background: #d9c296; color: #3a2a10; }
 .pip-X { background: #2a1612; color: #ffb15c; }
