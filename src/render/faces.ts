@@ -1,46 +1,49 @@
-import { t } from "../i18n/locale";
+import { KAEL, REFERENCE } from "../content";
+import type { Nemesis } from "../content/types";
+import { getLocale, t } from "../i18n/locale";
+import { pips } from "./pips";
 
-export type FaceSize = "sm" | "md" | "lg" | "vd";
+export type Face = "A" | "B";
 
-export function walkerFace(face: "A" | "B", size: FaceSize = "lg"): string {
-  const s = t();
-  const states: [string, ("charge" | "discharge" | "ultimate")[]][] =
-    face === "A" ? [["I", ["charge"]], ["II", ["charge"]]] : [["III", ["charge", "discharge"]], ["IV", ["discharge", "ultimate"]]];
-  const halves = states
-    .map(([num, abilities], i) => `
-<div class="half ${i === 1 ? "flip" : ""}">
-  <div class="hhead"><span class="state">${num}</span><span class="hname">${s.walkerName}</span></div>
-  <div class="hbody">${abilities.map((a) => `<p>${s[a]}</p>`).join("")}</div>
-</div>`)
-    .join("");
-  return `<div class="card walker ${size}"><div class="halves">${halves}</div><div class="facetag">${s.face} ${face}</div></div>`;
+interface Half {
+  state: string;
+  name: string;
+  body: string[];
 }
 
-export function nemesisFace(face: "A" | "B", size: FaceSize = "lg"): string {
-  const s = t();
-  const [title, body] = face === "A" ? [s.phase1, s.nemA] : [s.phase2, s.nemB];
-  const short = s.nemName.split(",")[0];
-  return `
-<div class="card nemesis ${size}">
-  <div class="halves">
-    <div class="half"><div class="hhead"><span class="state">${title}</span><span class="hname">${s.nemName}</span></div><div class="hbody">${body}</div></div>
-    <div class="half flip"><div class="hhead"><span class="state">${title} · ${s.heroicTag}</span><span class="hname">${short}</span></div><div class="hbody">${s.heroic}</div></div>
-  </div>
-  <div class="facetag">${s.face} ${face}</div>
+function fourStateCard(cls: string, upright: Half, flipped: Half, face: Face): string {
+  const half = (h: Half, flip: boolean) => `
+<div class="half${flip ? " flip" : ""}">
+  <div class="hhead"><span class="state">${h.state}</span><span class="hname">${h.name}</span></div>
+  <div class="hbody">${h.body.map((p) => `<p>${pips(p)}</p>`).join("")}</div>
 </div>`;
+  return `<div class="card ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${t().face} ${face}</div></div>`;
 }
 
-export function otherNemesis(name: string, emoji: string, color: string, p1: string, p2: string): string {
+export function walkerFace(face: Face): string {
+  const k = KAEL[getLocale()];
+  const half = (state: string, body: string[]): Half => ({ state, name: k.name, body });
+  return face === "A"
+    ? fourStateCard("walker", half("I", [k.charge]), half("II", [k.charge]), face)
+    : fourStateCard("walker", half("III", [k.charge, k.discharge]), half("IV", [k.discharge, k.ultimate]), face);
+}
+
+export function nemesisFace(nemesis: Nemesis, face: Face): string {
   const s = t();
-  return `
-<div class="card nemesis ${color} md">
-  <div class="halves">
-    <div class="half"><div class="hhead"><span class="state">${s.phase1}</span><span class="hname">${name}</span></div><div class="hbody"><div class="nemart">${emoji}</div><p>${p1}</p></div></div>
-    <div class="half"><div class="hhead"><span class="state">${s.phase2}</span></div><div class="hbody"><p>${p2}</p></div></div>
-  </div>
-</div>`;
+  const n = nemesis[getLocale()];
+  const phase = face === "A" ? s.phase1 : s.phase2;
+  const body = face === "A" ? [...n.phase1, `${s.flipTrigger} ${n.flip}`] : n.phase2;
+  return fourStateCard(
+    `nemesis nem-${nemesis.color}`,
+    { state: phase, name: n.name, body },
+    { state: `${phase} · ${s.heroicTag}`, name: n.name.split(",")[0], body: [s.heroic] },
+    face,
+  );
 }
 
-export function threatDeckBack(size: FaceSize, label: string): string {
-  return `<div class="card threat ${size}" style="background:repeating-linear-gradient(45deg,#3a1d12,#3a1d12 2mm,#4a2618 2mm,#4a2618 4mm)"><div style="margin:auto;color:#ffb15c;font-family:Copperplate,serif;text-align:center;font-size:1.5em">${label}</div></div>`;
+export function referenceFace(face: Face): string {
+  const sides = REFERENCE[getLocale()];
+  const [upright, flipped] = face === "A" ? [sides[0], sides[1]] : [sides[2], sides[3]];
+  const half = (side: (typeof sides)[number]): Half => ({ state: side.title, name: "", body: side.items });
+  return fourStateCard("reference", half(upright), half(flipped), face);
 }

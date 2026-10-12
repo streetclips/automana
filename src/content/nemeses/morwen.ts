@@ -1,0 +1,87 @@
+import type { Nemesis } from "../types";
+
+export const MORWEN: Nemesis = {
+  id: "morwen", color: "B",
+  en: {
+    name: "Morwen, the Lich Queen",
+    phase1: [
+      "<b>GRAVE TITHE</b> — At the end of each Nemesis turn, if the Ruin holds 3 or more creatures, return the highest-power one to the Table.",
+    ],
+    flip: "<b>UPRISING</b>: return the 2 highest-power creatures from the Ruin to the Table.",
+    phase2: [
+      "<b>WITHERING</b> — Your creatures get −1/−1.",
+    ],
+  },
+  es: {
+    name: "Morwen, la Reina Liche",
+    phase1: [
+      "<b>DIEZMO DE TUMBA</b> — Al final de cada turno de la Némesis, si la Ruina tiene 3 criaturas o más, devuelve a la Mesa la de mayor fuerza.",
+    ],
+    flip: "<b>LEVANTAMIENTO</b>: devuelve a la Mesa las 2 criaturas de mayor fuerza de la Ruina.",
+    phase2: [
+      "<b>MARCHITEZ</b> — Tus criaturas obtienen −1/−1.",
+    ],
+  },
+  threats: [
+    {
+      id: "wandering-skeleton", color: "T", cost: [], type: "creature", qty: 3, pt: "2/1", threat: true,
+      emoji: "💀",
+      en: { name: "Wandering Skeleton", sub: "Skeleton", text: "When it dies, put it face-down at the bottom of the Threat deck (Morwen gains 1 life)." },
+      es: { name: "Esqueleto Errante", sub: "Esqueleto", text: "Cuando muere, ponlo boca abajo en el fondo del mazo de Amenaza (Morwen gana 1 vida)." },
+    },
+    {
+      id: "rotting-zombie", color: "T", cost: [], type: "creature", qty: 2, pt: "2/3", threat: true,
+      emoji: "🧟",
+      en: { name: "Rotting Zombie", sub: "Zombie", text: "" },
+      es: { name: "Zombi Putrefacto", sub: "Zombi", text: "" },
+    },
+    {
+      id: "vampire-bat", color: "T", cost: [], type: "creature", qty: 2, pt: "1/2", threat: true,
+      emoji: "🦇",
+      en: { name: "Vampire Bat", sub: "Bat", text: "<b>Flying</b>, <b>Lifelink</b>" },
+      es: { name: "Murciélago Vampiro", sub: "Murciélago", text: "<b>Volar</b>, <b>Vínculo vital</b>" },
+    },
+    {
+      id: "morwens-ghoul", color: "T", cost: [], type: "creature", qty: 1, pt: "3/2", threat: true,
+      emoji: "🧌",
+      en: { name: "Morwen's Ghoul", sub: "Zombie", text: "<b>Deathtouch</b>" },
+      es: { name: "Necrófago de Morwen", sub: "Zombi", text: "<b>Toque mortal</b>" },
+    },
+    {
+      id: "deathless-knight", color: "T", cost: [], type: "creature", qty: 1, pt: "4/4", threat: true,
+      emoji: "♞",
+      en: { name: "Deathless Knight", sub: "Zombie Knight", text: "" },
+      es: { name: "Caballero Sin Muerte", sub: "Caballero zombi", text: "" },
+    },
+    {
+      id: "crypt-horror", color: "T", cost: [], type: "creature", qty: 1, pt: "5/4", threat: true,
+      emoji: "👁️",
+      en: { name: "Crypt Horror", sub: "Horror", text: "When it enters, you lose 1 life." },
+      es: { name: "Horror de la Cripta", sub: "Horror", text: "Cuando entra, pierdes 1 vida." },
+    },
+    {
+      id: "withering-touch", color: "T", cost: [], type: "spell", qty: 2, threat: true,
+      emoji: "🥀",
+      en: { name: "Withering Touch", text: "Your highest-power creature gets −2/−2 until end of turn. If you have none, you lose 2 life." },
+      es: { name: "Toque Marchito", text: "Tu criatura de mayor fuerza obtiene −2/−2 hasta el final del turno. Si no tienes ninguna, pierdes 2 vidas." },
+    },
+    {
+      id: "exhume", color: "T", cost: [], type: "spell", qty: 1, threat: true,
+      emoji: "⚰️",
+      en: { name: "Exhume", text: "Return the highest-power creature from the Ruin to the Table. If there is none, you lose 2 life." },
+      es: { name: "Exhumar", text: "Devuelve a la Mesa la criatura de mayor fuerza de la Ruina. Si no hay ninguna, pierdes 2 vidas." },
+    },
+    {
+      id: "soul-drain", color: "T", cost: [], type: "spell", qty: 1, threat: true,
+      emoji: "👻",
+      en: { name: "Soul Drain", text: "You lose 2 life. Return 2 Ruin cards face-down to the bottom of the Threat deck." },
+      es: { name: "Drenar Alma", text: "Pierdes 2 vidas. Devuelve 2 cartas de la Ruina boca abajo al fondo del mazo de Amenaza." },
+    },
+    {
+      id: "plague", color: "T", cost: [], type: "spell", qty: 1, threat: true,
+      emoji: "☠️",
+      en: { name: "Plague", text: "All creatures (both sides) get −1/−1 until end of turn." },
+      es: { name: "Plaga", text: "Todas las criaturas (de los dos bandos) obtienen −1/−1 hasta el final del turno." },
+    },
+  ],
+};
