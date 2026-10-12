@@ -10,11 +10,12 @@ A solo, in-hand dueling card game. This repo holds the complete game: the rules 
 | `npm run cards` | `dist/palmwalker-cards-en.html` and `palmwalker-cards-es.html`: all 126 cards, one section per component, ready to print |
 | `npm run build` | Both of the above |
 | `npm run pnp` | `dist/palmwalker-pnp-en.pdf` and `palmwalker-pnp-es.pdf`: print-and-play PDFs for [Imprenta Soriano](https://imprentasoriano.com/producto/baraja-de-cartas) |
+| `npm run art` | `art/{card id}.jpg`: AI illustrations for the cards with no image yet. `npm run art -- plains swamp` regenerates those cards |
 | `npm run sim` | Balance simulation: win rate of every colour pair against every Nemesis, Normal and Heroic, in `dist/sim/` |
 | `npm run sim:trace` | One simulated game, turn by turn, with the AI's hand and board |
 | `npm run sim:test` | Rules self-test of the simulator |
 
-Requirements: Node 22+. `npm run pnp` also needs Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`.
+Requirements: Node 22+. `npm run pnp` also needs Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`. `npm run art` needs `OPENROUTER_API_KEY`.
 
 ## Print and play
 
@@ -27,6 +28,16 @@ Requirements: Node 22+. `npm run pnp` also needs Google Chrome and Ghostscript (
 5. CMYK, converted with Ghostscript.
 
 Backs: Grimoire cards show their land, Kael, the Nemeses and the quick reference show Face B, and Threat cards share a plain back.
+
+## Card art
+
+`npm run art` illustrates cards with [Ming Image 0.1 Design](https://openrouter.ai/inclusionai/ming-image-0.1-design) through OpenRouter, 4 at a time, about 15 to 30 s per image:
+
+1. Every card describes its scene in its `art` field, for example `art: "a rocky island rising from a calm blue sea"`.
+2. `src/art/generate.ts` wraps it in the shared style: `Art illustration in the old Magic: The Gathering style of {art}, like a classic {type} card. No border, frame or text.`
+3. Images are 1088 × 960 JPEGs in `art/`, named by card id. Commit them: the model takes no seed, so a new run gives a different image.
+4. The card sheet and the PDFs show `art/{id}.jpg` when it exists and the `emoji` otherwise.
+5. About 1 image in 20 comes back with a painted parchment border: regenerate it with `npm run art -- {id}`.
 
 ## Balance simulator
 
@@ -80,6 +91,7 @@ The simulator reads costs, power, toughness and keywords from `src/content/`. Ca
 
 ```
 docs/rulebook.md        the rules and design reference (components, rules, Nemeses, example game, card lists)
+art/                    card illustrations, one {card id}.jpg each
 src/
 ├── content/            game data, bilingual (en/es), no rendering
 │   ├── types.ts        Card, HalfGrimoire, Nemesis, Walker, Reference…
@@ -90,9 +102,10 @@ src/
 │   ├── lands.ts        land cards (Grimoire card backs)
 │   └── index.ts        catalog: GRIMOIRES, NEMESES, ALL_CARDS, getCard(id)
 ├── i18n/               UI strings per locale + current locale
-├── render/             HTML components: card.ts (Grimoire and Threat cards), faces.ts (4-state Kael, Nemesis and reference cards)
+├── render/             HTML components: card.ts (Grimoire and Threat cards), faces.ts (4-state Kael, Nemesis and reference cards), art.ts (card illustrations)
 ├── sheet/              builds the printable card sheet
 ├── pnp/                builds the print-and-play PDFs for the print shop
+├── art/                generates the card illustrations with OpenRouter
 ├── sim/                balance simulator
 │   ├── engine/         rules engine: card rules and text checks, state, turn flow, combat, the Nemesis mind
 │   ├── ai/             player AI: turn planner, response and block search, evaluation, card values
@@ -114,7 +127,7 @@ src/
 
 ## Changing content
 
-1. Edit the card in `src/content/` with a unique `id`, both `en` and `es` texts, and an `emoji` as placeholder art.
+1. Edit the card in `src/content/` with a unique `id`, both `en` and `es` texts, an `emoji` as placeholder art and an `art` scene for its illustration (`npm run art`).
 2. Update its row in the card lists of `docs/rulebook.md` (section 18), and any rule it touches.
 3. Run `npm run build`.
 4. Run `npm run sim:test`. If you changed a rule or a number, update `src/sim/engine/` until it passes.

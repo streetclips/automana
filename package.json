@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit",
     "cards": "tsx src/sheet/build.ts",
     "pnp": "tsx src/pnp/build.ts",
+    "art": "tsx src/art/generate.ts",
     "build": "npm run typecheck && npm run cards",
     "sim": "tsx src/sim/batch/run.ts",
     "sim:trace": "tsx src/sim/trace.ts",

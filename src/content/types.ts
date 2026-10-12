@@ -22,6 +22,7 @@ export interface Card {
   pt?: string;
   threat?: boolean;
   emoji: string;
+  art: string;
   en: CardText;
   es: CardText;
 }

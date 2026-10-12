@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { GRIMOIRES, NEMESES } from "../content";
 import type { Card, Locale } from "../content/types";
 import { getLocale, setLocale, t } from "../i18n/locale";
+import { artCss } from "../render/art";
 import { renderCard } from "../render/card";
 import { nemesisFace, referenceFace, walkerFace } from "../render/faces";
 import { DIST, ensureDir, readCss } from "../lib/paths";
@@ -24,7 +25,7 @@ function buildSheet(locale: Locale): string {
     ...GRIMOIRES.map((g) => section(`${s.halfGrimoire} · ${g[locale].name}`, copies(g.cards))),
     ...NEMESES.map((n) => section(`${n[locale].name} · ${s.threatDeck}`, nemesisFace(n, "A") + nemesisFace(n, "B") + copies(n.threats))),
   ];
-  const css = readCss("render/card.css", "render/faces.css", "sheet/sheet.css");
+  const css = [readCss("render/card.css", "render/faces.css", "sheet/sheet.css"), artCss()].join("\n");
   const html = `<!doctype html><html lang="${getLocale()}"><head><meta charset="utf-8"><title>${s.sheetTitle}</title><style>${css}</style></head>
 <body><h1>${s.sheetTitle}</h1>${sections.join("")}</body></html>`;
   const path = join(ensureDir(DIST), `palmwalker-cards-${locale}.html`);
