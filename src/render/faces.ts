@@ -17,7 +17,7 @@ function fourStateCard(cls: string, upright: Half, flipped: Half, face: Face): s
   <div class="hhead"><span class="state">${h.state}</span><span class="hname">${h.name}</span></div>
   <div class="hbody">${h.body.map((p) => `<p>${pips(p)}</p>`).join("")}</div>
 </div>`;
-  return `<div class="card ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${t().face} ${face}</div></div>`;
+  return `<div class="pw-card pw-face ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${t().face} ${face}</div></div>`;
 }
 
 export function walkerFace(face: Face): string {

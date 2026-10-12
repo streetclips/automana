@@ -1,26 +1,22 @@
-.card { position: relative; display: flex; flex-direction: column; width: 60mm; height: 83.8mm; padding: .45em; border-radius: .9em; flex: none; box-sizing: border-box;
-  font-size: 8.4pt; box-shadow: 0 .25em .7em rgba(40,20,5,.35), inset 0 0 0 .12em rgba(0,0,0,.55); color: #1d140c; font-family: Palatino, "Book Antiqua", Georgia, serif; }
-.card.walker { background: linear-gradient(160deg, #ffe7a3, #c8952e 45%, #6f4a10); }
-.card.reference { background: linear-gradient(160deg, #e9e2d4, #8d8576 45%, #3b362e); }
-.card.nemesis { color: #f6e6cf; }
-.card.nem-R { background: linear-gradient(160deg, #ff9a52, #7a1d0a 45%, #200604); }
-.card.nem-G { background: linear-gradient(160deg, #c6eb8f, #2f6b2a 45%, #0d240f); }
-.card.nem-B { background: linear-gradient(160deg, #a796b5, #3a2547 45%, #120a18); }
-.card.nem-U { background: linear-gradient(160deg, #a6d4ff, #2a5d9c 45%, #0b1d3a); }
-.halves { flex: 1; display: flex; flex-direction: column; gap: .35em; }
-.half { flex: 1; border-radius: .5em; overflow: hidden; background: linear-gradient(#fbf4e4, #ecdcbc); box-shadow: inset 0 0 0 .1em rgba(0,0,0,.5); display: flex; flex-direction: column; }
-.card.nemesis .half:not(.flip) { flex: 1.7; }
-.card.nemesis .half { background: linear-gradient(#3d2219, #1f0f0a); box-shadow: inset 0 0 0 .1em #c0602b; }
-.half.flip { transform: rotate(180deg); opacity: .93; }
-.hhead { display: flex; align-items: center; gap: .4em; padding: .25em .45em; background: linear-gradient(#fff3d1, #e0c27e); border-bottom: .1em solid rgba(0,0,0,.35); }
-.card.nemesis .hhead { background: linear-gradient(#7a2a12, #3e1207); color: #ffd7a8; border-bottom-color: #c0602b; }
-.hhead .state { font-family: Copperplate, serif; font-weight: bold; font-size: 1.25em; color: #6b2d14; white-space: nowrap; }
-.card.nemesis .hhead .state { color: #ffb15c; font-size: 1.05em; }
-.card.reference .hhead .state { font-size: 1.05em; }
-.hhead .hname { font-size: .85em; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.hbody { padding: .35em .5em; font-size: .92em; line-height: 1.22; }
-.hbody p { margin: 0 0 .3em; }
-.card.reference .hbody { font-size: .86em; }
-.card.reference .hbody p { margin: 0 0 .15em; }
-.card.nemesis .hbody b { color: #ffcf7a; }
-.facetag { text-align: center; font-family: Copperplate, serif; font-size: .8em; color: #fff3d9; margin-top: .2em; letter-spacing: .12em; }
+.pw-face .halves { left: .3em; right: .3em; top: .3em; bottom: 1.3em; display: flex; flex-direction: column; gap: .5em; }
+.pw-face .half { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .3em; }
+.pw-face.nemesis .half:not(.flip) { flex: 2.2; }
+.pw-face .half.flip { transform: rotate(180deg); }
+.pw-face .hhead { flex: none; height: 1.9em; display: flex; align-items: center; gap: .45em; padding: 0 .55em; white-space: nowrap; overflow: hidden; }
+.pw-face .hhead .state { font-family: Copperplate, serif; font-weight: bold; font-size: 1.4em; color: var(--f-mark, var(--c-d)); }
+.pw-face.nemesis .hhead .state, .pw-face.reference .hhead .state { font-size: 1.15em; }
+.pw-face .hhead .hname { font-size: 1em; font-style: italic; overflow: hidden; text-overflow: ellipsis; }
+.pw-face .hbody { flex: 1; min-height: 0; padding: .4em .6em; font-size: 1.12em; line-height: 1.22; }
+.pw-face .hbody p { margin: 0 0 .3em; }
+.pw-face.nemesis .hbody { font-size: 1.08em; }
+.pw-face.reference .hbody { font-size: .98em; }
+.pw-face.reference .hbody p { margin: 0 0 .15em; }
+.pw-face .facetag { left: 0; right: 0; bottom: .25em; text-align: center; font-family: Copperplate, serif; font-size: .9em; letter-spacing: .12em; color: #fff3d9; text-shadow: 0 .05em .15em rgba(0,0,0,.6); }
+
+.pw-face.walker { --c-d: #6b2d14; --f-1: #f1d58c; --f-2: #8c6118; --f-bar: #fbefd2; --f-box: #f8f2e3; }
+.pw-face.reference { --c-d: #3b342b; --f-1: #ddd5c6; --f-2: #5d564b; --f-bar: #f4f0e7; --f-box: #f7f4ee; }
+.pw-face.nemesis { --f-bar: #3b1610; --f-box: #f0e2d6; --f-ink: #f6dcc4; --f-mark: #ffb15c; --f-sheen: .2; }
+.nem-R { --f-1: #b4401f; --f-2: #2a0805; }
+.nem-G { --f-1: #3f7d39; --f-2: #0c2410; }
+.nem-B { --f-1: #54406a; --f-2: #120a18; }
+.nem-U { --f-1: #3a6fae; --f-2: #0b1d3a; }

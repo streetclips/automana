@@ -7,14 +7,4 @@ html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-col
 .mark.v { width: .1mm; margin-left: -.05mm; }
 .mark.h { height: .1mm; margin-top: -.05mm; }
 
-.cell .pw-card { position: absolute; left: 3mm; top: 3mm; width: 63mm; height: 88mm; font-size: 2.52mm; border-radius: 0; box-shadow: none; overflow: visible; }
-.cell .pw-card .c-art { top: -3mm; right: -3mm; bottom: -3mm; }
-.cell .pw-card .c-emoji { padding: 3mm 3mm calc(12em / 9 + 3mm) 0; }
-.cell .pw-card .c-index { left: -3mm; top: -3mm; bottom: -3mm; width: calc(4em + 3mm); padding: 6.5mm 0 6.5mm 3mm; }
-.cell .pw-card .c-name { top: 3.5mm; right: 3.5mm; }
-.cell .pw-card .c-type { bottom: calc(12em + 1mm); }
-.cell .pw-card .c-text { right: 3mm; bottom: 3mm; }
-.cell .pw-card.pw-back .c-art { left: -3mm; }
-.cell .pw-card.pw-back .c-emoji { padding: 3mm; }
-
-.cell .card { position: absolute; inset: 0; width: auto; height: auto; padding: 6mm; border-radius: 0; box-shadow: none; }
+.cell .pw-card { position: absolute; inset: 0; width: auto; height: auto; font-size: 2.52mm; border-width: calc(1em + 3mm); border-radius: 0; box-shadow: none; }

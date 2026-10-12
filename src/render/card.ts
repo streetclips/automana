@@ -19,7 +19,8 @@ export function renderCard(idOrCard: string | Card): string {
   const glyph = card.threat ? "✹" : GLYPHS[card.type];
   const type = (card.threat ? strings.threatPrefix : "") + strings.typeLabel[card.type] + (tx.sub ? ` — ${tx.sub}` : "");
   const fit = tx.name.length > 20 ? "xlong" : tx.name.length > 16 ? "long" : "";
-  const cls = ["pw-card", `col-${card.color}`, tx.flavor ? "" : "no-flavor", fit].filter(Boolean).join(" ");
+  const typeFit = type.length > 33 ? "type-xlong" : type.length > 30 ? "type-long" : "";
+  const cls = ["pw-card", `col-${card.color}`, tx.flavor ? "" : "no-flavor", fit, typeFit].filter(Boolean).join(" ");
   return `<div class="${cls}">
   <div class="c-art"><div class="c-emoji">${card.emoji}</div></div>
   <div class="c-index"><div class="c-cmc">${manaValue(card)}</div><div class="c-cost">${cost}</div><div class="c-glyph">${glyph}</div><div class="c-ipt">${card.pt ?? ""}</div></div>
