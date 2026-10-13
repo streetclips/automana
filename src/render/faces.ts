@@ -1,6 +1,7 @@
 import { KAEL, REFERENCE } from "../content";
 import type { Nemesis } from "../content/types";
 import { getLocale, t } from "../i18n/locale";
+import { collectionIcon } from "./icons";
 import { pips } from "./pips";
 
 export type Face = "A" | "B";
@@ -11,13 +12,14 @@ interface Half {
   body: string[];
 }
 
-function fourStateCard(cls: string, upright: Half, flipped: Half, face: Face): string {
+function fourStateCard(cls: string, upright: Half, flipped: Half, face: Face, collection?: string): string {
   const half = (h: Half, flip: boolean) => `
 <div class="half${flip ? " flip" : ""}">
   <div class="hhead"><span class="state">${h.state}</span><span class="hname">${h.name}</span></div>
   <div class="hbody">${h.body.map((p) => `<p>${pips(p)}</p>`).join("")}</div>
 </div>`;
-  return `<div class="pw-card pw-face ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${t().face} ${face}</div></div>`;
+  const set = collection ? collectionIcon(collection) : "";
+  return `<div class="pw-card pw-face ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${set}${t().face} ${face}</div></div>`;
 }
 
 export function walkerFace(face: Face): string {
@@ -38,6 +40,7 @@ export function nemesisFace(nemesis: Nemesis, face: Face): string {
     { state: phase, name: n.name, body },
     { state: `${phase} · ${s.heroicTag}`, name: n.name.split(",")[0], body: [s.heroic] },
     face,
+    nemesis.id,
   );
 }
 

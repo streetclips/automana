@@ -57,20 +57,23 @@ Replay space: 10 colour pairs × 4 Nemeses × Normal/Heroic = 80 configurations.
 Cards are read in a **fan**. When cards overlap, only their left edge shows, like the corner index of a deck of playing cards. That is why every card carries its key information in the **index strip** down its left side.
 
 ```
-┌──┬──────────────────────┐
-│● │ [ Cinder Hound     ] │  1. Cost: ● = coloured mana; number = generic mana. {1}{R} = cost 2.
-│1 │ ┌──────────────────┐ │     The frame has the card's colour; Threats have a dark strip.
-│⚔ │ │                  │ │  2. Type glyph: ⚔ creature, ϟ instant, ✶ sorcery,
-│  │ │      (art)       │ │     ◈ aura, ▲ land, ✹ Threat.
-│  │ │                  │ │  3. Power/Toughness at the foot of the strip.
-│  │ └──────────────────┘ │  4. Name bar, above the art.
-│  │ [ Creature — Hound ] │  5. Type line, below the art.
-│  │ ┌──────────────────┐ │  6. Rules text; italic text is flavour.
-│2 │ │ Rules text       │ │
-│/ │ │ Flavour (italic) │ │
-│2 │ └──────────────────┘ │
-└──┴──────────────────────┘
+┌───┬──────────────────────┐
+│ ● │ [ Cinder Hound     ] │  1. Cost: ● = coloured mana; number = generic mana. {1}{R} = cost 2.
+│ 1 │ ┌──────────────────┐ │     The frame has the card's colour; Threats have a dark strip.
+│ ⚔ │ │                  │ │  2. Type glyph: ⚔ creature, ϟ instant, ✶ sorcery,
+│   │ │      (art)       │ │     ◈ aura, ▲ land, ✹ Threat.
+│   │ │                  │ │  3. Power/Toughness at the foot of the strip.
+│   │ └──────────────────┘ │  4. Name bar, above the art.
+│   │ [ Creature — Hound ] │  5. Type line, below the art.
+│   │ ┌──────────────────┐ │  6. Rules text; italic text is flavour.
+│   │ │ Rules text       │ │  7. Collection symbol and number: ◆ = Emberkin,
+│   │ │ Flavour (italic) │ │     card 5 of its 12.
+│   │ │           ◆ 5/12 │ │
+│2/2│ └──────────────────┘ │
+└───┴──────────────────────┘
 ```
+
+**Collection and number.** Every Grimoire and Threat card shows, at the bottom right of its text box, the symbol of its half-grimoire or Threat deck and its number in it. Copies of a card have consecutive numbers: the two Reckless Goblins are 1/12 and 2/12. After a game, sort the cards by symbol and lay each pile out by number: a gap is a missing card, and the card lists in section 18 name it. Each Nemesis card shows the symbol of its Threat deck next to its face label; Kael and the quick reference have none.
 
 **Double-faced: spell or land?** Once per turn you may flip a card from your hand to its land side and play it. A land is permanent; the spell on its front is gone for good. Choosing which cards to sacrifice as lands is the first decision of every turn.
 
@@ -514,139 +517,139 @@ Open questions: none.
 
 ## 18. Card lists
 
-### 18.1 Dawnward Order / Orden del Alba (white) — back: Plains / Llanura
+### 18.1 Dawnward Order / Orden del Alba (white) — back: Plains / Llanura — symbol: rising sun
 
-| # | EN | ES | Cost | Type | P/T | Text |
+| # | No. | EN | ES | Cost | Type | P/T | Text |
+|---|---|---|---|---|---|---|---|
+| 2 | 1–2 | Dawn Squire | Escudera del Alba | {W} | Creature — Human Soldier | 1/2 | **Vigilance** |
+| 2 | 3–4 | Luminous Aegis | Égida Luminosa | {W} | Instant | — | Prevent all damage that would be dealt to a creature you control this turn. |
+| 1 | 5 | Dawn Cleric | Clérigo del Alba | {1}{W} | Creature — Human Cleric | 1/3 | **Lifelink** |
+| 1 | 6 | Serene Judgment | Juicio Sereno | {1}{W} | Aura | — | **Pacify**: tuck behind a Nemesis creature. It can't attack or block. |
+| 1 | 7 | Prayer of Restoration | Plegaria de Restauración | {1}{W} | Sorcery | — | Gain 3 life. You may put one of those cards into your hand instead of your library. |
+| 1 | 8 | Sky Griffin | Grifo Celeste | {2}{W} | Creature — Griffin | 2/2 | **Flying**, **Vigilance** |
+| 1 | 9 | Sworn Paladin | Paladín Juramentado | {2}{W} | Creature — Human Knight | 3/2 | **Vigilance** |
+| 1 | 10 | Shield Formation | Formación de Escudos | {2}{W} | Instant | — | Creatures you control get +1/+1 until end of turn. |
+| 1 | 11 | Banish into Light | Exiliar en Luz | {1}{W} | Instant | — | Put an attacking Nemesis creature face-down at the bottom of the Threat deck. (The Nemesis gains 1 life and that creature will return later.) |
+| 1 | 12 | Vigil Angel | Ángel de la Vigilia | {4}{W} | Creature — Angel | 4/4 | **Flying**, **Lifelink** |
+
+### 18.2 Arcane Tide / Marea Arcana (blue) — back: Island / Isla — symbol: waves
+
+| # | No. | EN | ES | Cost | Type | P/T | Text |
+|---|---|---|---|---|---|---|---|
+| 2 | 1–2 | Tide Apprentice | Aprendiz de las Mareas | {U} | Creature — Human Wizard | 1/1 | When Tide Apprentice enters, **Scry** 2. |
+| 2 | 3–4 | Bend Fate | Desviar el Destino | {U} | Instant | — | You may put the Omen face-down at the bottom of the Threat deck; if you do, reveal a new Omen. **Scry** 1. |
+| 1 | 5 | Mist Hawk | Halcón de Bruma | {1}{U} | Creature — Bird | 2/1 | **Flying** |
+| 1 | 6 | Deep Freeze | Congelar | {1}{U} | Instant | — | **Freeze** a Nemesis creature. |
+| 1 | 7 | Return to the Tide | Devolver a la Marea | {1}{U} | Instant | — | Put a Nemesis creature on top of the Threat deck as the new Omen. The old Omen goes face-down right behind it. |
+| 1 | 8 | Watchful Siren | Sirena Vigía | {2}{U} | Creature — Siren | 2/3 | **Flying** |
+| 1 | 9 | Learned Archivist | Archivista Ilustrado | {2}{U} | Creature — Human Wizard | 2/2 | {T}: **Scry** 1. |
+| 1 | 10 | Arcane Study | Lectura Arcana | {2}{U} | Sorcery | — | **Scry** 2, then draw 2 cards. |
+| 1 | 11 | Cloud Djinn | Djinn de las Nubes | {3}{U} | Creature — Djinn | 4/3 | **Flying** |
+| 1 | 12 | Rising Tide | Marea Creciente | {4}{U} | Sorcery | — | Put every Nemesis creature on top of the Threat deck in any order; the top one becomes the Omen. |
+
+### 18.3 Grim Pact / Pacto Sombrío (black) — back: Swamp / Pantano — symbol: crescent moon
+
+| # | No. | EN | ES | Cost | Type | P/T | Text |
+|---|---|---|---|---|---|---|---|
+| 2 | 1–2 | Crypt Rat | Rata de Cripta | {B} | Creature — Rat | 1/1 | **Deathtouch** |
+| 2 | 3–4 | Lethal Whisper | Susurro Letal | {B} | Instant | — | A Nemesis creature gets −2/−2 until end of turn. |
+| 1 | 5 | Blood Acolyte | Acólito Sangriento | {1}{B} | Creature — Human Cleric | 2/2 | When Blood Acolyte enters, you lose 1 life and it deals 1 damage to the Nemesis. |
+| 1 | 6 | Forbidden Pact | Pacto Prohibido | {1}{B} | Sorcery | — | Draw 2 cards. |
+| 1 | 7 | Assassinate | Asesinar | {2}{B} | Instant | — | Destroy a Nemesis creature. |
+| 1 | 8 | Reanimate | Reanimar | {2}{B} | Sorcery | — | Put a creature card from your graveyard onto the Table. |
+| 1 | 9 | Hungry Ghoul | Necrófago Hambriento | {2}{B} | Creature — Zombie | 3/2 | When Hungry Ghoul dies, return a card from your graveyard to your hand. |
+| 1 | 10 | Drain Essence | Drenar Esencia | {2}{B} | Sorcery | — | Drain Essence deals 2 damage to the Nemesis and you gain 2 life. |
+| 1 | 11 | Night Specter | Espectro Nocturno | {3}{B} | Creature — Specter | 3/3 | **Flying** |
+| 1 | 12 | Crypt Lord | Señor de la Cripta | {4}{B} | Creature — Vampire | 4/5 | When Crypt Lord enters, put a creature card with cost 2 or less from your graveyard onto the Table. |
+
+### 18.4 Emberkin / Clan Ascua (red) — back: Mountain / Montaña — symbol: double axe
+
+| # | No. | EN | ES | Cost | Type | P/T | Text |
+|---|---|---|---|---|---|---|---|
+| 2 | 1–2 | Reckless Goblin | Trasgo Temerario | {R} | Creature — Goblin | 2/1 | **Haste** |
+| 2 | 3–4 | Ember Bolt | Descarga de Ascuas | {R} | Instant | — | Ember Bolt deals 3 damage to a creature or to the Nemesis. |
+| 1 | 5 | Cinder Hound | Sabueso de Ceniza | {1}{R} | Creature — Hound | 2/2 | When Cinder Hound enters, it deals 1 damage to a creature. |
+| 1 | 6 | Firebrand Raider | Saqueador Incendiario | {2}{R} | Creature — Human Warrior | 3/2 | **Haste** |
+| 1 | 7 | Battle Fury | Furia de Batalla | {R} | Instant | — | A creature gets +3/+0 until end of turn. |
+| 1 | 8 | Molten Blade | Hoja Fundida | {1}{R} | Aura | — | Tuck behind a creature you control. It gets +2/+0 and has **Trample**. |
+| 1 | 9 | Kindle | Prender | {R} | Sorcery | — | Kindle deals 2 damage to a creature or to the Nemesis. |
+| 1 | 10 | Volcanic Roar | Rugido Volcánico | {2}{R} | Sorcery | — | Volcanic Roar deals 2 damage to each Nemesis creature. |
+| 1 | 11 | Ashwing Drake | Draco Alaceniza | {3}{R} | Creature — Drake | 3/3 | **Flying** |
+| 1 | 12 | Pyre Titan | Titán de la Pira | {4}{R} | Creature — Giant | 5/4 | **Trample**. When Pyre Titan enters, it deals 2 damage to the Nemesis. |
+
+### 18.5 Wildwood / Monteverde (green) — back: Forest / Bosque — symbol: leaf
+
+| # | No. | EN | ES | Cost | Type | P/T | Text |
+|---|---|---|---|---|---|---|---|
+| 2 | 1–2 | Thicket Bear | Oso de la Espesura | {1}{G} | Creature — Bear | 2/2 | — |
+| 2 | 3–4 | Surge of Vigor | Oleada de Vigor | {G} | Instant | — | A creature gets +3/+3 until end of turn. |
+| 1 | 5 | Elvish Grovekeeper | Guardabosques Élfico | {G} | Creature — Elf Druid | 1/1 | {T}: Add {G}. |
+| 1 | 6 | Wild Strength | Fuerza Salvaje | {1}{G} | Aura | — | Tuck behind a creature you control. It gets +2/+2 and has **Trample**. |
+| 1 | 7 | Spider of the Canopy | Araña del Dosel | {1}{G} | Creature — Spider | 1/4 | **Reach** |
+| 1 | 8 | Ironbark Wall | Muro de Corteza Férrea | {1}{G} | Creature — Plant Wall | 0/5 | **Defender** |
+| 1 | 9 | Bloom of Life | Floración Vital | {1}{G} | Sorcery | — | Gain 4 life. |
+| 1 | 10 | Mossback Boar | Jabalí Lomomusgo | {2}{G} | Creature — Boar | 3/3 | **Trample** |
+| 1 | 11 | Grovesinger Druid | Druida Cantoarboleda | {2}{G} | Creature — Elf Druid | 2/3 | When Grovesinger Druid enters, gain 2 life. |
+| 1 | 12 | Ancient Crashhorn | Cuernochoque Ancestral | {4}{G} | Creature — Beast | 6/6 | **Trample** |
+
+### 18.6 Vorthrax's Threat deck — symbol: dragon eye
+
+| # | No. | EN | ES | Type | P/T | Text |
 |---|---|---|---|---|---|---|
-| 2 | Dawn Squire | Escudera del Alba | {W} | Creature — Human Soldier | 1/2 | **Vigilance** |
-| 2 | Luminous Aegis | Égida Luminosa | {W} | Instant | — | Prevent all damage that would be dealt to a creature you control this turn. |
-| 1 | Dawn Cleric | Clérigo del Alba | {1}{W} | Creature — Human Cleric | 1/3 | **Lifelink** |
-| 1 | Serene Judgment | Juicio Sereno | {1}{W} | Aura | — | **Pacify**: tuck behind a Nemesis creature. It can't attack or block. |
-| 1 | Prayer of Restoration | Plegaria de Restauración | {1}{W} | Sorcery | — | Gain 3 life. You may put one of those cards into your hand instead of your library. |
-| 1 | Sky Griffin | Grifo Celeste | {2}{W} | Creature — Griffin | 2/2 | **Flying**, **Vigilance** |
-| 1 | Sworn Paladin | Paladín Juramentado | {2}{W} | Creature — Human Knight | 3/2 | **Vigilance** |
-| 1 | Shield Formation | Formación de Escudos | {2}{W} | Instant | — | Creatures you control get +1/+1 until end of turn. |
-| 1 | Banish into Light | Exiliar en Luz | {1}{W} | Instant | — | Put an attacking Nemesis creature face-down at the bottom of the Threat deck. (The Nemesis gains 1 life and that creature will return later.) |
-| 1 | Vigil Angel | Ángel de la Vigilia | {4}{W} | Creature — Angel | 4/4 | **Flying**, **Lifelink** |
+| 2 | 1–2 | Ash Imp | Diablillo de Ceniza | Creature — Imp | 1/1 | **Flying** |
+| 2 | 3–4 | Cinderclaw Brute | Bruto Garrascua | Creature — Demon | 3/2 | — |
+| 2 | 5–6 | Magma Sentinel | Centinela de Magma | Creature — Elemental | 1/4 | **Defender** |
+| 1 | 7 | Ember Wyrmling | Dragoncillo de Ascuas | Creature — Dragon | 2/2 | **Flying** |
+| 1 | 8 | Scorch Fiend | Demonio Abrasador | Creature — Demon | 4/3 | **Trample** |
+| 1 | 9 | Vorthrax's Herald | Heraldo de Vorthrax | Creature — Cultist | 3/3 | When it enters, it deals 1 damage to you. |
+| 1 | 10 | Lava Behemoth | Behemot de Lava | Creature — Elemental | 5/5 | — |
+| 2 | 11–12 | Searing Breath | Aliento Abrasador | Spell | — | Deal 2 damage to your highest-power creature. If you have none, deal 2 damage to you. |
+| 1 | 13 | Rain of Cinders | Lluvia de Pavesas | Spell | — | Deal 1 damage to each of your creatures and 1 damage to you. |
+| 1 | 14 | Tyrant's Roar | Rugido del Tirano | Spell | — | Nemesis creatures get +1/+0 until end of turn. |
+| 1 | 15 | Cinder Rebirth | Renacer de Ceniza | Spell | — | Return the highest-power creature from the Ruin to the Table. If there is none, deal 2 damage to you. |
 
-### 18.2 Arcane Tide / Marea Arcana (blue) — back: Island / Isla
+### 18.7 Vaskara's Threat deck — symbol: honeycomb
 
-| # | EN | ES | Cost | Type | P/T | Text |
+| # | No. | EN | ES | Type | P/T | Text |
 |---|---|---|---|---|---|---|
-| 2 | Tide Apprentice | Aprendiz de las Mareas | {U} | Creature — Human Wizard | 1/1 | When Tide Apprentice enters, **Scry** 2. |
-| 2 | Bend Fate | Desviar el Destino | {U} | Instant | — | You may put the Omen face-down at the bottom of the Threat deck; if you do, reveal a new Omen. **Scry** 1. |
-| 1 | Mist Hawk | Halcón de Bruma | {1}{U} | Creature — Bird | 2/1 | **Flying** |
-| 1 | Deep Freeze | Congelar | {1}{U} | Instant | — | **Freeze** a Nemesis creature. |
-| 1 | Return to the Tide | Devolver a la Marea | {1}{U} | Instant | — | Put a Nemesis creature on top of the Threat deck as the new Omen. The old Omen goes face-down right behind it. |
-| 1 | Watchful Siren | Sirena Vigía | {2}{U} | Creature — Siren | 2/3 | **Flying** |
-| 1 | Learned Archivist | Archivista Ilustrado | {2}{U} | Creature — Human Wizard | 2/2 | {T}: **Scry** 1. |
-| 1 | Arcane Study | Lectura Arcana | {2}{U} | Sorcery | — | **Scry** 2, then draw 2 cards. |
-| 1 | Cloud Djinn | Djinn de las Nubes | {3}{U} | Creature — Djinn | 4/3 | **Flying** |
-| 1 | Rising Tide | Marea Creciente | {4}{U} | Sorcery | — | Put every Nemesis creature on top of the Threat deck in any order; the top one becomes the Omen. |
+| 4 | 1–4 | Ravenous Larva | Larva Voraz | Creature — Insect | 1/1 | — |
+| 2 | 5–6 | Armored Drone | Zángano Acorazado | Creature — Insect | 2/2 | — |
+| 2 | 7–8 | Darting Wasp | Avispa Lanzadera | Creature — Insect | 2/1 | **Flying** |
+| 1 | 9 | Shieldbreaker Beetle | Escarabajo Rompeescudos | Creature — Insect | 3/3 | **Trample** |
+| 1 | 10 | Mantis Queen | Mantis Reina | Creature — Insect | 4/4 | When it enters, other Nemesis creatures get +1/+0 until end of turn. |
+| 2 | 11–12 | Pheromones | Feromonas | Spell | — | Nemesis creatures get +1/+1 until end of turn. |
+| 2 | 13–14 | Egg Laying | Puesta de Huevos | Spell | — | Reveal the next face-down card. If it is a creature, execute it. Otherwise put it face-down at the bottom. |
+| 1 | 15 | Insect Plague | Plaga de Insectos | Spell | — | Deal 1 damage to each of your creatures. |
 
-### 18.3 Grim Pact / Pacto Sombrío (black) — back: Swamp / Pantano
+### 18.8 Morwen's Threat deck — symbol: crown
 
-| # | EN | ES | Cost | Type | P/T | Text |
+| # | No. | EN | ES | Type | P/T | Text |
 |---|---|---|---|---|---|---|
-| 2 | Crypt Rat | Rata de Cripta | {B} | Creature — Rat | 1/1 | **Deathtouch** |
-| 2 | Lethal Whisper | Susurro Letal | {B} | Instant | — | A Nemesis creature gets −2/−2 until end of turn. |
-| 1 | Blood Acolyte | Acólito Sangriento | {1}{B} | Creature — Human Cleric | 2/2 | When Blood Acolyte enters, you lose 1 life and it deals 1 damage to the Nemesis. |
-| 1 | Forbidden Pact | Pacto Prohibido | {1}{B} | Sorcery | — | Draw 2 cards. |
-| 1 | Assassinate | Asesinar | {2}{B} | Instant | — | Destroy a Nemesis creature. |
-| 1 | Reanimate | Reanimar | {2}{B} | Sorcery | — | Put a creature card from your graveyard onto the Table. |
-| 1 | Hungry Ghoul | Necrófago Hambriento | {2}{B} | Creature — Zombie | 3/2 | When Hungry Ghoul dies, return a card from your graveyard to your hand. |
-| 1 | Drain Essence | Drenar Esencia | {2}{B} | Sorcery | — | Drain Essence deals 2 damage to the Nemesis and you gain 2 life. |
-| 1 | Night Specter | Espectro Nocturno | {3}{B} | Creature — Specter | 3/3 | **Flying** |
-| 1 | Crypt Lord | Señor de la Cripta | {4}{B} | Creature — Vampire | 4/5 | When Crypt Lord enters, put a creature card with cost 2 or less from your graveyard onto the Table. |
+| 3 | 1–3 | Wandering Skeleton | Esqueleto Errante | Creature — Skeleton | 2/1 | When it dies, put it face-down at the bottom of the Threat deck (Morwen gains 1 life). |
+| 2 | 4–5 | Rotting Zombie | Zombi Putrefacto | Creature — Zombie | 2/3 | — |
+| 2 | 6–7 | Vampire Bat | Murciélago Vampiro | Creature — Bat | 1/2 | **Flying**, **Lifelink** |
+| 1 | 8 | Morwen's Ghoul | Necrófago de Morwen | Creature — Zombie | 3/2 | **Deathtouch** |
+| 1 | 9 | Deathless Knight | Caballero Sin Muerte | Creature — Zombie Knight | 4/4 | — |
+| 1 | 10 | Crypt Horror | Horror de la Cripta | Creature — Horror | 5/4 | When it enters, you lose 1 life. |
+| 2 | 11–12 | Withering Touch | Toque Marchito | Spell | — | Your highest-power creature gets −2/−2 until end of turn. If you have none, you lose 2 life. |
+| 1 | 13 | Exhume | Exhumar | Spell | — | Return the highest-power creature from the Ruin to the Table. If there is none, you lose 2 life. |
+| 1 | 14 | Soul Drain | Drenar Alma | Spell | — | You lose 2 life. Return 2 Ruin cards face-down to the bottom of the Threat deck. |
+| 1 | 15 | Plague | Plaga | Spell | — | All creatures (both sides) get −1/−1 until end of turn. |
 
-### 18.4 Emberkin / Clan Ascua (red) — back: Mountain / Montaña
+### 18.9 The Mirror Archmage's Threat deck — symbol: wizard hat
 
-| # | EN | ES | Cost | Type | P/T | Text |
+| # | No. | EN | ES | Type | P/T | Text |
 |---|---|---|---|---|---|---|
-| 2 | Reckless Goblin | Trasgo Temerario | {R} | Creature — Goblin | 2/1 | **Haste** |
-| 2 | Ember Bolt | Descarga de Ascuas | {R} | Instant | — | Ember Bolt deals 3 damage to a creature or to the Nemesis. |
-| 1 | Cinder Hound | Sabueso de Ceniza | {1}{R} | Creature — Hound | 2/2 | When Cinder Hound enters, it deals 1 damage to a creature. |
-| 1 | Firebrand Raider | Saqueador Incendiario | {2}{R} | Creature — Human Warrior | 3/2 | **Haste** |
-| 1 | Battle Fury | Furia de Batalla | {R} | Instant | — | A creature gets +3/+0 until end of turn. |
-| 1 | Molten Blade | Hoja Fundida | {1}{R} | Aura | — | Tuck behind a creature you control. It gets +2/+0 and has **Trample**. |
-| 1 | Kindle | Prender | {R} | Sorcery | — | Kindle deals 2 damage to a creature or to the Nemesis. |
-| 1 | Volcanic Roar | Rugido Volcánico | {2}{R} | Sorcery | — | Volcanic Roar deals 2 damage to each Nemesis creature. |
-| 1 | Ashwing Drake | Draco Alaceniza | {3}{R} | Creature — Drake | 3/3 | **Flying** |
-| 1 | Pyre Titan | Titán de la Pira | {4}{R} | Creature — Giant | 5/4 | **Trample**. When Pyre Titan enters, it deals 2 damage to the Nemesis. |
-
-### 18.5 Wildwood / Monteverde (green) — back: Forest / Bosque
-
-| # | EN | ES | Cost | Type | P/T | Text |
-|---|---|---|---|---|---|---|
-| 2 | Thicket Bear | Oso de la Espesura | {1}{G} | Creature — Bear | 2/2 | — |
-| 2 | Surge of Vigor | Oleada de Vigor | {G} | Instant | — | A creature gets +3/+3 until end of turn. |
-| 1 | Elvish Grovekeeper | Guardabosques Élfico | {G} | Creature — Elf Druid | 1/1 | {T}: Add {G}. |
-| 1 | Wild Strength | Fuerza Salvaje | {1}{G} | Aura | — | Tuck behind a creature you control. It gets +2/+2 and has **Trample**. |
-| 1 | Spider of the Canopy | Araña del Dosel | {1}{G} | Creature — Spider | 1/4 | **Reach** |
-| 1 | Ironbark Wall | Muro de Corteza Férrea | {1}{G} | Creature — Plant Wall | 0/5 | **Defender** |
-| 1 | Bloom of Life | Floración Vital | {1}{G} | Sorcery | — | Gain 4 life. |
-| 1 | Mossback Boar | Jabalí Lomomusgo | {2}{G} | Creature — Boar | 3/3 | **Trample** |
-| 1 | Grovesinger Druid | Druida Cantoarboleda | {2}{G} | Creature — Elf Druid | 2/3 | When Grovesinger Druid enters, gain 2 life. |
-| 1 | Ancient Crashhorn | Cuernochoque Ancestral | {4}{G} | Creature — Beast | 6/6 | **Trample** |
-
-### 18.6 Vorthrax's Threat deck
-
-| # | EN | ES | Type | P/T | Text |
-|---|---|---|---|---|---|
-| 2 | Ash Imp | Diablillo de Ceniza | Creature — Imp | 1/1 | **Flying** |
-| 2 | Cinderclaw Brute | Bruto Garrascua | Creature — Demon | 3/2 | — |
-| 2 | Magma Sentinel | Centinela de Magma | Creature — Elemental | 1/4 | **Defender** |
-| 1 | Ember Wyrmling | Dragoncillo de Ascuas | Creature — Dragon | 2/2 | **Flying** |
-| 1 | Scorch Fiend | Demonio Abrasador | Creature — Demon | 4/3 | **Trample** |
-| 1 | Vorthrax's Herald | Heraldo de Vorthrax | Creature — Cultist | 3/3 | When it enters, it deals 1 damage to you. |
-| 1 | Lava Behemoth | Behemot de Lava | Creature — Elemental | 5/5 | — |
-| 2 | Searing Breath | Aliento Abrasador | Spell | — | Deal 2 damage to your highest-power creature. If you have none, deal 2 damage to you. |
-| 1 | Rain of Cinders | Lluvia de Pavesas | Spell | — | Deal 1 damage to each of your creatures and 1 damage to you. |
-| 1 | Tyrant's Roar | Rugido del Tirano | Spell | — | Nemesis creatures get +1/+0 until end of turn. |
-| 1 | Cinder Rebirth | Renacer de Ceniza | Spell | — | Return the highest-power creature from the Ruin to the Table. If there is none, deal 2 damage to you. |
-
-### 18.7 Vaskara's Threat deck
-
-| # | EN | ES | Type | P/T | Text |
-|---|---|---|---|---|---|
-| 4 | Ravenous Larva | Larva Voraz | Creature — Insect | 1/1 | — |
-| 2 | Armored Drone | Zángano Acorazado | Creature — Insect | 2/2 | — |
-| 2 | Darting Wasp | Avispa Lanzadera | Creature — Insect | 2/1 | **Flying** |
-| 1 | Shieldbreaker Beetle | Escarabajo Rompeescudos | Creature — Insect | 3/3 | **Trample** |
-| 1 | Mantis Queen | Mantis Reina | Creature — Insect | 4/4 | When it enters, other Nemesis creatures get +1/+0 until end of turn. |
-| 2 | Pheromones | Feromonas | Spell | — | Nemesis creatures get +1/+1 until end of turn. |
-| 2 | Egg Laying | Puesta de Huevos | Spell | — | Reveal the next face-down card. If it is a creature, execute it. Otherwise put it face-down at the bottom. |
-| 1 | Insect Plague | Plaga de Insectos | Spell | — | Deal 1 damage to each of your creatures. |
-
-### 18.8 Morwen's Threat deck
-
-| # | EN | ES | Type | P/T | Text |
-|---|---|---|---|---|---|
-| 3 | Wandering Skeleton | Esqueleto Errante | Creature — Skeleton | 2/1 | When it dies, put it face-down at the bottom of the Threat deck (Morwen gains 1 life). |
-| 2 | Rotting Zombie | Zombi Putrefacto | Creature — Zombie | 2/3 | — |
-| 2 | Vampire Bat | Murciélago Vampiro | Creature — Bat | 1/2 | **Flying**, **Lifelink** |
-| 1 | Morwen's Ghoul | Necrófago de Morwen | Creature — Zombie | 3/2 | **Deathtouch** |
-| 1 | Deathless Knight | Caballero Sin Muerte | Creature — Zombie Knight | 4/4 | — |
-| 1 | Crypt Horror | Horror de la Cripta | Creature — Horror | 5/4 | When it enters, you lose 1 life. |
-| 2 | Withering Touch | Toque Marchito | Spell | — | Your highest-power creature gets −2/−2 until end of turn. If you have none, you lose 2 life. |
-| 1 | Exhume | Exhumar | Spell | — | Return the highest-power creature from the Ruin to the Table. If there is none, you lose 2 life. |
-| 1 | Soul Drain | Drenar Alma | Spell | — | You lose 2 life. Return 2 Ruin cards face-down to the bottom of the Threat deck. |
-| 1 | Plague | Plaga | Spell | — | All creatures (both sides) get −1/−1 until end of turn. |
-
-### 18.9 The Mirror Archmage's Threat deck
-
-| # | EN | ES | Type | P/T | Text |
-|---|---|---|---|---|---|
-| 2 | Fragile Illusion | Ilusión Frágil | Creature — Illusion | 3/1 | **Flying** |
-| 2 | Water Elemental | Elemental de Agua | Creature — Elemental | 2/4 | — |
-| 2 | Crystal Golem | Gólem de Cristal | Creature — Golem | 1/4 | **Defender** |
-| 1 | Guardian Sphinx | Esfinge Guardiana | Creature — Sphinx | 3/3 | **Flying** |
-| 1 | Mirror Djinn | Djinn del Espejo | Creature — Djinn | 4/2 | **Flying** |
-| 1 | Tide Serpent | Serpiente de la Marea | Creature — Serpent | 4/5 | — |
-| 2 | Counterspell | Contraconjuro | Spell | — | **Counter reminder**: the next spell you cast is countered. |
-| 2 | Rebound | Rebote | Spell | — | Return your highest-power creature to your hand. If you have none, discard the leftmost card of your hand. |
-| 1 | Mind Theft | Robo de Mente | Spell | — | Discard the leftmost card of your hand. If you can't, you lose 2 life. |
-| 1 | Mass Illusion | Ilusión Masiva | Spell | — | Lower all your creatures. |
+| 2 | 1–2 | Fragile Illusion | Ilusión Frágil | Creature — Illusion | 3/1 | **Flying** |
+| 2 | 3–4 | Water Elemental | Elemental de Agua | Creature — Elemental | 2/4 | — |
+| 2 | 5–6 | Crystal Golem | Gólem de Cristal | Creature — Golem | 1/4 | **Defender** |
+| 1 | 7 | Guardian Sphinx | Esfinge Guardiana | Creature — Sphinx | 3/3 | **Flying** |
+| 1 | 8 | Mirror Djinn | Djinn del Espejo | Creature — Djinn | 4/2 | **Flying** |
+| 1 | 9 | Tide Serpent | Serpiente de la Marea | Creature — Serpent | 4/5 | — |
+| 2 | 10–11 | Counterspell | Contraconjuro | Spell | — | **Counter reminder**: the next spell you cast is countered. |
+| 2 | 12–13 | Rebound | Rebote | Spell | — | Return your highest-power creature to your hand. If you have none, discard the leftmost card of your hand. |
+| 1 | 14 | Mind Theft | Robo de Mente | Spell | — | Discard the leftmost card of your hand. If you can't, you lose 2 life. |
+| 1 | 15 | Mass Illusion | Ilusión Masiva | Spell | — | Lower all your creatures. |
 
 ## 19. Quick reference
 

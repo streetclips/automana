@@ -9,7 +9,7 @@ export interface PrintCard {
 }
 
 function copies(cards: Card[], back: string): PrintCard[] {
-  return cards.flatMap((c) => Array.from({ length: c.qty }, () => ({ front: renderCard(c), back })));
+  return cards.flatMap((c) => Array.from({ length: c.qty }, (_, copy) => ({ front: renderCard(c, copy), back })));
 }
 
 export function buildDeck(): PrintCard[] {

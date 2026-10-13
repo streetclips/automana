@@ -19,13 +19,13 @@
   color: var(--f-mark, var(--c-d)); font-family: "Avenir Next", "Helvetica Neue", sans-serif; z-index: 2; }
 .pw-card .c-cost { display: flex; flex-direction: column; align-items: center; gap: .2em; font-size: 1.4em; }
 .pw-card .c-glyph { font-size: 1.5em; }
-.pw-card .c-ipt { margin-top: auto; font-size: 2.1em; font-weight: 800; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: .04em; text-shadow: 0 .03em 0 var(--f-emboss, rgba(255,255,255,.7)); }
+.pw-card .c-ipt { margin-top: auto; font-family: "Avenir Next Condensed", "Avenir Next", sans-serif; font-size: 1.65em; font-weight: 800; text-shadow: 0 .03em 0 var(--f-emboss, rgba(255,255,255,.7)); }
 .pw-card .c-art, .pw-card .c-text, .pw-face .hbody { border: .09em solid #0b0807; box-shadow: 0 0 0 .1em rgba(255,255,255,.7); }
 .pw-card .c-text, .pw-face .hbody { background: radial-gradient(ellipse 70% 55% at 25% 25%, rgba(255,255,255,.6), transparent), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(0,0,0,.06), transparent), var(--f-box); }
 .pw-card .c-name, .pw-card .c-type, .pw-card .c-art, .pw-card .c-text { left: 3.85em; right: .4em; }
 .pw-card .c-art { top: 3em; bottom: 13.45em; overflow: hidden; }
 .pw-card .c-art::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 1em rgba(0,0,0,.45); }
-.pw-card .c-emoji { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8em; line-height: 1;
+.pw-card .c-glow { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
   background: radial-gradient(circle at 50% 45%, var(--c-s), var(--c-p) 60%, var(--c-d)); }
 .pw-card .c-img { width: 100%; height: 100%; background-size: cover; background-position: center; }
 .pw-card .c-text { bottom: .5em; height: 10em; padding: .6em; display: flex; flex-direction: column; justify-content: safe center; gap: .45em; }
@@ -33,9 +33,11 @@
 .pw-card .c-flavor { font-style: italic; color: #4b3d2f; }
 .pw-card .c-text .c-flavor { font-size: 1.02em; }
 .pw-card.no-flavor .c-flavor { display: none; }
+.pw-card .c-set { position: absolute; right: .8em; bottom: .45em; display: flex; align-items: center; gap: .3em; font: 600 .75em/1 "Avenir Next", "Helvetica Neue", sans-serif; color: var(--c-d); opacity: .6; }
+.pw-card .c-set .icon { width: 1.5em; height: 1.5em; }
 .pw-card.pw-back .c-art { inset: .4em; }
-.pw-card.pw-back .c-emoji { font-size: 7.5em; color: #ffb15c; }
-.pw-card.pw-back .c-emoji .icon { position: relative; top: -5%; }
+.pw-card.pw-back .c-glow { font-size: 7.5em; color: #ffb15c; }
+.pw-card.pw-back .c-glow .icon { position: relative; top: -5%; }
 
 .col-R { --c-p: #d8452b; --c-s: #f2a541; --c-d: #3d0f05; --f-1: #e8714a; --f-2: #8e2010; --f-bar: #f7d9c8; --f-box: #f6e6db; }
 .col-G { --c-p: #3c8d3f; --c-s: #a6d36b; --c-d: #10301a; --f-1: #63a65e; --f-2: #1c4d25; --f-bar: #d9e9cf; --f-box: #e5efdc; }

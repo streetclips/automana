@@ -12,6 +12,7 @@
 .pw-face.reference .hbody { font-size: .98em; }
 .pw-face.reference .hbody p { margin: 0 0 .15em; }
 .pw-face .facetag { left: 0; right: 0; bottom: 0; text-align: center; font-family: Copperplate, serif; font-size: .9em; letter-spacing: .12em; color: #fff3d9; text-shadow: 0 .05em .15em rgba(0,0,0,.6); }
+.pw-face .facetag .icon { display: inline-block; width: 1.25em; height: 1.25em; margin-right: .45em; vertical-align: -.25em; }
 
 .pw-face.walker { --c-d: #6b2d14; --f-1: #f1d58c; --f-2: #8c6118; --f-bar: #fbefd2; --f-box: #f8f2e3; }
 .pw-face.reference { --c-d: #3b342b; --f-1: #ddd5c6; --f-2: #5d564b; --f-bar: #f4f0e7; --f-box: #f7f4ee; }

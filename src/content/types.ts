@@ -21,7 +21,6 @@ export interface Card {
   qty: number;
   pt?: string;
   threat?: boolean;
-  emoji: string;
   art: string;
   en: CardText;
   es: CardText;

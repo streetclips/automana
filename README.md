@@ -46,7 +46,7 @@ Backs: Grimoire cards show their land, Kael, the Nemeses and the quick reference
 1. Every card describes its scene in its `art` field, for example `art: "a rocky island rising from a calm blue sea"`.
 2. `src/art/generate.ts` wraps it in the shared style: `Art illustration in the old Magic: The Gathering style of {art}, like a classic {type} card. No border, frame or text.`
 3. Images are 1088 × 960 JPEGs in `art/`, named by card id. Commit them: the model takes no seed, so a new run gives a different image.
-4. The preview and the PDFs show `art/{id}.jpg` when it exists and the `emoji` otherwise.
+4. The preview and the PDFs show `art/{id}.jpg` when it exists and a plain glow in the card's colour otherwise.
 5. About 1 image in 20 comes back with a painted parchment border: regenerate it with `npm run art -- {id}`.
 
 ## Balance simulator
@@ -112,7 +112,7 @@ src/
 │   ├── lands.ts        land cards (Grimoire card backs)
 │   └── index.ts        catalog: GRIMOIRES, NEMESES, ALL_CARDS, getCard(id)
 ├── i18n/               UI strings per locale + current locale
-├── render/             HTML components: card.ts (Grimoire and Threat cards), faces.ts (4-state Kael, Nemesis and reference cards), art.ts (card illustrations), icons.ts (SVG mana symbols and type glyphs)
+├── render/             HTML components: card.ts (Grimoire and Threat cards), faces.ts (4-state Kael, Nemesis and reference cards), art.ts (card illustrations), icons.ts (SVG mana symbols, type glyphs and collection symbols)
 ├── preview/            serves the live card preview: pages and web server
 ├── pnp/                builds the print-and-play PDFs for the print shop
 ├── art/                generates the card illustrations with OpenRouter
@@ -137,8 +137,8 @@ src/
 
 ## Changing content
 
-1. Edit the card in `src/content/` with a unique `id`, both `en` and `es` texts, an `emoji` as placeholder art and an `art` scene for its illustration (`npm run art`).
-2. Update its row in the card lists of `docs/rulebook.md` (section 18), and any rule it touches.
+1. Edit the card in `src/content/` with a unique `id`, both `en` and `es` texts and an `art` scene for its illustration (`npm run art`).
+2. Update its row in the card lists of `docs/rulebook.md` (section 18), and any rule it touches. Card numbers follow the order of `src/content/`: adding, moving or removing a card, or changing its `qty`, renumbers its collection, so update the `No.` column too.
 3. Check it in `npm run preview` and run `npm run typecheck`.
 4. Run `npm run sim:test`. If you changed a rule or a number, update `src/sim/engine/` until it passes.
 5. Run `npm run build` when you need new PDFs.
