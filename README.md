@@ -36,8 +36,29 @@ Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrom
 3. Odd pages are fronts, even pages are backs, mirrored for long-edge duplex.
 4. Square corners: order the 3 mm rounded corners option instead.
 5. CMYK, converted with Ghostscript.
+6. No blurred shadows: some PDF viewers draw them as solid dark patches over the card.
+7. Each cell is frame black underneath, so the hairline gaps the CMYK conversion leaves at the frame edge print black, not white.
 
 Backs: Grimoire cards show their land, Kael, the Nemeses and the quick reference show Face B, and Threat cards share a plain back.
+
+### Ordering at Imprenta Soriano
+
+Upload the PDF to [Baraja de Cartas](https://imprentasoriano.com/producto/baraja-de-cartas) and fill in the form like this:
+
+| Option | Value |
+|---|---|
+| ¿Quieres que la montemos nosotros? | No (ya están montadas) |
+| Cantidad de páginas | 28 per deck: 14 sheets, front and back |
+| Numero de cartas por hoja | 9 |
+| Grosor del papel | Especial para barajar cartas (300 g, Black Core) |
+| Cortar | Sí |
+| Cantos redondeados | Sí, 3 mm |
+
+1. Black Core card is made for shuffling and is opaque: the face of the top card does not show through its back.
+2. Take 3 mm corners: the cards have square corners, and the shop advises 4 mm only when the rounding is printed.
+3. Several decks: multiply the pages by the number of decks and write the number of decks in the Mostrador field.
+4. The English and Spanish PDFs have the same cut, so they can go in one order without the 15 € fee for each extra cut.
+5. One deck cost 34.30 € with these options on 13 October 2026, shipping not included. The shop does not say whether VAT is included.
 
 ## Card art
 

@@ -2,9 +2,12 @@
 html, body { margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 .sheet { position: relative; width: 210mm; height: 297mm; overflow: hidden; break-after: page; }
 .sheet:last-child { break-after: auto; }
-.cell { position: absolute; width: 69mm; height: 94mm; overflow: hidden; }
+.cell { position: absolute; width: 69mm; height: 94mm; overflow: hidden; background: #0d0b0a; }
 .mark { position: absolute; background: #000; }
 .mark.v { width: .1mm; margin-left: -.05mm; }
 .mark.h { height: .1mm; margin-top: -.05mm; }
 
 .cell .pw-card { position: absolute; inset: 0; width: auto; height: auto; font-size: 2.52mm; border-width: calc(1em + 3mm); border-radius: 0; box-shadow: none; }
+.cell .pw-card .c-index, .cell .pw-card .c-name, .cell .pw-card .c-type, .cell .pw-face .hhead { box-shadow: 0 0 0 .1em rgba(255,255,255,.7), inset 0 0 0 .06em rgba(255,255,255,.35); }
+.cell .pw-card .c-art::after { box-shadow: none; }
+.cell .pw-face .facetag { text-shadow: none; }
