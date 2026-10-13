@@ -7,6 +7,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit",
     "preview": "tsx watch src/preview/server.ts",
+    "play": "tsx watch src/play/server.ts",
     "pnp": "tsx src/pnp/build.ts",
     "art": "tsx src/art/generate.ts",
     "build": "npm run typecheck && npm run pnp",

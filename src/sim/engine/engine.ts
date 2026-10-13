@@ -128,7 +128,6 @@ export function ruinCreatures(s: State): number {
 }
 
 export function loseLife(s: State, n: number): void {
-  if (n > 0) log(s, `you lose ${n} life (${Math.max(0, s.library.length - n)} left)`);
   for (let i = 0; i < n && !s.over; i++) {
     const uid = s.library.shift();
     if (uid === undefined) break;
@@ -136,14 +135,17 @@ export function loseLife(s: State, n: number): void {
     s.grave.push(uid);
     if (s.library.length === 0) s.over = 2;
   }
+  if (n > 0) log(s, `you lose ${n} life (${s.library.length} left)`);
 }
 
 export function gainLife(s: State, n: number): void {
-  for (let i = 0; i < n && s.grave.length; i++) {
+  let k = 0;
+  for (; k < n && s.grave.length; k++) {
     const uid = s.grave.pop()!;
     s.library.push(uid);
     s.known[uid] = 1;
   }
+  if (k) log(s, `you gain ${k} life (${s.library.length} left)`);
 }
 
 export function draw(s: State, n: number): void {
@@ -169,11 +171,13 @@ export function scry(s: State, n: number, agent: Agent): void {
 }
 
 export function nemGain(s: State, n: number): void {
-  for (let i = 0; i < n && s.ruin.length; i++) {
+  let k = 0;
+  for (; k < n && s.ruin.length; k++) {
     const uid = s.ruin.pop()!;
     s.faceDown.push(uid);
     s.known[uid] = 1;
   }
+  if (k) log(s, `Nemesis gains ${k} life (${s.faceDown.length} left)`);
 }
 
 export function toBottom(s: State, uid: number): void {
@@ -873,10 +877,10 @@ function nemCombatDamage(s: State, agent: Agent): void {
 function executeCard(s: State, uid: number): void {
   const d = defOf(s, uid);
   if (d.kind === "creature") { enterNem(s, uid, true); return; }
-  log(s, `executes ${d.name}`);
   s.pend = uid;
   const t = d.id === "searing-breath" || d.id === "withering-touch" || d.id === "rebound" ? nemTarget(s) : undefined;
   s.pendTarget = t ? t.uid : -1;
+  log(s, `executes ${d.name}${t ? ` on ${t.def.name}` : ""}`);
   s.q.unshift({ k: T.SPELL, u: uid }, { k: T.RESOLVE, u: uid });
 }
 
