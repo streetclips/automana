@@ -2,16 +2,15 @@ import { getCard } from "../content";
 import type { Card } from "../content/types";
 import { getLocale, t } from "../i18n/locale";
 import { hasArt } from "./art";
+import { icon } from "./icons";
 import { pip, pips } from "./pips";
-
-const GLYPHS: Record<Card["type"], string> = { creature: "⚔", instant: "ϟ", sorcery: "✶", aura: "◈", land: "▲", spell: "✹" };
 
 export function renderCard(idOrCard: string | Card): string {
   const card = typeof idOrCard === "string" ? getCard(idOrCard) : idOrCard;
   const tx = card[getLocale()];
   const strings = t();
-  const cost = card.threat ? '<span class="pip pip-X">✹</span>' : [...card.cost].sort((a, b) => Number(/^\d$/.test(a)) - Number(/^\d$/.test(b))).map(pip).join("");
-  const glyph = card.threat ? "✹" : GLYPHS[card.type];
+  const cost = card.threat ? pip("X") : [...card.cost].sort((a, b) => Number(/^\d$/.test(a)) - Number(/^\d$/.test(b))).map(pip).join("");
+  const glyph = icon(card.threat ? "X" : card.type);
   const type = (card.threat ? strings.threatPrefix : "") + strings.typeLabel[card.type] + (tx.sub ? ` — ${tx.sub}` : "");
   const fit = tx.name.length > 20 ? "xlong" : tx.name.length > 16 ? "long" : "";
   const typeFit = type.length > 33 ? "type-xlong" : type.length > 30 ? "type-long" : "";
@@ -27,5 +26,5 @@ export function renderCard(idOrCard: string | Card): string {
 }
 
 export function renderThreatBack(): string {
-  return `<div class="pw-card pw-back col-T"><div class="c-art"><div class="c-emoji">✹</div></div></div>`;
+  return `<div class="pw-card pw-back col-T"><div class="c-art"><div class="c-emoji">${icon("X")}</div></div></div>`;
 }

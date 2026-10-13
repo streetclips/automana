@@ -112,7 +112,7 @@ src/
 │   ├── lands.ts        land cards (Grimoire card backs)
 │   └── index.ts        catalog: GRIMOIRES, NEMESES, ALL_CARDS, getCard(id)
 ├── i18n/               UI strings per locale + current locale
-├── render/             HTML components: card.ts (Grimoire and Threat cards), faces.ts (4-state Kael, Nemesis and reference cards), art.ts (card illustrations)
+├── render/             HTML components: card.ts (Grimoire and Threat cards), faces.ts (4-state Kael, Nemesis and reference cards), art.ts (card illustrations), icons.ts (SVG mana symbols and type glyphs)
 ├── preview/            serves the live card preview: pages and web server
 ├── pnp/                builds the print-and-play PDFs for the print shop
 ├── art/                generates the card illustrations with OpenRouter
