@@ -1,21 +1,31 @@
 # Palmwalker
 
-A solo, in-hand dueling card game. This repo holds the complete game: the rules in `docs/rulebook.md` and the card data in `src/content/`, plus a printable sheet with every card.
+A solo, in-hand dueling card game. This repo holds the complete game: the rules in `docs/rulebook.md` and the card data in `src/content/`, plus a live preview of every card and the print-and-play PDFs.
 
 ## Commands
 
 | Command | Output |
 |---|---|
 | `npm run typecheck` | Type-checks everything in `src/` |
-| `npm run cards` | `dist/palmwalker-cards-en.html` and `palmwalker-cards-es.html`: all 126 cards, one section per component, ready to print |
-| `npm run build` | Both of the above |
+| `npm run preview` | Card preview at `http://localhost:4400`, reloaded on every save |
 | `npm run pnp` | `dist/palmwalker-pnp-en.pdf` and `palmwalker-pnp-es.pdf`: print-and-play PDFs for [Imprenta Soriano](https://imprentasoriano.com/producto/baraja-de-cartas) |
+| `npm run build` | `typecheck`, then `pnp` |
 | `npm run art` | `art/{card id}.jpg`: AI illustrations for the cards with no image yet. `npm run art -- plains swamp` regenerates those cards |
 | `npm run sim` | Balance simulation: win rate of every colour pair against every Nemesis, Normal and Heroic, in `dist/sim/` |
 | `npm run sim:trace` | One simulated game, turn by turn, with the AI's hand and board |
 | `npm run sim:test` | Rules self-test of the simulator |
 
-Requirements: Node 22+. `npm run pnp` also needs Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`. `npm run art` needs `OPENROUTER_API_KEY`.
+Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`. `npm run art` needs `OPENROUTER_API_KEY`.
+
+## Card preview
+
+`npm run preview` serves the cards at `http://localhost:4400` (`PORT` changes it), rendered from `src/` on every request:
+
+1. `cards` shows every card once, one section per component, with its id and number of copies under it: `dawn-squire ×2`.
+2. `pnp` shows the A4 sheets of `npm run pnp`, fronts and backs, without Chrome or Ghostscript: colours are RGB, before the CMYK conversion.
+3. `en` and `es` switch the language and keep the scroll position.
+4. Saving reloads the page. A change in `src/content/` or the render code restarts the server; a CSS change or a new image in `art/` only reloads the page.
+5. A render error shows its stack trace in the page, which reloads once you fix it.
 
 ## Print and play
 
@@ -36,7 +46,7 @@ Backs: Grimoire cards show their land, Kael, the Nemeses and the quick reference
 1. Every card describes its scene in its `art` field, for example `art: "a rocky island rising from a calm blue sea"`.
 2. `src/art/generate.ts` wraps it in the shared style: `Art illustration in the old Magic: The Gathering style of {art}, like a classic {type} card. No border, frame or text.`
 3. Images are 1088 × 960 JPEGs in `art/`, named by card id. Commit them: the model takes no seed, so a new run gives a different image.
-4. The card sheet and the PDFs show `art/{id}.jpg` when it exists and the `emoji` otherwise.
+4. The preview and the PDFs show `art/{id}.jpg` when it exists and the `emoji` otherwise.
 5. About 1 image in 20 comes back with a painted parchment border: regenerate it with `npm run art -- {id}`.
 
 ## Balance simulator
@@ -103,7 +113,7 @@ src/
 │   └── index.ts        catalog: GRIMOIRES, NEMESES, ALL_CARDS, getCard(id)
 ├── i18n/               UI strings per locale + current locale
 ├── render/             HTML components: card.ts (Grimoire and Threat cards), faces.ts (4-state Kael, Nemesis and reference cards), art.ts (card illustrations)
-├── sheet/              builds the printable card sheet
+├── preview/            serves the live card preview: pages and web server
 ├── pnp/                builds the print-and-play PDFs for the print shop
 ├── art/                generates the card illustrations with OpenRouter
 ├── sim/                balance simulator
@@ -129,5 +139,6 @@ src/
 
 1. Edit the card in `src/content/` with a unique `id`, both `en` and `es` texts, an `emoji` as placeholder art and an `art` scene for its illustration (`npm run art`).
 2. Update its row in the card lists of `docs/rulebook.md` (section 18), and any rule it touches.
-3. Run `npm run build`.
+3. Check it in `npm run preview` and run `npm run typecheck`.
 4. Run `npm run sim:test`. If you changed a rule or a number, update `src/sim/engine/` until it passes.
+5. Run `npm run build` when you need new PDFs.

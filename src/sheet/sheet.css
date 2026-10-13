@@ -1,8 +1,0 @@
-@page { size: A4; margin: 8mm; }
-body { margin: 8mm; font-family: "Avenir Next", "Helvetica Neue", sans-serif; color: #1d140c; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-h1 { font-size: 16pt; margin: 0 0 4mm; }
-h2 { font-size: 11pt; margin: 0 0 3mm; }
-section { margin-bottom: 8mm; }
-section + section { break-before: page; }
-.grid { display: flex; flex-wrap: wrap; gap: 2mm; }
-.grid > div { break-inside: avoid; box-shadow: none; }
