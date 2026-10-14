@@ -389,10 +389,10 @@ Win rates of the balance simulator, 1,000 games per colour pair and Nemesis:
 |---|---:|---|---|
 | Vorthrax | 56% | Deathtouch and destroy effects; trade early, keep a blocker for Inferno Charger | U/B 64%, W/B 63%, B/R 62% |
 | Vaskara | 56% | Removal for each creature as it comes, blockers with high toughness | U/B 65%, B/G 63%, W/B 60% |
-| Morwen | 45% | Lock instead of kill (Pacify, bounce, Banish into Light) plus direct damage | U/B 56%, W/B 56%, W/U 53% |
-| Mirror Archmage | 45% | Cheap spells first, then the big ones; kill the Refraction Golem | W/R 52%, B/R 52%, W/B 51% |
+| Morwen | 45% | Lock instead of kill (Pacify, bounce, Banish into Light) plus direct damage | U/B 57%, W/B 56%, W/U 53% |
+| Mirror Archmage | 45% | Cheap spells first, then the big ones; kill the Refraction Golem | W/R 52%, U/B 52%, B/R 52% |
 
-Every colour pair wins between 42% and 59% of its games, 50% on average. Black is the strongest half (56% over its pairs): Deathtouch and destroy effects ignore how big the Nemesis's creatures are. Green is the weakest (46%): its big bodies are still smaller than theirs.
+Every colour pair wins between 42.3% and 59.5% of its games, 50.6% on average. Black is the strongest half (56.4% over its pairs): Deathtouch and destroy effects ignore how big the Nemesis's creatures are. Green is the weakest (46.5%): its big bodies are still smaller than theirs.
 
 Five showcase pairs:
 
@@ -400,7 +400,7 @@ Five showcase pairs:
 2. **W/B — Life as a resource (58%):** lifelink refills what black's pacts spend.
 3. **U/R — Arcane tempo (50%):** flyers, burn, and Bend Fate to dodge the worst Omens.
 4. **B/G — Cycle of life (54%):** damage fills your graveyard, Reanimate brings creatures back.
-5. **W/U — Control fate (50%):** Pacify, Deep Freeze, and flyers that never need to trade.
+5. **W/U — Control fate (51%):** Pacify, Deep Freeze, and flyers that never need to trade.
 
 ## 16. Designer notes
 
@@ -457,7 +457,7 @@ Open questions: none.
 | 1 | 8 | Watchful Siren | Sirena Vigía | 3 | Creature — Siren | 2/3 | **Flying** |
 | 1 | 9 | Learned Archivist | Archivista Ilustrado | 3 | Creature — Human Wizard | 2/2 | {T}: **Scry** 1. |
 | 1 | 10 | Arcane Study | Lectura Arcana | 3 | Sorcery | — | **Scry** 2, then draw 2 cards. |
-| 1 | 11 | Cloud Djinn | Djinn de las Nubes | 3 | Creature — Djinn | 2/3 | **Flying** |
+| 1 | 11 | Cloud Djinn | Djinn de las Nubes | 3 | Creature — Djinn | 2/3 | **Flying**, **Vigilance** |
 | 1 | 12 | Rising Tide | Marea Creciente | 3 | Sorcery | — | Put every Nemesis creature on top of the Threat deck in any order; the top one becomes the Omen. |
 
 ### 17.3 Grim Pact / Pacto Sombrío (black) — symbol: crescent moon

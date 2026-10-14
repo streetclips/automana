@@ -116,7 +116,7 @@ Output: the tables on screen plus `dist/sim/sim-seed{seed}-g{games}.{md,csv,json
 1. **Its own turn:** a depth-first search over the whole turn (spells before combat, attackers, tricks after the Nemesis's blocks, spells after combat). Each plan is scored by playing out the next Nemesis turn three times with different guesses for the hidden cards and evaluating the result: life on both sides, boards, hand, the mana kept for the Nemesis turn, the Omen, danger and lethal threats.
 2. **The Nemesis turn:** every response window (before the Omen, against a Nemesis spell, before attacks, after blocks, at end of turn) and every block assignment is chosen by the same simulate-and-evaluate search.
 3. **Fair play:** the AI never looks at hidden cards. It knows only what a player knows: cards it scried or returned, and which Threats went to the bottom of the deck.
-4. **Tuned:** the evaluation weights in `src/sim/ai/values.ts` were tuned for the current rules by paired win-rate comparisons and validated on a separate seed. On seed 77, never used for tuning, it wins 50.4% of 40,000 games.
+4. **Tuned:** the evaluation weights in `src/sim/ai/values.ts` were tuned for the current rules by paired win-rate comparisons and validated on a separate seed. On seed 77, never used for tuning, it wins 50.6% of 40,000 games.
 
 ### Rule interpretations
 

@@ -56,8 +56,8 @@ export const ARCANE_TIDE: HalfGrimoire = {
     {
       id: "cloud-djinn", color: "U", cost: 3, type: "creature", qty: 1, pt: "2/3",
       art: "a towering blue djinn formed of storm clouds, arms crossed, floating high above the sea",
-      en: { name: "Cloud Djinn", sub: "Djinn", text: "<b>Flying</b>", flavor: "Bound to no lamp but the sky." },
-      es: { name: "Djinn de las Nubes", sub: "Djinn", text: "<b>Volar</b>", flavor: "No lo ata otra lámpara que el cielo." },
+      en: { name: "Cloud Djinn", sub: "Djinn", text: "<b>Flying</b>, <b>Vigilance</b>", flavor: "Bound to no lamp but the sky." },
+      es: { name: "Djinn de las Nubes", sub: "Djinn", text: "<b>Volar</b>, <b>Vigilancia</b>", flavor: "No lo ata otra lámpara que el cielo." },
     },
     {
       id: "rising-tide", color: "U", cost: 3, type: "sorcery", qty: 1,
