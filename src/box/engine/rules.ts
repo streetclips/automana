@@ -1,5 +1,6 @@
 import { parseCost } from './mana';
-import { getCardDef, getCost } from './registry';
+import { castCost } from './nemesis';
+import { getCardDef } from './registry';
 import { canAfford, defOf, getCard, hasFlashDef, isInstantDef, isLandDef, isReadyToTap } from './state';
 import type { Refusal } from './refusals';
 import { targetsError } from './targets';
@@ -38,7 +39,7 @@ export function castBlocker(s: GameState, player: PlayerId, cardId: CardId): Ref
   if (!isInstantDef(def) && !hasFlashDef(def) && !canActAtSorcerySpeed(s, player)) {
     return { code: 'sorceryTiming' };
   }
-  if (!canAfford(s, player, getCost(card.def))) return { code: 'notEnoughMana' };
+  if (!canAfford(s, player, castCost(s, player, cardId))) return { code: 'notEnoughMana' };
   return null;
 }
 

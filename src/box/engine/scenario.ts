@@ -1,5 +1,6 @@
 import { defaultPlayerNames } from './describe';
 import { advance, emptyState } from './game';
+import { syncNemesisLife } from './nemesis';
 import { getCardDef, hasCardDef } from './registry';
 import { isRelicDef } from './state';
 import type { CardId, GameState, PlayerId, Zone } from './types';
@@ -26,6 +27,7 @@ export interface ScenarioPlayer {
   landsPlayed?: number;
   extraLands?: number;
   damagedThisTurn?: boolean;
+  nemesis?: boolean;
 }
 
 export interface ScenarioSpec {
@@ -117,7 +119,9 @@ export function createScenario(spec: ScenarioSpec): GameState {
     for (const entry of ps.library ?? DEFAULT_LIBRARY) place(player, 'library', entry);
     for (const entry of ps.graveyard ?? []) place(player, 'graveyard', entry);
     for (const entry of ps.relics ?? []) place(player, 'command', entry);
+    if (ps.nemesis) state.nemesis = true;
   }
+  syncNemesisLife(s);
 
   advance(s);
   return s;

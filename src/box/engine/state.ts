@@ -1,4 +1,5 @@
 import { canPay, choosePayment, manaValue, parseCost, type ManaSource } from './mana';
+import { changeNemesisLife, nemesisDestination, recursOnDeath } from './nemesis';
 import { getCardDef, getCost } from './registry';
 import type {
   CardDef,
@@ -269,9 +270,12 @@ export function createToken(s: GameState, defId: string, controller: PlayerId): 
   return id;
 }
 
-export function moveCard(s: GameState, id: CardId, to: Zone, options: MoveOptions = {}): void {
+export function moveCard(s: GameState, id: CardId, destination: Zone, requested: MoveOptions = {}): void {
   const card = getCard(s, id);
   const from = card.zone;
+  const redirect = nemesisDestination(s, id, from, destination);
+  const to = redirect?.to ?? destination;
+  const options = redirect ? { ...requested, toBottom: redirect.toBottom } : requested;
   const def = getCardDef(card.def);
   removeFromList(zoneList(s, card, from), id);
   const previousController = card.controller;
@@ -310,6 +314,7 @@ export function moveCard(s: GameState, id: CardId, to: Zone, options: MoveOption
     removeFromList(zoneList(s, card, to), id);
     card.zone = 'gone';
   }
+  if (recursOnDeath(s, id, from, to)) moveCard(s, id, 'library', { toBottom: true });
 }
 
 function loseTargetsOn(s: GameState, id: CardId): void {
@@ -364,6 +369,10 @@ export function drawCards(s: GameState, player: PlayerId, count: number): void {
 export function changeLife(s: GameState, player: PlayerId, delta: number): void {
   if (delta === 0) return;
   const ps = s.players[player];
+  if (ps.nemesis) {
+    changeNemesisLife(s, player, delta);
+    return;
+  }
   ps.life += delta;
   s.events.push({ t: 'life', player, delta, life: ps.life });
   if (delta > 0) for (const id of triggerSources(s, player)) queueTriggers(s, id, 'lifeGain', player);

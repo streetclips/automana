@@ -1,3 +1,4 @@
+import { nemesisDiscard, resolveThreatSpell } from './nemesis';
 import { getCardDef } from './registry';
 import { shuffleInPlace } from './rng';
 import {
@@ -226,6 +227,7 @@ export function executeEffects(s: GameState, effects: Effect[], ctx: EffectConte
         break;
       case 'discard': {
         const player = playerOf(ctx, effect.who);
+        if (nemesisDiscard(s, player, effect.amount)) break;
         const count = Math.min(effect.amount, s.players[player].hand.length);
         if (count > 0) s.pending = { kind: 'discard', player, count, source: ctx.source };
         break;
@@ -270,6 +272,7 @@ export function targetLegality(s: GameState, item: StackItem, specs: TargetSpec[
 export function resolveTopOfStack(s: GameState): void {
   const item = s.stack.pop();
   if (!item) return;
+  if (resolveThreatSpell(s, item)) return;
   const source = stackItemSource(item);
 
   if (item.kind === 'spell' && isPermanentDef(defOf(s, source))) {

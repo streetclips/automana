@@ -14,7 +14,10 @@
     "sim": "tsx src/sim/batch/run.ts",
     "sim:trace": "tsx src/sim/trace.ts",
     "sim:test": "tsx src/sim/selftest.ts",
-    "sim:tune": "tsx src/sim/batch/tune.ts"
+    "sim:tune": "tsx src/sim/batch/tune.ts",
+    "box": "tsx src/box/sim.ts",
+    "box:trace": "tsx src/box/trace.ts",
+    "box:test:nemesis": "tsx src/box/nemesis/selftest.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",

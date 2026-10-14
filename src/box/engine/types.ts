@@ -120,6 +120,24 @@ export interface SpellAbility {
   effects: Effect[];
 }
 
+export type ThreatEffect =
+  | { kind: 'damageEach'; creatures: number; player: number }
+  | { kind: 'shrinkTarget'; amount: number; fallback: number }
+  | { kind: 'reanimate'; count: number; fallback: number; damage: boolean }
+  | { kind: 'reveal'; count: number }
+  | { kind: 'shrinkAll'; amount: number }
+  | { kind: 'counterNext' }
+  | { kind: 'rebound' }
+  | { kind: 'randomDiscard'; fallback: number }
+  | { kind: 'tapAll' };
+
+export interface ThreatInfo {
+  tier: 1 | 2 | 3;
+  effect?: ThreatEffect;
+  recur?: boolean;
+  tax?: number;
+}
+
 export interface CardDef {
   id: string;
   name: string;
@@ -138,6 +156,7 @@ export interface CardDef {
   triggers?: TriggeredAbility[];
   activated?: ActivatedAbility[];
   flavor?: string;
+  threat?: ThreatInfo;
 }
 
 export type Zone = 'library' | 'hand' | 'battlefield' | 'graveyard' | 'command' | 'stack' | 'gone';
@@ -174,6 +193,9 @@ export interface PlayerState {
   extraLandsThisTurn: number;
   openingHand?: number;
   drawOnFirstTurn?: boolean;
+  nemesis?: boolean;
+  spellsCastThisTurn?: number;
+  overflows?: number;
 }
 
 export type Step =
