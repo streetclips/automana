@@ -82,6 +82,23 @@ const TEST_CARDS: CardDef[] = [
 for (const def of TEST_CARDS) registerCard(def);
 
 let passed = 0;
+const PINNED_THREATS: Record<string, [number, number]> = {
+  nm_ash_imp: [1, 2],
+  nm_magma_sentinel: [1, 5],
+  nm_cinderclaw_brute: [4, 3],
+  nm_lava_behemoth: [5, 6],
+  nm_scorch_fiend: [5, 4],
+  nm_armored_drone: [2, 3],
+  nm_darting_wasp: [2, 2],
+  nm_ravenous_larva: [1, 2],
+  nm_wandering_skeleton: [1, 2],
+  nm_water_elemental: [3, 5],
+  nm_refraction_golem: [1, 5],
+};
+
+for (const [id, [power, toughness]] of Object.entries(PINNED_THREATS))
+  registerCard({ ...getCardDef(id), id: id.replace('nm_', 'zt_'), power, toughness });
+
 function test(name: string, run: () => void): void {
   run();
   passed += 1;
@@ -154,7 +171,7 @@ test('the player takes the first turn and skips that draw', () => {
 
 test('damage moves the cards right behind the Omen to the Ruin', () => {
   let s = scenario({
-    players: [{ hand: ['zz_bolt'], battlefield: ['zz_land'] }, { library: ['nm_ash_imp', 'nm_cinderclaw_brute', 'nm_lava_behemoth', 'nm_scorch_fiend'] }],
+    players: [{ hand: ['zz_bolt'], battlefield: ['zz_land'] }, { library: ['zt_ash_imp', 'zt_cinderclaw_brute', 'zt_lava_behemoth', 'zt_scorch_fiend'] }],
   });
   assert.equal(s.players[1].life, 3);
   const [omen, first, second, third] = s.players[1].library;
@@ -168,7 +185,7 @@ test('damage moves the cards right behind the Omen to the Ruin', () => {
 test('Nemesis spells go face-down to the bottom after resolving', () => {
   let s = scenario({
     activePlayer: 1,
-    players: [{ battlefield: ['zz_bear'] }, { hand: ['nm_searing_breath'], library: ['nm_ash_imp', 'nm_cinderclaw_brute'] }],
+    players: [{ battlefield: ['zz_bear'] }, { hand: ['nm_searing_breath'], library: ['zt_ash_imp', 'zt_cinderclaw_brute'] }],
   });
   const breath = idOf(s, 'nm_searing_breath');
   s = act(s, nemesisAction(s, 1));
@@ -182,20 +199,20 @@ test('Nemesis spells go face-down to the bottom after resolving', () => {
 test('overflow: a fifth creature hits the player for its power and goes to the bottom', () => {
   const s = scenario({
     activePlayer: 1,
-    players: [{}, { battlefield: ['nm_ash_imp', 'nm_ash_imp', 'nm_ash_imp', 'nm_magma_sentinel'], library: ['nm_lava_behemoth', 'nm_ash_imp', 'nm_cinderclaw_brute'] }],
+    players: [{}, { battlefield: ['zt_ash_imp', 'zt_ash_imp', 'zt_ash_imp', 'zt_magma_sentinel'], library: ['zt_lava_behemoth', 'zt_ash_imp', 'zt_cinderclaw_brute'] }],
   });
-  const behemoth = idOf(s, 'nm_lava_behemoth');
+  const behemoth = idOf(s, 'zt_lava_behemoth');
   const t = cloneState(s);
   nemesisDrawStep(t, 1);
-  assert.equal(t.players[0].life, 15);
+  assert.equal(t.players[0].life, 20 - (getCardDef('zt_lava_behemoth').power ?? 0));
   assert.equal(t.players[1].library.at(-1), behemoth);
   assert.equal(t.players[1].hand.length, 0);
   assert.equal(t.players[1].overflows, 1);
 });
 
 test('attack rule: stay home only when a blocker could kill and survive', () => {
-  const base = { activePlayer: 1 as const, players: [{}, { battlefield: ['nm_cinderclaw_brute'] }] as ScenarioSpec['players'] };
-  const brute = (s: GameState): string => idOf(s, 'nm_cinderclaw_brute');
+  const base = { activePlayer: 1 as const, players: [{}, { battlefield: ['zt_cinderclaw_brute'] }] as ScenarioSpec['players'] };
+  const brute = (s: GameState): string => idOf(s, 'zt_cinderclaw_brute');
   let s = scenario({ ...base, players: [{ battlefield: ['zz_bear'] }, base.players[1]] });
   assert.deepEqual(nemesisAttackers(s, 1), [brute(s)]);
   s = scenario({ ...base, players: [{ battlefield: ['zz_giant'] }, base.players[1]] });
@@ -206,8 +223,8 @@ test('attack rule: stay home only when a blocker could kill and survive', () => 
   assert.deepEqual(nemesisAttackers(s, 1), [brute(s)]);
   s = scenario({ ...base, players: [{ battlefield: ['zz_lancer'] }, base.players[1]] });
   assert.deepEqual(nemesisAttackers(s, 1), []);
-  s = scenario({ activePlayer: 1, players: [{ battlefield: ['zz_giant'] }, { battlefield: ['nm_ash_imp'] }] });
-  assert.deepEqual(nemesisAttackers(s, 1), [idOf(s, 'nm_ash_imp')]);
+  s = scenario({ activePlayer: 1, players: [{ battlefield: ['zz_giant'] }, { battlefield: ['zt_ash_imp'] }] });
+  assert.deepEqual(nemesisAttackers(s, 1), [idOf(s, 'zt_ash_imp')]);
 });
 
 function attackWith(spec: ScenarioSpec, attackers: string[]): GameState {
@@ -219,28 +236,28 @@ function attackWith(spec: ScenarioSpec, attackers: string[]): GameState {
 
 test('safe block takes the attacker it can kill and survive', () => {
   const s = attackWith(
-    { players: [{ battlefield: ['zz_bear', 'zz_giant'] }, { battlefield: ['nm_water_elemental'] }] },
+    { players: [{ battlefield: ['zz_bear', 'zz_giant'] }, { battlefield: ['zt_water_elemental'] }] },
     ['zz_bear', 'zz_giant'],
   );
-  assert.deepEqual(nemesisBlocks(s, 1), [{ blocker: idOf(s, 'nm_water_elemental'), attacker: idOf(s, 'zz_bear') }]);
+  assert.deepEqual(nemesisBlocks(s, 1), [{ blocker: idOf(s, 'zt_water_elemental'), attacker: idOf(s, 'zz_bear') }]);
 });
 
 test('trade blocks the strongest attacker it can kill even if it dies', () => {
   const s = attackWith(
-    { players: [{ battlefield: ['zz_knight', 'zz_giant'] }, { battlefield: ['nm_cinderclaw_brute'] }] },
+    { players: [{ battlefield: ['zz_knight', 'zz_giant'] }, { battlefield: ['zt_cinderclaw_brute'] }] },
     ['zz_knight', 'zz_giant'],
   );
-  assert.deepEqual(nemesisBlocks(s, 1), [{ blocker: idOf(s, 'nm_cinderclaw_brute'), attacker: idOf(s, 'zz_knight') }]);
+  assert.deepEqual(nemesisBlocks(s, 1), [{ blocker: idOf(s, 'zt_cinderclaw_brute'), attacker: idOf(s, 'zz_knight') }]);
 });
 
 test('desperation chump-blocks only when the damage would be lethal', () => {
   const lethal = attackWith(
-    { players: [{ battlefield: ['zz_giant'] }, { battlefield: ['nm_ash_imp'], library: ['nm_ash_imp', 'nm_ash_imp', 'nm_ash_imp'] }] },
+    { players: [{ battlefield: ['zz_giant'] }, { battlefield: ['zt_ash_imp'], library: ['zt_ash_imp', 'zt_ash_imp', 'zt_ash_imp'] }] },
     ['zz_giant'],
   );
-  assert.deepEqual(nemesisBlocks(lethal, 1), [{ blocker: idOf(lethal, 'nm_ash_imp'), attacker: idOf(lethal, 'zz_giant') }]);
+  assert.deepEqual(nemesisBlocks(lethal, 1), [{ blocker: idOf(lethal, 'zt_ash_imp'), attacker: idOf(lethal, 'zz_giant') }]);
   const safe = attackWith(
-    { players: [{ battlefield: ['zz_giant'] }, { battlefield: ['nm_ash_imp'], library: Array.from({ length: 12 }, () => 'nm_ash_imp') }] },
+    { players: [{ battlefield: ['zz_giant'] }, { battlefield: ['zt_ash_imp'], library: Array.from({ length: 12 }, () => 'zt_ash_imp') }] },
     ['zz_giant'],
   );
   assert.deepEqual(nemesisBlocks(safe, 1), []);
@@ -257,9 +274,9 @@ test('Nemesis targets: the strongest creature it can target, else the player', (
 
 test('bouncing a Nemesis creature makes it the new Omen', () => {
   let s = scenario({
-    players: [{ hand: ['zz_unsummon'], battlefield: ['zz_land'] }, { battlefield: ['nm_lava_behemoth'], library: ['nm_ash_imp', 'nm_cinderclaw_brute'] }],
+    players: [{ hand: ['zz_unsummon'], battlefield: ['zz_land'] }, { battlefield: ['zt_lava_behemoth'], library: ['zt_ash_imp', 'zt_cinderclaw_brute'] }],
   });
-  const behemoth = idOf(s, 'nm_lava_behemoth');
+  const behemoth = idOf(s, 'zt_lava_behemoth');
   const [omen] = s.players[1].library;
   s = act(s, { type: 'cast', player: 0, card: idOf(s, 'zz_unsummon'), targets: [{ card: behemoth }] });
   s = resolveStack(s);
@@ -270,7 +287,7 @@ test('bouncing a Nemesis creature makes it the new Omen', () => {
 
 test('making the Nemesis discard sends the cards behind the Omen to the Ruin', () => {
   let s = scenario({
-    players: [{ hand: ['zz_mind_rot'], battlefield: ['zz_land'] }, { library: ['nm_ash_imp', 'nm_cinderclaw_brute', 'nm_scorch_fiend', 'nm_lava_behemoth'] }],
+    players: [{ hand: ['zz_mind_rot'], battlefield: ['zz_land'] }, { library: ['zt_ash_imp', 'zt_cinderclaw_brute', 'zt_scorch_fiend', 'zt_lava_behemoth'] }],
   });
   const [omen, first, second, third] = s.players[1].library;
   s = act(s, { type: 'cast', player: 0, card: idOf(s, 'zz_mind_rot'), targets: [] });
@@ -282,7 +299,7 @@ test('making the Nemesis discard sends the cards behind the Omen to the Ruin', (
 test('Counterspell waits for the next spell, counters it, then goes to the bottom', () => {
   let s = scenario({
     activePlayer: 1,
-    players: [{ hand: ['zz_opt', 'zz_opt'], battlefield: ['zz_land', 'zz_land'], library: ['zz_land', 'zz_land', 'zz_land'] }, { hand: ['nm_counterspell'], library: ['nm_ash_imp', 'nm_cinderclaw_brute'] }],
+    players: [{ hand: ['zz_opt', 'zz_opt'], battlefield: ['zz_land', 'zz_land'], library: ['zz_land', 'zz_land', 'zz_land'] }, { hand: ['nm_counterspell'], library: ['zt_ash_imp', 'zt_cinderclaw_brute'] }],
   });
   const counter = idOf(s, 'nm_counterspell');
   s = act(s, nemesisAction(s, 1));
@@ -303,12 +320,12 @@ test('Counterspell waits for the next spell, counters it, then goes to the botto
 
 test('Refraction Golem: the first spell each turn costs 1 more', () => {
   let s = scenario({
-    players: [{ hand: ['zz_opt', 'zz_opt'], battlefield: ['zz_land'] }, { battlefield: ['nm_refraction_golem'] }],
+    players: [{ hand: ['zz_opt', 'zz_opt'], battlefield: ['zz_land'] }, { battlefield: ['zt_refraction_golem'] }],
   });
   const [first] = idsOf(s, 'zz_opt');
   assert.equal(castBlocker(s, 0, first as string)?.code, 'notEnoughMana');
   s = scenario({
-    players: [{ hand: ['zz_opt', 'zz_opt'], battlefield: ['zz_land', 'zz_land', 'zz_land'] }, { battlefield: ['nm_refraction_golem'] }],
+    players: [{ hand: ['zz_opt', 'zz_opt'], battlefield: ['zz_land', 'zz_land', 'zz_land'] }, { battlefield: ['zt_refraction_golem'] }],
   });
   const [a, b] = idsOf(s, 'zz_opt');
   s = act(s, { type: 'cast', player: 0, card: a as string, targets: [] });
@@ -321,20 +338,20 @@ test('Refraction Golem: the first spell each turn costs 1 more', () => {
 test('Brood executes the creatures it reveals and sends the rest to the bottom', () => {
   let s = scenario({
     activePlayer: 1,
-    players: [{}, { hand: ['nm_brood'], library: ['nm_ash_imp', 'nm_armored_drone', 'nm_pheromones', 'nm_darting_wasp'] }],
+    players: [{}, { hand: ['nm_brood'], library: ['zt_ash_imp', 'zt_armored_drone', 'nm_pheromones', 'zt_darting_wasp'] }],
   });
-  const drone = idOf(s, 'nm_armored_drone');
+  const drone = idOf(s, 'zt_armored_drone');
   const pheromones = idOf(s, 'nm_pheromones');
   const brood = idOf(s, 'nm_brood');
   s = act(s, nemesisAction(s, 1));
   s = resolveStack(s);
   assert.equal(getCard(s, drone).zone, 'battlefield');
   assert.deepEqual(s.players[1].library.slice(-2), [pheromones, brood]);
-  assert.equal(s.players[1].library[1], idOf(s, 'nm_darting_wasp'));
+  assert.equal(s.players[1].library[1], idOf(s, 'zt_darting_wasp'));
 });
 
 test('Egg Laying executes one creature, or sends a spell to the bottom', () => {
-  let s = scenario({ activePlayer: 1, players: [{}, { hand: ['nm_egg_laying'], library: ['nm_ash_imp', 'nm_insect_plague', 'nm_armored_drone'] }] });
+  let s = scenario({ activePlayer: 1, players: [{}, { hand: ['nm_egg_laying'], library: ['zt_ash_imp', 'nm_insect_plague', 'zt_armored_drone'] }] });
   const plague = idOf(s, 'nm_insect_plague');
   s = act(s, nemesisAction(s, 1));
   s = resolveStack(s);
@@ -345,13 +362,13 @@ test('Egg Laying executes one creature, or sends a spell to the bottom', () => {
 test('Uprising returns the two strongest creatures from the Ruin; Exhume with an empty Ruin costs 2 life', () => {
   let s = scenario({
     activePlayer: 1,
-    players: [{}, { hand: ['nm_uprising'], graveyard: ['nm_ash_imp', 'nm_scorch_fiend', 'nm_cinderclaw_brute'], library: ['nm_ash_imp', 'nm_ash_imp'] }],
+    players: [{}, { hand: ['nm_uprising'], graveyard: ['zt_ash_imp', 'zt_scorch_fiend', 'zt_cinderclaw_brute'], library: ['zt_ash_imp', 'zt_ash_imp'] }],
   });
   s = act(s, nemesisAction(s, 1));
   s = resolveStack(s);
   const back = s.players[1].battlefield.map((id) => getCard(s, id).def).sort();
-  assert.deepEqual(back, ['nm_cinderclaw_brute', 'nm_scorch_fiend']);
-  s = scenario({ activePlayer: 1, players: [{}, { hand: ['nm_exhume'], library: ['nm_ash_imp', 'nm_ash_imp'] }] });
+  assert.deepEqual(back, ['zt_cinderclaw_brute', 'zt_scorch_fiend']);
+  s = scenario({ activePlayer: 1, players: [{}, { hand: ['nm_exhume'], library: ['zt_ash_imp', 'zt_ash_imp'] }] });
   s = act(s, nemesisAction(s, 1));
   s = resolveStack(s);
   assert.equal(s.players[0].life, 18);
@@ -360,9 +377,9 @@ test('Uprising returns the two strongest creatures from the Ruin; Exhume with an
 test('Nemesis lifelink brings Ruin cards back face-down', () => {
   let s = scenario({
     activePlayer: 1,
-    players: [{}, { battlefield: ['nm_ravenous_larva'], graveyard: ['nm_cinderclaw_brute'], library: ['nm_ash_imp', 'nm_ash_imp'] }],
+    players: [{}, { battlefield: ['zt_ravenous_larva'], graveyard: ['zt_cinderclaw_brute'], library: ['zt_ash_imp', 'zt_ash_imp'] }],
   });
-  const brute = idOf(s, 'nm_cinderclaw_brute');
+  const brute = idOf(s, 'zt_cinderclaw_brute');
   s = passAll(s, (state) => state.pending?.kind === 'declareAttackers');
   s = act(s, nemesisAction(s, 1));
   s = passAll(s, (state) => state.step === 'main2');
@@ -373,9 +390,9 @@ test('Nemesis lifelink brings Ruin cards back face-down', () => {
 
 test('Wandering Skeleton goes face-down to the bottom when it dies', () => {
   let s = scenario({
-    players: [{ hand: ['zz_bolt'], battlefield: ['zz_land'] }, { battlefield: ['nm_wandering_skeleton'], library: ['nm_ash_imp', 'nm_ash_imp'] }],
+    players: [{ hand: ['zz_bolt'], battlefield: ['zz_land'] }, { battlefield: ['zt_wandering_skeleton'], library: ['zt_ash_imp', 'zt_ash_imp'] }],
   });
-  const skeleton = idOf(s, 'nm_wandering_skeleton');
+  const skeleton = idOf(s, 'zt_wandering_skeleton');
   s = act(s, { type: 'cast', player: 0, card: idOf(s, 'zz_bolt'), targets: [{ card: skeleton }] });
   s = resolveStack(s);
   assert.equal(s.players[1].library.at(-1), skeleton);

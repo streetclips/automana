@@ -47,14 +47,31 @@ It never responds and never activates abilities. `src/box/nemesis/mind.ts`:
 
 ## Threat decks at Magic scale
 
-Creatures keep their Palmwalker names, effects and quantities, at power − 2 (minimum 1) and toughness − 4 (minimum 1). Spells keep their numbers. Data: `src/box/nemesis/threats.ts`. Each tier lists the cards in it and how many of each.
+Creatures keep their Palmwalker names, effects and quantities. Their sizes were tuned against the 45 pairs of Beginner Box decks (see Tuning): Vorthrax, Vaskara and Morwen at Palmwalker's power − 1 and Palmwalker's toughness, the Mirror Archmage at power − 2 and toughness − 3. Spells keep their numbers. Data: `src/box/nemesis/threats.ts`. Each tier lists the cards in it and how many of each.
 
 | Nemesis | Tier 1 | Tier 2 | Tier 3 |
 |---|---|---|---|
-| Vorthrax | 3 Ash Imp 1/2 flying, Magma Sentinel 1/5 defender, Rain of Cinders, Tyrant's Roar | 2 Searing Breath, 3 Cinderclaw Brute 4/3, 2 Ember Wyrmling 3/3 flying | 2 Vorthrax's Herald 4/4, 2 Scorch Fiend 5/4 trample, Lava Behemoth 5/6, Inferno Charger 4/3 haste, Cinder Rebirth |
-| Vaskara | 3 Ravenous Larva 1/2 lifelink, 2 Pheromones, Insect Plague | 4 Armored Drone 2/3, 3 Darting Wasp 2/2 flying | 2 Shieldbreaker Beetle 2/4 trample, 2 Mantis Queen 3/5, 2 Egg Laying, Brood |
-| Morwen | 4 Wandering Skeleton 1/2, Rotting Zombie 1/4, Plague | 3 Vampire Bat 1/3 flying lifelink, 2 Withering Touch, Soul Drain, Exhume | 2 Morwen's Ghoul 2/3 deathtouch, 2 Deathless Knight 3/5 lifelink, 2 Crypt Horror 4/5 lifelink, Uprising |
-| Mirror Archmage | Crystal Golem 1/5 defender, Mind Theft, Mass Illusion, 2 Counterspell, 2 Rebound | 3 Fragile Illusion 3/2 flying, 3 Water Elemental 3/5 | 2 Guardian Sphinx 3/4 flying, 2 Mirror Djinn 4/3 flying, 2 Tide Serpent 4/6, Refraction Golem 1/5 defender |
+| Vorthrax | 3 Ash Imp 2/6 flying, Magma Sentinel 2/9 defender, Rain of Cinders, Tyrant's Roar | 2 Searing Breath, 3 Cinderclaw Brute 5/7, 2 Ember Wyrmling 4/7 flying | 2 Vorthrax's Herald 5/8, 2 Scorch Fiend 6/8 trample, Lava Behemoth 6/10, Inferno Charger 5/7 haste, Cinder Rebirth |
+| Vaskara | 3 Ravenous Larva 2/6 lifelink, 2 Pheromones, Insect Plague | 4 Armored Drone 3/7, 3 Darting Wasp 3/6 flying | 2 Shieldbreaker Beetle 3/8 trample, 2 Mantis Queen 4/9, 2 Egg Laying, Brood |
+| Morwen | 4 Wandering Skeleton 2/6, Rotting Zombie 2/8, Plague | 3 Vampire Bat 2/7 flying lifelink, 2 Withering Touch, Soul Drain, Exhume | 2 Morwen's Ghoul 3/7 deathtouch, 2 Deathless Knight 4/9 lifelink, 2 Crypt Horror 5/9 lifelink, Uprising |
+| Mirror Archmage | 3 Fragile Illusion 3/3 flying, Crystal Golem 1/6 defender, 2 Counterspell | 3 Water Elemental 3/6, 2 Rebound, Mind Theft, Mass Illusion | 2 Guardian Sphinx 3/5 flying, 2 Mirror Djinn 4/4 flying, 2 Tide Serpent 4/7, Refraction Golem 1/6 defender |
+
+## Tuning
+
+1. **Method.** A grid of power and toughness changes per Nemesis, 20 games per pair and Nemesis, then a check with 100 games per pair and Nemesis on a fresh seed: 18,000 games, seed 3, 0 errors, 152 games/s.
+2. **Knobs.** Power is the coarse one: one point moves the player's win rate by 25 to 35 points. Toughness is the fine one: 3 to 5 points per point of toughness, and Morwen stops responding beyond +4.
+3. **The Archmage needed its tiers changed.** With no attacker in tier 1 it never pressured the player: even at +3/+4 the player won 54%. Its Fragile Illusions moved to tier 1, and Rebound, Mind Theft and Mass Illusion to tier 2.
+4. **Result** (seed 3, 100 games per pair and Nemesis):
+
+| Nemesis | Target | Player wins | Rounds | Player life (wins) | Nemesis life (losses) |
+|---|---:|---:|---:|---:|---:|
+| Vorthrax | 52–58% | 57.5% | 7.4 | 9.5 | 8.1 |
+| Vaskara | 52–58% | 53.9% | 8.1 | 11.1 | 11.9 |
+| Morwen | 42–48% | 48.7% | 7.2 | 8.3 | 10.8 |
+| Mirror Archmage | 42–48% | 47.5% | 7.9 | 9.2 | 8.8 |
+| All | 45–55% | 51.9% | 7.6 | 9.6 | 9.9 |
+
+5. **The deck decides a lot.** The 45 pairs run from 30.0% (Wizards + Goblins) to 77.2% (Cats + Healing), and 17 of them fall more than 10 points from the average. Average over the 9 pairs of each deck: Healing 64.7%, Elves 62.2%, Cats 58.6%, Primal 55.4%, Wizards 51.7%, Undead 48.6%, Inferno 48.5%, Vampires 47.5%, Pirates 44.8%, Goblins 37.3%. Other Threat shapes don't narrow the spread: +2/+0 and +2/+1 on Vorthrax, Vaskara and Morwen give a standard deviation across pairs of 13.9 and 15.1 points, against 12.9 for the tuned sizes on the same seed.
 
 ## The player's AI
 
@@ -64,7 +81,7 @@ Creatures keep their Palmwalker names, effects and quantities, at power − 2 (m
 
 ## Decisions and deviations
 
-1. **Archmage tiers are 7/6/7,** not 6/7/7. A tier belongs to a card definition, and both Rebounds share one, so both are tier 1.
+1. **Tiers are per card definition,** so all copies of a Threat share one tier.
 2. **The new Omen is revealed when the old one is taken,** at the draw step. So the player knows the next Omen while responding to the current one. "The next face-down cards" are always the ones behind the visible Omen: for damage, discard, Brood and Egg Laying.
 3. **A targeted Nemesis spell picks its target on cast.** If the target becomes illegal in response (hexproof, bounce, death), the spell fizzles and goes to the bottom without its fallback.
 4. **Creature Threats are cast as spells,** so the player's counterspells can counter them. A countered Threat goes face-down to the bottom.
@@ -80,6 +97,7 @@ Creatures keep their Palmwalker names, effects and quantities, at power − 2 (m
 |---|---|
 | `npm run box -- --games 100 --seed 1 [--decks a,b] [--nemeses vorthrax,morwen] [--workers N]` | Games per deck × Nemesis in worker threads. Prints the win-rate table and the metrics per Nemesis, and writes `dist/box/box-seed<S>-g<N>.{md,json}`. Every game has its own seed, so results don't depend on the worker count. |
 | `npm run box:trace -- <seed> <deck> <nemesis>` | The log of one game. |
-| `npm run box:test:nemesis` | The rules above as 20 scenario tests. |
+| `npm run box:test:nemesis` | The rules above as 20 scenario tests, on Threats pinned to fixed sizes so tuning never breaks them. |
+| `BOX_THREAT_SIZES=vorthrax=1/2,morwen=0/-1 npm run box` | Adds power/toughness to every creature of the named Nemeses, to probe sizes without editing the deck lists. |
 
-Until the Beginner Box decks are merged, the player decks are mana-duel's 14 (`src/box/nemesis/decks.ts`).
+The player decks are the 45 pairs of Beginner Box decks (`src/box/nemesis/decks.ts`).
