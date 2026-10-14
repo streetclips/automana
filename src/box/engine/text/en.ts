@@ -4,22 +4,29 @@ import type { Refusal } from '../refusals';
 import { isPlayerTarget } from '../targets';
 import {
   COLORS,
+  type AttachmentEffect,
   type CardDef,
   type CardId,
   type CardType,
   type Color,
+  type CostReduction,
+  type Count,
   type Effect,
+  type EffectCondition,
   type GameEvent,
   type GameState,
   type Keyword,
+  type PermanentKind,
   type PlayerId,
+  type SpellFilter,
+  type StaticAbility,
   type Step,
   type Target,
   type TargetSpec,
   type TriggerCondition,
   type TriggerEvent,
 } from '../types';
-import { capitalizeParts, formatModifier, joined, line, lowerFirst, mention, type TextPart } from './parts';
+import { capitalize, capitalizeParts, formatModifier, joined, line, lowerFirst, mention, type TextPart } from './parts';
 import {
   activatedText,
   describeState,
@@ -50,6 +57,8 @@ const KEYWORD_NAMES: Record<Keyword, string> = {
   hexproof: 'Hexproof',
   evolve: 'Evolve',
   prowess: 'Prowess',
+  indestructible: 'Indestructible',
+  ward: 'Ward {2}',
 };
 
 const KEYWORD_REMINDERS: Record<Keyword, string> = {
@@ -70,6 +79,8 @@ const KEYWORD_REMINDERS: Record<Keyword, string> = {
   hexproof: "Can't be the target of spells or abilities your opponents control.",
   evolve: 'Gets a +1/+1 counter whenever another creature with greater power or toughness enters under your control.',
   prowess: 'Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.',
+  indestructible: 'Damage and effects that say "destroy" don\'t destroy it.',
+  ward: 'Whenever this creature becomes the target of a spell or ability an opponent controls, counter it unless that player pays {2}.',
 };
 
 const STEP_NAMES: Record<Step, string> = {
@@ -92,6 +103,8 @@ const STEP_NAMES: Record<Step, string> = {
 const TYPE_NAMES: Record<CardType, string> = {
   land: 'Land',
   creature: 'Creature',
+  artifact: 'Artifact',
+  enchantment: 'Enchantment',
   instant: 'Instant',
   sorcery: 'Sorcery',
   relic: 'Relic',
@@ -150,17 +163,43 @@ function formatPump(power: number, toughness: number, keywords: readonly Keyword
 
 function tokenDescription(defId: string, amount: number): string {
   const token = getCardDef(defId);
+  if (!token.types.includes('creature')) return `${(token.subtypes ?? [token.name]).join(' ')} ${plural(amount, 'token', 'tokens')}`;
   const colors = token.colors?.length ? andList(token.colors.map((color) => COLOR_WORDS[color])) : 'colorless';
   const subtypes = token.subtypes?.length ? ` ${token.subtypes.join(' ')}` : '';
   const keywords = token.keywords?.length ? ` with ${keywordList(token.keywords)}` : '';
   return `${token.power}/${token.toughness} ${colors}${subtypes} creature ${plural(amount, 'token', 'tokens')}${keywords}`;
 }
 
+function pluralSubtype(subtype: string): string {
+  if (subtype === 'Elf') return 'Elves';
+  return `${subtype}s`;
+}
+
 function creatureNoun(spec: Extract<TargetSpec, { kind: 'creature' }>): string {
-  const noun = spec.tapped ? 'target tapped creature' : 'target creature';
-  if (spec.controller === 'you') return `${noun} you control`;
-  if (spec.controller === 'opponent') return `${noun} you don't control`;
-  return noun;
+  const words = [spec.other ? 'another target' : 'target'];
+  if (spec.tapped) words.push('tapped');
+  if (spec.combat === 'attacking') words.push('attacking');
+  if (spec.combat === 'attackingOrBlocking') words.push('attacking or blocking');
+  words.push(spec.subtype ?? 'creature');
+  if (spec.maxPower !== undefined) words.push(`with power ${spec.maxPower} or less`);
+  if (spec.controller === 'you') words.push('you control');
+  if (spec.controller === 'opponent') words.push('an opponent controls');
+  return words.join(' ');
+}
+
+const PERMANENT_WORDS: Record<PermanentKind, string> = {
+  artifact: 'artifact',
+  enchantment: 'enchantment',
+  creature: 'creature',
+  flyingCreature: 'creature with flying',
+  land: 'land',
+  nonland: 'nonland permanent',
+};
+
+function permanentNoun(spec: Extract<TargetSpec, { kind: 'permanent' }>): string {
+  const kinds = spec.types?.length ? andList(spec.types.map((kind) => PERMANENT_WORDS[kind]), 'or') : 'permanent';
+  const owner = spec.controller === 'you' ? ' you control' : spec.controller === 'opponent' ? ' an opponent controls' : '';
+  return `target ${kinds}${owner}`;
 }
 
 function targetPhrase(spec: TargetSpec): string {
@@ -169,12 +208,18 @@ function targetPhrase(spec: TargetSpec): string {
       return 'any target';
     case 'creature':
       return creatureNoun(spec);
+    case 'permanent':
+      return permanentNoun(spec);
     case 'player':
       if (spec.controller === 'opponent') return 'target opponent';
       if (spec.controller === 'you') return 'you';
       return 'target player';
     case 'spell':
       return 'target spell';
+    case 'graveyard': {
+      const kind = spec.subtype ? `${spec.subtype} ${spec.cards}` : spec.cards;
+      return `target ${kind} card from your graveyard`;
+    }
   }
 }
 
@@ -187,12 +232,38 @@ function repeatedPhrase(spec: TargetSpec): string {
   switch (spec.kind) {
     case 'creature':
       return 'that creature';
+    case 'permanent':
+      return 'that permanent';
     case 'player':
       return 'that player';
     case 'spell':
       return 'that spell';
     case 'any':
       return 'that target';
+    case 'graveyard':
+      return 'that card';
+  }
+}
+
+function countPhrase(count: Count): string {
+  switch (count.kind) {
+    case 'attacking':
+      return 'attacking creature';
+    case 'creatures':
+      return `${count.subtype ?? 'creature'} you control`;
+    case 'instantsAndSorceriesInGraveyard':
+      return 'instant and sorcery card in your graveyard';
+  }
+}
+
+function countNumber(count: Count): string {
+  switch (count.kind) {
+    case 'attacking':
+      return 'the number of attacking creatures';
+    case 'creatures':
+      return `the number of ${count.subtype ? pluralSubtype(count.subtype) : 'creatures'} you control`;
+    case 'instantsAndSorceriesInGraveyard':
+      return 'the number of instant and sorcery cards in your graveyard';
   }
 }
 
@@ -248,6 +319,8 @@ function gainsText(verb: 'gets' | 'get', power: number, toughness: number, keywo
 function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext): string {
   switch (effect.kind) {
     case 'damage':
+      if (effect.times)
+        return `${context.subject} deals damage to ${ref(effect.to, 'object')} equal to ${countNumber(effect.times)}.`;
       return `${context.subject} deals ${damageAmount(effect.amount)} to ${ref(effect.to, 'object')}.`;
     case 'pump':
       return `${ref(effect.to, 'subject')} ${gainsText('gets', effect.power, effect.toughness, effect.keywords)} until end of turn.`;
@@ -260,6 +333,7 @@ function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext
     case 'draw':
       return `Draw ${cardsCount(effect.amount)}.`;
     case 'gainLife':
+      if (effect.times) return `You gain ${lifeAmount(effect.amount)} for each ${countPhrase(effect.times)}.`;
       return `You gain ${lifeAmount(effect.amount)}.`;
     case 'loseLife':
       return effect.who === 'opponent'
@@ -289,6 +363,32 @@ function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext
       return `You may play ${extraLandsText(effect.amount)} this turn.`;
     case 'searchLand':
       return searchLandSentence(effect.land, effect.battlefield, effect.hand ?? 0, effect.tapped ?? false);
+    case 'pumpAttackers':
+      return 'Attacking creatures you control get +X/+X until end of turn, where X is the number of attacking creatures.';
+    case 'distributeCounters':
+      return `Distribute ${countWord(effect.amount)} +1/+1 counters among one, two, or three target creatures, then double the number of +1/+1 counters on each of those creatures.`;
+    case 'exile':
+      return `Exile ${ref(effect.to, 'object')}.`;
+    case 'exileIfDies':
+      return `If ${ref(effect.to, 'subject')} would die this turn, exile it instead.`;
+    case 'mill':
+      return `Mill ${cardsCount(effect.amount)}.`;
+    case 'scry':
+      return `Scry ${effect.amount}.`;
+    case 'returnToHand':
+      return `Return ${ref(effect.to, 'object')} to your hand.`;
+    case 'returnSelf':
+      return `Return this card from your graveyard to the battlefield${effect.tapped ? ' tapped' : ''}.`;
+    case 'attach':
+      return `Attach it to ${ref(effect.to, 'object')}.`;
+    case 'tap':
+      return `Tap ${ref(effect.to, 'object')}.`;
+    case 'cantBlock':
+      return `${ref(effect.to, 'subject')} can't block this turn.`;
+    case 'unblockable':
+      return `${ref(effect.to, 'subject')} can't be blocked this turn.`;
+    case 'doom':
+      return `When ${ref(effect.to, 'subject')} deals combat damage this turn, sacrifice it.`;
   }
 }
 
@@ -303,6 +403,12 @@ const TRIGGER_OPENERS: Record<TriggerEvent, string> = {
   damagesPlayer: 'Whenever this creature deals combat damage to a player',
   lifeGain: 'Whenever you gain life',
   landfall: 'Landfall — Whenever a land you control enters',
+  beginCombat: 'At the beginning of combat on your turn',
+  endStep: 'At the beginning of your end step',
+  youAttack: 'Whenever one or more creatures you control attack',
+  draw: 'Whenever you draw a card',
+  secondDraw: 'Whenever you draw your second card each turn',
+  allyCounters: 'Whenever one or more +1/+1 counters are put on another non-Hydra creature you control',
 };
 
 const RELIC_OPENERS: Partial<Record<TriggerEvent, string>> = {
@@ -313,7 +419,94 @@ const RELIC_OPENERS: Partial<Record<TriggerEvent, string>> = {
 const TRIGGER_CONDITIONS: Record<TriggerCondition, string> = {
   opponentDamaged: 'if an opponent was dealt damage this turn',
   emptyHand: 'if you have no cards in hand',
+  opponentLostLife: 'if an opponent lost life this turn',
+  attackedThisTurn: 'if you attacked this turn',
+  threeCreatures: 'if you control three or more creatures',
+  anotherElf: 'if you control another Elf',
+  opponentsTurn: "if it's an opponent's turn",
 };
+
+function costReductionLine(reduction: CostReduction): string {
+  if ('per' in reduction) return `This spell costs {1} less to cast for each ${countPhrase(reduction.per)}.`;
+  return `This spell costs {${reduction.amount}} less to cast if you control ${withArticle(reduction.ifControl)}.`;
+}
+
+function enchantLine(spec: TargetSpec): string {
+  return spec.kind === 'permanent' && spec.types?.includes('land') ? 'Enchant land' : 'Enchant creature';
+}
+
+function staticLine(ability: StaticAbility): string {
+  switch (ability.kind) {
+    case 'anthem': {
+      const subjects = ability.subtypes?.length ? andList(ability.subtypes.map(pluralSubtype)) : 'creatures';
+      const who = `${ability.other ? 'Other ' : ''}${ability.attacking ? 'attacking ' : ''}${subjects} you control`;
+      const power = ability.power ?? 0;
+      const toughness = ability.toughness ?? 0;
+      const keywords = ability.keywords ?? [];
+      if (power === 0 && toughness === 0) return `${capitalize(who)} have ${keywordList(keywords)}.`;
+      const has = keywords.length ? ` and have ${keywordList(keywords)}` : '';
+      return `${capitalize(who)} get ${formatModifier(power, toughness)}${has}.`;
+    }
+    case 'keywordIf': {
+      const keyword = lowerFirst(KEYWORD_NAMES[ability.keyword]);
+      if (ability.condition === 'attacking') return `This creature has ${keyword} as long as it's attacking.`;
+      if (ability.condition === 'controlDragon') return `As long as you control a Dragon, this creature has ${keyword}.`;
+      return `As long as you have 25 or more life, this creature has ${keyword}.`;
+    }
+    case 'cantBlock':
+      return "This creature can't block.";
+    case 'spellDiscount':
+      return `${ability.subtype} spells you cast cost {${ability.amount}} less to cast.`;
+  }
+}
+
+function attachmentLine(def: CardDef, attachment: AttachmentEffect): string {
+  if (attachment.landMana) return `Enchanted land has "{T}: Add ${countWord(attachment.landMana)} mana of any one color."`;
+  const noun = def.enchant ? 'Enchanted creature' : 'Equipped creature';
+  const parts: string[] = [];
+  if (attachment.loseAbilities) parts.push('loses all abilities');
+  if (attachment.base) parts.push(`has base power and toughness ${attachment.base[0]}/${attachment.base[1]}`);
+  const power = attachment.power ?? 0;
+  const toughness = attachment.toughness ?? 0;
+  if (power !== 0 || toughness !== 0) parts.push(`gets ${formatModifier(power, toughness)}`);
+  if (attachment.keywords?.length) parts.push(`has ${keywordList(attachment.keywords)}`);
+  if (attachment.cantAttack && attachment.cantBlock) parts.push("can't attack or block");
+  else if (attachment.cantBlock) parts.push("can't block");
+  if (attachment.doesntUntap) parts.push("doesn't untap during its controller's untap step");
+  const sentence = `${noun} ${andList(parts)}.`;
+  return attachment.yourTurn ? `During your turn, ${lowerFirst(sentence)}` : sentence;
+}
+
+function entersOpener(def: CardDef): string {
+  if (def.types.includes('creature')) return 'When this creature enters';
+  if (def.enchant) return 'When this Aura enters';
+  if (def.subtypes?.includes('Equipment')) return 'When this Equipment enters';
+  if (def.types.includes('enchantment')) return 'When this enchantment enters';
+  return 'When this artifact enters';
+}
+
+function spellOpener(filter: SpellFilter): string {
+  if (filter === 'any') return 'Whenever you cast a spell';
+  if (filter === 'noncreatureOrDragon') return 'Whenever you cast a noncreature or Dragon spell';
+  return TRIGGER_OPENERS.spell;
+}
+
+function subtypeOpener(event: TriggerEvent, subtype: string): string {
+  if (event === 'allyDies') return `Whenever another ${subtype} you control dies`;
+  if (event === 'allyEnters') return `Whenever another ${subtype} you control enters`;
+  return TRIGGER_OPENERS[event];
+}
+
+function conditionPrefix(condition: EffectCondition, spec: TargetSpec | undefined): string {
+  if ('kicked' in condition) return 'If this spell was kicked, ';
+  if ('targetSubtype' in condition) {
+    return spec?.kind === 'graveyard'
+      ? `If it's ${withArticle(condition.targetSubtype)} card, `
+      : `If that creature is ${withArticle(condition.targetSubtype)}, `;
+  }
+  if ('payMana' in condition) return `You may pay ${condition.payMana}. If you do, `;
+  return `You may pay ${lifeAmount(condition.payLife)}. If you do, `;
+}
 
 function manaChoice(colors: readonly Color[]): string {
   if (colors.length === COLORS.length) return 'one mana of any color';
@@ -438,6 +631,16 @@ function describeEventParts(s: GameState, event: GameEvent, viewer: PlayerId): T
     }
     case 'extraLands':
       return line`${act(event.player, viewer, 'may', 'may')} play ${extraLandsText(event.amount)} this turn.`;
+    case 'exile':
+      return line`${capitalizeParts(cardRefParts(s, event.card, viewer))} is exiled.`;
+    case 'mill':
+      return line`${act(event.player, viewer, 'mill', 'mills')} ${mention(s, event.card)}.`;
+    case 'attach':
+      return line`${capitalizeParts(cardRefParts(s, event.card, viewer))} is attached to ${cardRefParts(s, event.to, viewer)}.`;
+    case 'scry':
+      return line`${act(event.player, viewer, 'scry', 'scries')} ${event.top + event.bottom}.`;
+    case 'sacrifice':
+      return line`${act(event.player, viewer, 'sacrifice', 'sacrifices')} ${mention(s, event.card)}.`;
     case 'resolve':
     case 'enter':
       return null;
@@ -532,7 +735,19 @@ function refusal(refused: Refusal): string {
       return `${refused.blocker} can't block ${refused.attacker}`;
     case 'menace':
       return `${refused.attacker} has menace and can't be blocked except by two or more creatures`;
+    case 'abilityUsed':
+      return 'that ability can only be activated once';
+    case 'invalidSacrifice':
+      return "that creature can't be sacrificed for this";
+    case 'invalidX':
+      return 'choose a valid value for X';
   }
+}
+
+function sacrificeSelfCost(def: CardDef): string {
+  if (def.types.includes('creature')) return 'Sacrifice this creature';
+  if (def.token) return 'Sacrifice this token';
+  return `Sacrifice this ${def.types.includes('artifact') ? 'artifact' : 'enchantment'}`;
 }
 
 const RULES: RulesGrammar = {
@@ -546,7 +761,6 @@ const RULES: RulesGrammar = {
   undying: `${TRIGGER_OPENERS.dies}, if it had no +1/+1 counters on it, return it to the battlefield under its owner's control with a +1/+1 counter on it.`,
   evolve: `${TRIGGER_OPENERS.allyEnters}, if that creature has greater power or toughness than this creature, put a +1/+1 counter on this creature.`,
   prowess: KEYWORD_REMINDERS.prowess,
-  sacrificeCost: 'Sacrifice this creature',
   selves: {
     pronoun: { subject: 'it', object: 'it' },
     creature: { subject: 'this creature', object: 'this creature' },
@@ -557,6 +771,27 @@ const RULES: RulesGrammar = {
   effectSentence,
   moreDamage: (amount, target) => `and ${damageAmount(amount)} to ${target}.`,
   andThen: ', then ',
+  creatureEntersTapped: 'This creature enters tapped.',
+  kickerLine: (cost) => `Kicker ${cost}`,
+  additionalCostLine: (cost) => `As an additional cost to cast this spell, sacrifice a creature or pay ${cost}.`,
+  costReductionLine,
+  enchantLine,
+  xCountersLine: 'This creature enters with X +1/+1 counters on it.',
+  manaTimesLine: (colors, count) => `{T}: Add ${manaChoice(colors)} for each ${countPhrase(count)}.`,
+  staticLine,
+  attachmentLine,
+  entersOpener,
+  spellOpener,
+  subtypeOpener,
+  conditionPrefix,
+  equipLine: (cost) => `Equip ${cost}`,
+  sorceryOnly: 'Activate only as a sorcery.',
+  onceOnly: 'Activate only once.',
+  sacrificeAnotherCost: 'Sacrifice another creature',
+  exileSelfCost: 'Exile this card from your graveyard',
+  sacrificeSelfCost,
+  attachedRef: 'enchanted creature',
+  eachOpponent: 'each opponent',
 };
 
 const STATE: StateWords = {

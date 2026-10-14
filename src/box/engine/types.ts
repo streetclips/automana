@@ -11,9 +11,10 @@ export interface ManaCost {
   B: number;
   R: number;
   G: number;
+  x?: number;
 }
 
-export type CardType = 'land' | 'creature' | 'instant' | 'sorcery' | 'relic';
+export type CardType = 'land' | 'creature' | 'artifact' | 'enchantment' | 'instant' | 'sorcery' | 'relic';
 
 export type Keyword =
   | 'flying'
@@ -32,7 +33,9 @@ export type Keyword =
   | 'undying'
   | 'hexproof'
   | 'evolve'
-  | 'prowess';
+  | 'prowess'
+  | 'indestructible'
+  | 'ward';
 
 export const KEYWORDS: readonly Keyword[] = [
   'flying',
@@ -52,39 +55,78 @@ export const KEYWORDS: readonly Keyword[] = [
   'hexproof',
   'evolve',
   'prowess',
+  'indestructible',
+  'ward',
 ];
+
+export type PermanentKind = 'artifact' | 'enchantment' | 'creature' | 'flyingCreature' | 'land' | 'nonland';
 
 export type TargetSpec =
   | { kind: 'any' }
-  | { kind: 'creature'; controller?: 'you' | 'opponent'; tapped?: boolean }
+  | {
+      kind: 'creature';
+      controller?: 'you' | 'opponent';
+      tapped?: boolean;
+      other?: boolean;
+      subtype?: string;
+      combat?: 'attacking' | 'attackingOrBlocking';
+      maxPower?: number;
+    }
+  | { kind: 'permanent'; controller?: 'you' | 'opponent'; types?: PermanentKind[] }
   | { kind: 'player'; controller?: 'you' | 'opponent' }
-  | { kind: 'spell' };
+  | { kind: 'spell' }
+  | { kind: 'graveyard'; cards: 'creature' | 'permanent'; subtype?: string };
 
 export type Target = { player: PlayerId } | { card: CardId };
 
-export type EffectTarget = number | 'self';
+export type EffectTarget = number | 'self' | 'attached' | 'opponent';
 
 export type Who = 'you' | 'opponent';
 
-export type Effect =
-  | { kind: 'damage'; amount: number; to: EffectTarget }
+export type Count =
+  | { kind: 'attacking' }
+  | { kind: 'creatures'; subtype?: string }
+  | { kind: 'instantsAndSorceriesInGraveyard' };
+
+export type EffectCondition =
+  | { kicked: true }
+  | { targetSubtype: string; target: number }
+  | { payMana: string }
+  | { payLife: number };
+
+export type Effect = (
+  | { kind: 'damage'; amount: number; to: EffectTarget; times?: Count }
   | { kind: 'pump'; power: number; toughness: number; to: EffectTarget; keywords?: Keyword[] }
   | { kind: 'destroy'; to: EffectTarget }
   | { kind: 'bounce'; to: EffectTarget }
   | { kind: 'counter'; to: number }
   | { kind: 'draw'; amount: number }
-  | { kind: 'gainLife'; amount: number }
+  | { kind: 'gainLife'; amount: number; times?: Count }
   | { kind: 'loseLife'; amount: number; who?: Who }
   | { kind: 'fight'; a: EffectTarget; b: EffectTarget }
   | { kind: 'bite'; a: EffectTarget; b: EffectTarget }
   | { kind: 'pumpTeam'; power: number; toughness: number; keywords?: Keyword[] }
+  | { kind: 'pumpAttackers'; perAttacker: number }
   | { kind: 'addCounters'; amount: number; to: EffectTarget }
   | { kind: 'addCountersTeam'; amount: number }
+  | { kind: 'distributeCounters'; amount: number }
   | { kind: 'createTokens'; token: string; amount: number }
   | { kind: 'discard'; amount: number; who?: Who }
   | { kind: 'returnToBattlefield'; counters: number }
   | { kind: 'extraLands'; amount: number }
-  | { kind: 'searchLand'; land: string; battlefield: number; hand?: number; tapped?: boolean };
+  | { kind: 'searchLand'; land: string; battlefield: number; hand?: number; tapped?: boolean }
+  | { kind: 'exile'; to: EffectTarget }
+  | { kind: 'exileIfDies'; to: EffectTarget }
+  | { kind: 'mill'; amount: number }
+  | { kind: 'scry'; amount: number }
+  | { kind: 'returnToHand'; to: number }
+  | { kind: 'returnSelf'; tapped: boolean }
+  | { kind: 'attach'; to: number }
+  | { kind: 'tap'; to: EffectTarget }
+  | { kind: 'cantBlock'; to: EffectTarget }
+  | { kind: 'unblockable'; to: EffectTarget }
+  | { kind: 'doom'; to: EffectTarget }
+) & { if?: EffectCondition };
 
 export type TriggerEvent =
   | 'upkeep'
@@ -96,14 +138,32 @@ export type TriggerEvent =
   | 'allyDies'
   | 'damagesPlayer'
   | 'lifeGain'
-  | 'landfall';
+  | 'landfall'
+  | 'beginCombat'
+  | 'endStep'
+  | 'youAttack'
+  | 'draw'
+  | 'secondDraw'
+  | 'allyCounters';
 
-export type TriggerCondition = 'opponentDamaged' | 'emptyHand';
+export type TriggerCondition =
+  | 'opponentDamaged'
+  | 'emptyHand'
+  | 'opponentLostLife'
+  | 'attackedThisTurn'
+  | 'threeCreatures'
+  | 'anotherElf'
+  | 'opponentsTurn';
+
+export type SpellFilter = 'instantOrSorcery' | 'any' | 'noncreatureOrDragon';
 
 export interface TriggeredAbility {
   on: TriggerEvent;
   condition?: TriggerCondition;
+  spells?: SpellFilter;
+  subtype?: string;
   targets: TargetSpec[];
+  minTargets?: number;
   effects: Effect[];
 }
 
@@ -111,14 +171,50 @@ export interface ActivatedAbility {
   cost: string;
   tap?: boolean;
   sacrifice?: boolean;
+  sacrificeAnother?: boolean;
+  exileSelf?: boolean;
+  fromGraveyard?: boolean;
+  sorcery?: boolean;
+  once?: boolean;
   targets: TargetSpec[];
+  minTargets?: number;
   effects: Effect[];
 }
 
 export interface SpellAbility {
   targets: TargetSpec[];
+  minTargets?: number;
   effects: Effect[];
 }
+
+export type StaticAbility =
+  | {
+      kind: 'anthem';
+      subtypes?: string[];
+      other?: boolean;
+      attacking?: boolean;
+      power?: number;
+      toughness?: number;
+      keywords?: Keyword[];
+    }
+  | { kind: 'keywordIf'; keyword: Keyword; condition: 'attacking' | 'controlDragon' | 'life25' }
+  | { kind: 'cantBlock' }
+  | { kind: 'spellDiscount'; subtype: string; amount: number };
+
+export interface AttachmentEffect {
+  power?: number;
+  toughness?: number;
+  keywords?: Keyword[];
+  yourTurn?: boolean;
+  cantAttack?: boolean;
+  cantBlock?: boolean;
+  loseAbilities?: boolean;
+  base?: [number, number];
+  doesntUntap?: boolean;
+  landMana?: number;
+}
+
+export type CostReduction = { per: Count } | { ifControl: string; amount: number };
 
 export interface CardDef {
   id: string;
@@ -137,10 +233,19 @@ export interface CardDef {
   spell?: SpellAbility;
   triggers?: TriggeredAbility[];
   activated?: ActivatedAbility[];
+  statics?: StaticAbility[];
+  enchant?: TargetSpec;
+  attachment?: AttachmentEffect;
+  kicker?: string;
+  costReduction?: CostReduction;
+  xCounters?: boolean;
+  manaTimes?: Count;
+  sacrificeForMana?: boolean;
+  sacrificeCreatureOr?: string;
   flavor?: string;
 }
 
-export type Zone = 'library' | 'hand' | 'battlefield' | 'graveyard' | 'command' | 'stack' | 'gone';
+export type Zone = 'library' | 'hand' | 'battlefield' | 'graveyard' | 'exile' | 'command' | 'stack' | 'gone';
 
 export interface CardInstance {
   id: CardId;
@@ -153,6 +258,8 @@ export interface CardInstance {
   damage: number;
   deathtouchDamage: boolean;
   counters: number;
+  attachedTo?: CardId;
+  spent?: boolean;
 }
 
 export interface PlayerState {
@@ -163,6 +270,7 @@ export interface PlayerState {
   hand: CardId[];
   battlefield: CardId[];
   graveyard: CardId[];
+  exile: CardId[];
   command: CardId[];
   landsPlayedThisTurn: number;
   mulligans: number;
@@ -171,6 +279,9 @@ export interface PlayerState {
   drewFromEmptyLibrary: boolean;
   conceded: boolean;
   damagedThisTurn: boolean;
+  lostLifeThisTurn: boolean;
+  attackedThisTurn: boolean;
+  drawsThisTurn: number;
   extraLandsThisTurn: number;
   openingHand?: number;
   drawOnFirstTurn?: boolean;
@@ -193,7 +304,16 @@ export type Step =
   | 'cleanup';
 
 export type StackItem =
-  | { id: string; kind: 'spell'; controller: PlayerId; card: CardId; targets: Target[]; lost?: number[] }
+  | {
+      id: string;
+      kind: 'spell';
+      controller: PlayerId;
+      card: CardId;
+      targets: Target[];
+      lost?: number[];
+      x?: number;
+      kicked?: boolean;
+    }
   | {
       id: string;
       kind: 'trigger';
@@ -219,6 +339,10 @@ export interface ContinuousEffect {
   power: number;
   toughness: number;
   keywords?: Keyword[];
+  cantBlock?: boolean;
+  unblockable?: boolean;
+  exileIfDies?: boolean;
+  doom?: boolean;
   until: 'endOfTurn';
 }
 
@@ -260,8 +384,8 @@ export type Action =
   | { type: 'bottom'; player: PlayerId; cards: CardId[] }
   | { type: 'pass'; player: PlayerId }
   | { type: 'playLand'; player: PlayerId; card: CardId }
-  | { type: 'cast'; player: PlayerId; card: CardId; targets: Target[] }
-  | { type: 'activate'; player: PlayerId; card: CardId; ability: number; targets: Target[] }
+  | { type: 'cast'; player: PlayerId; card: CardId; targets: Target[]; x?: number; sacrifice?: CardId }
+  | { type: 'activate'; player: PlayerId; card: CardId; ability: number; targets: Target[]; sacrifice?: CardId }
   | { type: 'declareAttackers'; player: PlayerId; attackers: CardId[] }
   | { type: 'declareBlockers'; player: PlayerId; blocks: Block[] }
   | { type: 'chooseTargets'; player: PlayerId; targets: Target[] }
@@ -299,6 +423,11 @@ export type GameEvent =
   | { t: 'fight'; a: CardId; b: CardId }
   | { t: 'bite'; a: CardId; b: CardId }
   | { t: 'dies'; card: CardId; player: PlayerId }
+  | { t: 'exile'; card: CardId; player: PlayerId }
+  | { t: 'mill'; card: CardId; player: PlayerId }
+  | { t: 'attach'; card: CardId; to: CardId }
+  | { t: 'scry'; player: PlayerId; bottom: number; top: number }
+  | { t: 'sacrifice'; card: CardId; player: PlayerId }
   | { t: 'discard'; player: PlayerId; card: CardId }
   | { t: 'concede'; player: PlayerId }
   | { t: 'gameOver'; winner: PlayerId | null; reason: GameOverReason };

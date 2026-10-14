@@ -2,9 +2,9 @@ import type { CardDef } from '../types';
 
 export const island: CardDef = {
   id: 'island',
-  name: 'Isla',
+  name: 'Island',
   types: ['land'],
   supertypes: ['Basic'],
-  subtypes: ['Isla'],
+  subtypes: ['Island'],
   mana: ['U'],
 };

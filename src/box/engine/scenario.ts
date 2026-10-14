@@ -2,7 +2,7 @@ import { defaultPlayerNames } from './describe';
 import { advance, emptyState } from './game';
 import { getCardDef, hasCardDef } from './registry';
 import { isRelicDef } from './state';
-import type { CardId, GameState, PlayerId, Zone } from './types';
+import type { CardId, CardInstance, GameState, PlayerId, Zone } from './types';
 
 export interface ScenarioCard {
   card: string;
@@ -11,6 +11,7 @@ export interface ScenarioCard {
   sick?: boolean;
   damage?: number;
   counters?: number;
+  attachedTo?: CardId;
 }
 
 export type ScenarioEntry = string | ScenarioCard;
@@ -22,10 +23,13 @@ export interface ScenarioPlayer {
   battlefield?: ScenarioEntry[];
   library?: ScenarioEntry[];
   graveyard?: ScenarioEntry[];
+  exile?: ScenarioEntry[];
   relics?: ScenarioEntry[];
   landsPlayed?: number;
   extraLands?: number;
   damagedThisTurn?: boolean;
+  lostLifeThisTurn?: boolean;
+  attackedThisTurn?: boolean;
 }
 
 export interface ScenarioSpec {
@@ -56,6 +60,7 @@ export function createScenario(spec: ScenarioSpec): GameState {
       ...(spec.players[player]?.battlefield ?? []),
       ...(spec.players[player]?.library ?? DEFAULT_LIBRARY),
       ...(spec.players[player]?.graveyard ?? []),
+      ...(spec.players[player]?.exile ?? []),
       ...(spec.players[player]?.relics ?? []),
     ]) {
       if (typeof entry !== 'string' && entry.id) {
@@ -100,6 +105,7 @@ export function createScenario(spec: ScenarioSpec): GameState {
       deathtouchDamage: false,
       counters: zone === 'battlefield' ? (card.counters ?? 0) : 0,
     };
+    if (zone === 'battlefield' && card.attachedTo) (s.cards[id] as CardInstance).attachedTo = card.attachedTo;
     s.players[player][zone].push(id);
   };
 
@@ -112,10 +118,13 @@ export function createScenario(spec: ScenarioSpec): GameState {
     state.landsPlayedThisTurn = ps.landsPlayed ?? 0;
     state.extraLandsThisTurn = ps.extraLands ?? 0;
     state.damagedThisTurn = ps.damagedThisTurn ?? false;
+    state.lostLifeThisTurn = ps.lostLifeThisTurn ?? false;
+    state.attackedThisTurn = ps.attackedThisTurn ?? false;
     for (const entry of ps.hand ?? []) place(player, 'hand', entry);
     for (const entry of ps.battlefield ?? []) place(player, 'battlefield', entry);
     for (const entry of ps.library ?? DEFAULT_LIBRARY) place(player, 'library', entry);
     for (const entry of ps.graveyard ?? []) place(player, 'graveyard', entry);
+    for (const entry of ps.exile ?? []) place(player, 'exile', entry);
     for (const entry of ps.relics ?? []) place(player, 'command', entry);
   }
 

@@ -1,6 +1,5 @@
 import { CORE_CARDS } from './cards';
 import { parseCost } from './mana';
-import { RELIC_DEFS } from './relics';
 import { CARD_TEXTS, localizer } from './text/content';
 import type { CardDef, ManaCost, TriggerEvent } from './types';
 
@@ -62,8 +61,11 @@ export function validateCardDef(def: CardDef): void {
   if (isLand && def.cost) fail('lands have no mana cost');
   if (isSpell && !def.spell) fail('instants and sorceries need a spell ability');
   if (!isSpell && def.spell) fail('only instants and sorceries have a spell ability');
-  if (def.token && (!isCreature || def.cost)) fail('tokens are creatures without a mana cost');
-  if (def.entersTapped && !isLand) fail('only lands enter tapped');
+  const isPermanent = isCreature || isLand || def.types.includes('artifact') || def.types.includes('enchantment');
+  if (def.token && (!isPermanent || def.cost)) fail('tokens are permanents without a mana cost');
+  if (def.entersTapped && !isLand && !isCreature) fail('only lands and creatures enter tapped');
+  if (def.enchant && !def.attachment) fail('an Aura needs an attachment effect');
+  if (def.xCounters && !parseCost(def.cost).x) fail('X counters need an {X} in the cost');
   if (def.types.includes('relic')) {
     if (def.types.length > 1) fail('a relic has no other type');
     if (
@@ -109,8 +111,10 @@ export function validateCardDef(def: CardDef): void {
         fail('an ability that sacrifices its creature cannot affect it');
       const refs =
         effect.kind === 'fight' || effect.kind === 'bite' ? [effect.a, effect.b] : 'to' in effect ? [effect.to] : [];
+      if (effect.if && 'target' in effect.if && effect.if.target >= ability.targets.length)
+        fail(`condition refers to missing target ${effect.if.target}`);
       for (const ref of refs) {
-        if (ref === 'self' && !isCreature) fail('"self" effects need a permanent source');
+        if (ref === 'self' && !isPermanent) fail('"self" effects need a permanent source');
         if (typeof ref === 'number' && (ref < 0 || ref >= ability.targets.length))
           fail(`effect refers to missing target ${ref}`);
         const spec = typeof ref === 'number' ? ability.targets[ref] : undefined;
@@ -122,4 +126,4 @@ export function validateCardDef(def: CardDef): void {
   }
 }
 
-for (const def of [...CORE_CARDS, ...RELIC_DEFS]) registerCard(def);
+for (const def of CORE_CARDS) registerCard(def);

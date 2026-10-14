@@ -43,4 +43,7 @@ export type Refusal =
   | { code: 'malformedBlock' }
   | { code: 'blockerTwice'; card: CardId }
   | { code: 'cannotBlock'; blocker: CardId; attacker: CardId }
-  | { code: 'menace'; attacker: CardId };
+  | { code: 'menace'; attacker: CardId }
+  | { code: 'abilityUsed' }
+  | { code: 'invalidSacrifice' }
+  | { code: 'invalidX' };

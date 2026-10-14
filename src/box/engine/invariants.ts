@@ -18,7 +18,7 @@ export function checkInvariants(s: GameState): string[] {
       problems.push(`p${player} has invalid extra land plays`);
     if (player === s.activePlayer && ps.landsPlayedThisTurn > 1 + ps.extraLandsThisTurn)
       problems.push(`p${player} played more lands than allowed`);
-    for (const zone of ['library', 'hand', 'graveyard', 'battlefield', 'command'] as const) {
+    for (const zone of ['library', 'hand', 'graveyard', 'exile', 'battlefield', 'command'] as const) {
       for (const id of ps[zone]) {
         note(id, `p${player}.${zone}`);
         const card = s.cards[id];
@@ -59,8 +59,15 @@ export function checkInvariants(s: GameState): string[] {
     if (card.damage < 0 || !Number.isInteger(card.damage)) problems.push(`${id} has invalid damage ${card.damage}`);
     if (card.counters < 0 || !Number.isInteger(card.counters))
       problems.push(`${id} has invalid counters ${card.counters}`);
-    if (card.zone !== 'battlefield' && (card.tapped || card.damage > 0 || card.summoningSick || card.counters > 0)) {
+    if (
+      card.zone !== 'battlefield' &&
+      (card.tapped || card.damage > 0 || card.summoningSick || card.counters > 0 || card.attachedTo || card.spent)
+    ) {
       problems.push(`${id} keeps battlefield state outside the battlefield`);
+    }
+    if (card.attachedTo !== undefined && card.zone === 'battlefield') {
+      if (!hasCardDef(card.def) || !getCardDef(card.def).attachment) problems.push(`${id} is attached but can't be`);
+      if (card.attachedTo === id) problems.push(`${id} is attached to itself`);
     }
   }
 

@@ -1,6 +1,8 @@
 import { applyDamage, sourceHasKeyword, type DamageAssignment } from './effects';
 import { compareIds } from './mana';
 import {
+  cantAttack,
+  cantBlock,
   creaturesOf,
   getCard,
   getPower,
@@ -8,9 +10,12 @@ import {
   hasKeyword,
   isCreature,
   isReadyToTap,
+  isUnblockable,
+  moveCard,
   onBattlefield,
   opponent,
   queueTriggers,
+  triggerSources,
 } from './state';
 import type { Refusal } from './refusals';
 import { isPlayerTarget } from './targets';
@@ -23,7 +28,7 @@ export function defendingPlayer(s: GameState): PlayerId {
 export function canAttack(s: GameState, id: CardId): boolean {
   const card = s.cards[id];
   if (!card || card.zone !== 'battlefield' || card.controller !== s.activePlayer) return false;
-  if (!isCreature(s, id) || card.tapped || hasKeyword(s, id, 'defender')) return false;
+  if (!isCreature(s, id) || card.tapped || hasKeyword(s, id, 'defender') || cantAttack(s, id)) return false;
   return isReadyToTap(s, id);
 }
 
@@ -34,8 +39,8 @@ export function eligibleAttackers(s: GameState): CardId[] {
 export function canBlockAttacker(s: GameState, blocker: CardId, attacker: CardId): boolean {
   const card = s.cards[blocker];
   if (!card || card.zone !== 'battlefield' || card.controller !== defendingPlayer(s)) return false;
-  if (!isCreature(s, blocker) || card.tapped) return false;
-  if (!s.combat?.attackers.includes(attacker)) return false;
+  if (!isCreature(s, blocker) || card.tapped || cantBlock(s, blocker)) return false;
+  if (!s.combat?.attackers.includes(attacker) || isUnblockable(s, attacker)) return false;
   if (hasKeyword(s, attacker, 'flying') && !hasKeyword(s, blocker, 'flying') && !hasKeyword(s, blocker, 'reach')) {
     return false;
   }
@@ -94,7 +99,10 @@ export function performDeclareAttackers(s: GameState, attackers: CardId[]): void
     if (!hasKeyword(s, id, 'vigilance')) getCard(s, id).tapped = true;
   }
   s.events.push({ t: 'attack', player: s.activePlayer, attackers: [...attackers] });
+  if (attackers.length === 0) return;
+  s.players[s.activePlayer].attackedThisTurn = true;
   for (const id of attackers) queueTriggers(s, id, 'attacks', s.activePlayer);
+  for (const id of triggerSources(s, s.activePlayer)) queueTriggers(s, id, 'youAttack', s.activePlayer);
 }
 
 export function performDeclareBlockers(s: GameState, blocks: Block[]): void {
@@ -204,5 +212,11 @@ export function performCombatDamage(s: GameState, kind: 'first' | 'regular'): vo
   const hits = assignments.filter((assignment) => assignment.amount > 0 && isPlayerTarget(assignment.target));
   for (const source of new Set(hits.map((hit) => hit.source))) {
     queueTriggers(s, source, 'damagesPlayer', getCard(s, source).controller);
+  }
+  const dealt = new Set(assignments.filter((assignment) => assignment.amount > 0).map((assignment) => assignment.source));
+  for (const source of dealt) {
+    if (!onBattlefield(s, source) || !s.effects.some((effect) => effect.card === source && effect.doom)) continue;
+    s.events.push({ t: 'sacrifice', card: source, player: getCard(s, source).controller });
+    moveCard(s, source, 'graveyard');
   }
 }

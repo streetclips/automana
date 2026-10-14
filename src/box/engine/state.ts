@@ -1,18 +1,22 @@
 import { canPay, choosePayment, manaValue, parseCost, type ManaSource } from './mana';
 import { getCardDef, getCost } from './registry';
-import type {
-  CardDef,
-  CardId,
-  CardInstance,
-  GameState,
-  Keyword,
-  ManaCost,
-  PlayerId,
-  PlayerState,
-  TriggerCondition,
-  TriggerEvent,
-  TriggeredAbility,
-  Zone,
+import {
+  COLORS,
+  type AttachmentEffect,
+  type CardDef,
+  type CardId,
+  type CardInstance,
+  type Count,
+  type GameState,
+  type Keyword,
+  type ManaCost,
+  type PlayerId,
+  type PlayerState,
+  type SpellFilter,
+  type TriggerCondition,
+  type TriggerEvent,
+  type TriggeredAbility,
+  type Zone,
 } from './types';
 
 export const UNDYING_TRIGGER = -1;
@@ -76,6 +80,7 @@ function clonePlayer(p: PlayerState): PlayerState {
     hand: [...p.hand],
     battlefield: [...p.battlefield],
     graveyard: [...p.graveyard],
+    exile: [...p.exile],
     command: [...p.command],
   };
 }
@@ -131,7 +136,20 @@ export function isRelicDef(def: CardDef): boolean {
 }
 
 export function isPermanentDef(def: CardDef): boolean {
-  return def.types.includes('creature') || def.types.includes('land');
+  return (
+    def.types.includes('creature') ||
+    def.types.includes('land') ||
+    def.types.includes('artifact') ||
+    def.types.includes('enchantment')
+  );
+}
+
+export function hasSubtype(def: CardDef, subtype: string): boolean {
+  return def.subtypes?.includes(subtype) ?? false;
+}
+
+export function isAttachmentDef(def: CardDef): boolean {
+  return def.attachment !== undefined;
 }
 
 export function isCreature(s: GameState, id: CardId): boolean {
@@ -158,34 +176,185 @@ export function allCreatures(s: GameState): CardId[] {
   return [...creaturesOf(s, 0), ...creaturesOf(s, 1)];
 }
 
+function battlefieldIds(s: GameState): CardId[] {
+  return [...s.players[0].battlefield, ...s.players[1].battlefield];
+}
+
+export function attachmentsOf(s: GameState, id: CardId): AttachmentEffect[] {
+  const found: AttachmentEffect[] = [];
+  for (const other of battlefieldIds(s)) {
+    const card = getCard(s, other);
+    if (card.attachedTo !== id) continue;
+    const attachment = getCardDef(card.def).attachment;
+    if (!attachment) continue;
+    if (attachment.yourTurn && s.activePlayer !== getCard(s, id).controller) continue;
+    found.push(attachment);
+  }
+  return found;
+}
+
+export function abilitiesLost(s: GameState, id: CardId): boolean {
+  for (const other of battlefieldIds(s)) {
+    const card = getCard(s, other);
+    if (card.attachedTo === id && getCardDef(card.def).attachment?.loseAbilities) return true;
+  }
+  return false;
+}
+
+export function isAttacking(s: GameState, id: CardId): boolean {
+  return s.combat?.attackers.includes(id) ?? false;
+}
+
+interface StaticBonus {
+  power: number;
+  toughness: number;
+  keywords: Keyword[];
+}
+
+function staticBonus(s: GameState, id: CardId): StaticBonus {
+  const bonus: StaticBonus = { power: 0, toughness: 0, keywords: [] };
+  const card = getCard(s, id);
+  const def = getCardDef(card.def);
+  for (const attachment of attachmentsOf(s, id)) {
+    bonus.power += attachment.power ?? 0;
+    bonus.toughness += attachment.toughness ?? 0;
+    bonus.keywords.push(...(attachment.keywords ?? []));
+  }
+  for (const source of s.players[card.controller].battlefield) {
+    const statics = getCardDef(getCard(s, source).def).statics;
+    if (!statics || abilitiesLost(s, source)) continue;
+    for (const ability of statics) {
+      if (ability.kind === 'anthem') {
+        if (ability.other && source === id) continue;
+        if (ability.attacking && !isAttacking(s, id)) continue;
+        if (ability.subtypes && !ability.subtypes.some((subtype) => hasSubtype(def, subtype))) continue;
+        bonus.power += ability.power ?? 0;
+        bonus.toughness += ability.toughness ?? 0;
+        bonus.keywords.push(...(ability.keywords ?? []));
+      } else if (ability.kind === 'keywordIf' && source === id && keywordConditionHolds(s, id, ability.condition)) {
+        bonus.keywords.push(ability.keyword);
+      }
+    }
+  }
+  return bonus;
+}
+
+function keywordConditionHolds(s: GameState, id: CardId, condition: 'attacking' | 'controlDragon' | 'life25'): boolean {
+  const controller = getCard(s, id).controller;
+  switch (condition) {
+    case 'attacking':
+      return isAttacking(s, id);
+    case 'controlDragon':
+      return s.players[controller].battlefield.some((other) => hasSubtype(defOf(s, other), 'Dragon'));
+    case 'life25':
+      return s.players[controller].life >= 25;
+  }
+}
+
+function basePowerToughness(s: GameState, id: CardId): [number, number] {
+  for (const other of battlefieldIds(s)) {
+    const card = getCard(s, other);
+    const base = card.attachedTo === id ? getCardDef(card.def).attachment?.base : undefined;
+    if (base) return base;
+  }
+  const def = defOf(s, id);
+  return [def.power ?? 0, def.toughness ?? 0];
+}
+
+export function staticStats(s: GameState, id: CardId): { power: number; toughness: number; keywords: Keyword[] } {
+  const [power, toughness] = basePowerToughness(s, id);
+  const counters = getCard(s, id).counters;
+  const bonus = staticBonus(s, id);
+  const printed = abilitiesLost(s, id) ? [] : (defOf(s, id).keywords ?? []);
+  return {
+    power: power + counters + bonus.power,
+    toughness: toughness + counters + bonus.toughness,
+    keywords: [...new Set([...printed, ...bonus.keywords])],
+  };
+}
+
 export function getPower(s: GameState, id: CardId): number {
-  let power = (defOf(s, id).power ?? 0) + getCard(s, id).counters;
+  let power = basePowerToughness(s, id)[0] + getCard(s, id).counters + staticBonus(s, id).power;
   for (const effect of s.effects) if (effect.card === id) power += effect.power;
   return power;
 }
 
 export function getToughness(s: GameState, id: CardId): number {
-  let toughness = (defOf(s, id).toughness ?? 0) + getCard(s, id).counters;
+  let toughness = basePowerToughness(s, id)[1] + getCard(s, id).counters + staticBonus(s, id).toughness;
   for (const effect of s.effects) if (effect.card === id) toughness += effect.toughness;
   return toughness;
 }
 
 export function getKeywords(s: GameState, id: CardId): Keyword[] {
-  const printed = defOf(s, id).keywords ?? [];
-  let keywords = printed;
+  const keywords = abilitiesLost(s, id) ? [] : [...(defOf(s, id).keywords ?? [])];
+  const add = (keyword: Keyword): void => {
+    if (!keywords.includes(keyword)) keywords.push(keyword);
+  };
   for (const effect of s.effects) {
-    if (effect.card !== id || !effect.keywords) continue;
-    for (const keyword of effect.keywords) {
-      if (keywords.includes(keyword)) continue;
-      if (keywords === printed) keywords = [...printed];
-      keywords.push(keyword);
-    }
+    if (effect.card === id) for (const keyword of effect.keywords ?? []) add(keyword);
   }
+  if (s.cards[id]?.zone === 'battlefield') for (const keyword of staticBonus(s, id).keywords) add(keyword);
   return keywords;
 }
 
 export function hasKeyword(s: GameState, id: CardId, keyword: Keyword): boolean {
   return getKeywords(s, id).includes(keyword);
+}
+
+export function cantAttack(s: GameState, id: CardId): boolean {
+  return attachmentsOf(s, id).some((attachment) => attachment.cantAttack);
+}
+
+export function cantBlock(s: GameState, id: CardId): boolean {
+  if (attachmentsOf(s, id).some((attachment) => attachment.cantBlock)) return true;
+  if (s.effects.some((effect) => effect.card === id && effect.cantBlock)) return true;
+  return !abilitiesLost(s, id) && (defOf(s, id).statics ?? []).some((ability) => ability.kind === 'cantBlock');
+}
+
+export function isUnblockable(s: GameState, id: CardId): boolean {
+  return s.effects.some((effect) => effect.card === id && effect.unblockable);
+}
+
+export function doesntUntap(s: GameState, id: CardId): boolean {
+  return attachmentsOf(s, id).some((attachment) => attachment.doesntUntap);
+}
+
+export function countOf(s: GameState, player: PlayerId, count: Count): number {
+  switch (count.kind) {
+    case 'attacking':
+      return s.activePlayer === player ? (s.combat?.attackers.length ?? 0) : 0;
+    case 'creatures':
+      return creaturesOf(s, player).filter((id) => !count.subtype || hasSubtype(defOf(s, id), count.subtype)).length;
+    case 'instantsAndSorceriesInGraveyard':
+      return s.players[player].graveyard.filter((id) => {
+        const def = defOf(s, id);
+        return def.types.includes('instant') || def.types.includes('sorcery');
+      }).length;
+  }
+}
+
+export function spellCost(s: GameState, player: PlayerId, cardId: CardId, x = 0, kicked = false): ManaCost {
+  const def = defOf(s, cardId);
+  const base = getCost(def.id);
+  const cost: ManaCost = { ...base, generic: base.generic + (base.x ?? 0) * x, x: 0 };
+  if (kicked && def.kicker) {
+    const kicker = parseCost(def.kicker);
+    cost.generic += kicker.generic;
+    for (const color of COLORS) cost[color] += kicker[color];
+  }
+  let reduction = 0;
+  const own = def.costReduction;
+  if (own && 'per' in own) reduction += countOf(s, player, own.per);
+  if (own && 'ifControl' in own && s.players[player].battlefield.some((id) => hasSubtype(defOf(s, id), own.ifControl)))
+    reduction += own.amount;
+  for (const source of s.players[player].battlefield) {
+    if (abilitiesLost(s, source)) continue;
+    for (const ability of defOf(s, source).statics ?? []) {
+      if (ability.kind === 'spellDiscount' && hasSubtype(def, ability.subtype)) reduction += ability.amount;
+    }
+  }
+  cost.generic = Math.max(0, cost.generic - reduction);
+  return cost;
 }
 
 export function isReadyToTap(s: GameState, id: CardId): boolean {
@@ -202,6 +371,8 @@ function zoneList(s: GameState, card: CardInstance, zone: Zone): CardId[] | null
       return s.players[card.owner].hand;
     case 'graveyard':
       return s.players[card.owner].graveyard;
+    case 'exile':
+      return s.players[card.owner].exile;
     case 'command':
       return s.players[card.owner].command;
     case 'battlefield':
@@ -269,10 +440,17 @@ export function createToken(s: GameState, defId: string, controller: PlayerId): 
   return id;
 }
 
-export function moveCard(s: GameState, id: CardId, to: Zone, options: MoveOptions = {}): void {
+export function moveCard(s: GameState, id: CardId, destination: Zone, options: MoveOptions = {}): void {
   const card = getCard(s, id);
   const from = card.zone;
   const def = getCardDef(card.def);
+  const exiled =
+    from === 'battlefield' &&
+    destination === 'graveyard' &&
+    isCreatureDef(def) &&
+    s.effects.some((effect) => effect.card === id && effect.exileIfDies);
+  const to: Zone = exiled ? 'exile' : destination;
+  const lostAbilities = from === 'battlefield' && abilitiesLost(s, id);
   removeFromList(zoneList(s, card, from), id);
   const previousController = card.controller;
   const undying = from === 'battlefield' && card.counters === 0 && getKeywords(s, id).includes('undying');
@@ -283,6 +461,8 @@ export function moveCard(s: GameState, id: CardId, to: Zone, options: MoveOption
     card.damage = 0;
     card.deathtouchDamage = false;
     card.counters = 0;
+    delete card.attachedTo;
+    delete card.spent;
     s.effects = s.effects.filter((effect) => effect.card !== id);
     removeFromCombat(s, id);
     loseTargetsOn(s, id);
@@ -296,11 +476,12 @@ export function moveCard(s: GameState, id: CardId, to: Zone, options: MoveOption
     else toList.unshift(id);
   }
 
+  if (to === 'exile') s.events.push({ t: 'exile', card: id, player: previousController });
   if (from === 'battlefield' && to === 'graveyard' && isCreatureDef(def)) {
     s.events.push({ t: 'dies', card: id, player: previousController });
-    queueTriggers(s, id, 'dies', previousController);
+    if (!lostAbilities) queueTriggers(s, id, 'dies', previousController, id);
     for (const watcher of options.watchers ?? triggerSources(s, previousController)) {
-      if (watcher !== id) queueTriggers(s, watcher, 'allyDies', previousController);
+      if (watcher !== id) queueTriggers(s, watcher, 'allyDies', previousController, id);
     }
     if (undying)
       s.triggers.push({ id: newId(s, 't'), controller: previousController, source: id, ability: UNDYING_TRIGGER });
@@ -328,7 +509,12 @@ export function removeFromCombat(s: GameState, id: CardId): void {
   combat.blocks = combat.blocks.filter((block) => block.blocker !== id && block.attacker !== id);
 }
 
-function conditionHolds(s: GameState, condition: TriggerCondition | undefined, controller: PlayerId): boolean {
+function conditionHolds(
+  s: GameState,
+  condition: TriggerCondition | undefined,
+  controller: PlayerId,
+  source: CardId,
+): boolean {
   switch (condition) {
     case undefined:
       return true;
@@ -336,14 +522,46 @@ function conditionHolds(s: GameState, condition: TriggerCondition | undefined, c
       return s.players[opponent(controller)].damagedThisTurn;
     case 'emptyHand':
       return s.players[controller].hand.length === 0;
+    case 'opponentLostLife':
+      return s.players[opponent(controller)].lostLifeThisTurn;
+    case 'attackedThisTurn':
+      return s.players[controller].attackedThisTurn;
+    case 'threeCreatures':
+      return creaturesOf(s, controller).length >= 3;
+    case 'anotherElf':
+      return creaturesOf(s, controller).some((id) => id !== source && hasSubtype(defOf(s, id), 'Elf'));
+    case 'opponentsTurn':
+      return s.activePlayer !== controller;
   }
 }
 
-export function queueTriggers(s: GameState, source: CardId, event: TriggerEvent, controller: PlayerId): void {
+function spellMatches(filter: SpellFilter, def: CardDef): boolean {
+  switch (filter) {
+    case 'instantOrSorcery':
+      return isInstantOrSorceryDef(def);
+    case 'any':
+      return true;
+    case 'noncreatureOrDragon':
+      return !isCreatureDef(def) || hasSubtype(def, 'Dragon');
+  }
+}
+
+export function queueTriggers(
+  s: GameState,
+  source: CardId,
+  event: TriggerEvent,
+  controller: PlayerId,
+  subject?: CardId,
+): void {
   const triggers = defOf(s, source).triggers ?? [];
+  if (triggers.length === 0) return;
+  if (s.cards[source]?.zone === 'battlefield' && isCreature(s, source) && abilitiesLost(s, source)) return;
   triggers.forEach((trigger, ability) => {
-    if (trigger.on === event && conditionHolds(s, trigger.condition, controller))
-      s.triggers.push({ id: newId(s, 't'), controller, source, ability });
+    if (trigger.on !== event || !conditionHolds(s, trigger.condition, controller, source)) return;
+    const subjectDef = subject === undefined ? undefined : defOf(s, subject);
+    if (trigger.subtype && (!subjectDef || !hasSubtype(subjectDef, trigger.subtype))) return;
+    if (event === 'spell' && (!subjectDef || !spellMatches(trigger.spells ?? 'instantOrSorcery', subjectDef))) return;
+    s.triggers.push({ id: newId(s, 't'), controller, source, ability });
   });
 }
 
@@ -358,6 +576,11 @@ export function drawCards(s: GameState, player: PlayerId, count: number): void {
     }
     moveCard(s, top, 'hand');
     s.events.push({ t: 'draw', player, card: top });
+    ps.drawsThisTurn += 1;
+    for (const id of triggerSources(s, player)) {
+      queueTriggers(s, id, 'draw', player);
+      if (ps.drawsThisTurn === 2) queueTriggers(s, id, 'secondDraw', player);
+    }
   }
 }
 
@@ -365,6 +588,7 @@ export function changeLife(s: GameState, player: PlayerId, delta: number): void 
   if (delta === 0) return;
   const ps = s.players[player];
   ps.life += delta;
+  if (delta < 0) ps.lostLifeThisTurn = true;
   s.events.push({ t: 'life', player, delta, life: ps.life });
   if (delta > 0) for (const id of triggerSources(s, player)) queueTriggers(s, id, 'lifeGain', player);
 }
@@ -375,8 +599,20 @@ export function manaSources(s: GameState, player: PlayerId, exclude?: CardId): M
     if (id === exclude) continue;
     const card = getCard(s, id);
     const def = getCardDef(card.def);
-    if (!def.mana || card.tapped || !isReadyToTap(s, id)) continue;
-    sources.push({ id, colors: def.mana, isCreature: isCreatureDef(def) });
+    if (card.tapped || !isReadyToTap(s, id)) continue;
+    const isCreatureSource = isCreatureDef(def);
+    const landMana = isLandDef(def)
+      ? attachmentsOf(s, id).reduce((sum, attachment) => sum + (attachment.landMana ?? 0), 0)
+      : 0;
+    if (landMana > 0) {
+      for (let i = 0; i < landMana; i++) sources.push({ id, colors: [...COLORS], isCreature: false });
+      continue;
+    }
+    if (!def.mana || (isCreatureSource && abilitiesLost(s, id))) continue;
+    const times = def.manaTimes ? Math.max(1, countOf(s, player, def.manaTimes)) : 1;
+    for (let i = 0; i < times; i++) {
+      sources.push({ id, colors: def.mana, isCreature: isCreatureSource, sacrifice: def.sacrificeForMana === true });
+    }
   }
   return sources;
 }
@@ -415,4 +651,14 @@ export function canAfford(s: GameState, player: PlayerId, cost: ManaCost, exclud
 
 export function tapCards(s: GameState, ids: CardId[]): void {
   for (const id of ids) getCard(s, id).tapped = true;
+}
+
+export function payWith(s: GameState, ids: CardId[]): void {
+  tapCards(s, ids);
+  for (const id of new Set(ids)) {
+    const card = getCard(s, id);
+    if (card.zone !== 'battlefield' || !getCardDef(card.def).sacrificeForMana) continue;
+    s.events.push({ t: 'sacrifice', card: id, player: card.controller });
+    moveCard(s, id, 'graveyard');
+  }
 }

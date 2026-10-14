@@ -16,6 +16,7 @@ export function parseCost(text: string | undefined): ManaCost {
   for (const match of compact.matchAll(/\{([^}]+)\}/g)) {
     const symbol = match[1] ?? '';
     if (/^\d+$/.test(symbol)) cost.generic += Number.parseInt(symbol, 10);
+    else if (symbol === 'X') cost.x = (cost.x ?? 0) + 1;
     else if (isColor(symbol)) cost[symbol] += 1;
     else throw new Error(`Unknown mana symbol {${symbol}} in "${text}"`);
     consumed += match[0];
@@ -26,6 +27,7 @@ export function parseCost(text: string | undefined): ManaCost {
 
 export function costSymbols(cost: ManaCost): string[] {
   const symbols: string[] = [];
+  for (let i = 0; i < (cost.x ?? 0); i++) symbols.push('X');
   if (cost.generic > 0) symbols.push(String(cost.generic));
   for (const color of COLORS) {
     for (let i = 0; i < cost[color]; i++) symbols.push(color);
@@ -50,6 +52,7 @@ export interface ManaSource {
   id: CardId;
   colors: Color[];
   isCreature: boolean;
+  sacrifice?: boolean;
 }
 
 export function choosePayment(sources: ManaSource[], cost: ManaCost, wants: ManaCost[] = []): CardId[] | null {
@@ -88,7 +91,7 @@ export function canPay(sources: ManaSource[], cost: ManaCost): boolean {
 function groupSources(sources: ManaSource[]): ManaSource[][] {
   const groups = new Map<string, ManaSource[]>();
   for (const source of [...sources].sort((a, b) => compareIds(a.id, b.id))) {
-    const key = `${source.isCreature ? 'c' : 'l'}:${[...source.colors].sort().join('')}`;
+    const key = `${source.sacrifice ? 's' : source.isCreature ? 'c' : 'l'}:${[...source.colors].sort().join('')}`;
     const group = groups.get(key);
     if (group) group.push(source);
     else groups.set(key, [source]);
@@ -119,6 +122,7 @@ function rankPayment(used: ManaSource[], left: ManaSource[], wants: ManaCost[]):
   }
   const colorsLeft = COLORS.filter((color) => left.some((source) => source.colors.includes(color))).length;
   return [
+    -used.filter((source) => source.sacrifice).length,
     castable,
     affordable.length,
     -used.filter((source) => source.isCreature).length,

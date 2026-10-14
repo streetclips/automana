@@ -1,430 +1,264 @@
 import type { CardDef } from '../types';
-import { adaptiveBloom } from './adaptive_bloom';
-import { arcInitiate } from './arc_initiate';
-import { ashHarbor } from './ash_harbor';
-import { ashStorm } from './ash_storm';
-import { ashenDuelist } from './ashen_duelist';
-import { ashveilExecutioner } from './ashveil_executioner';
-import { ashwingKestrel } from './ashwing_kestrel';
-import { auroraSeraph } from './aurora_seraph';
-import { avalancheFury } from './avalanche_fury';
-import { bannerguardKnight } from './bannerguard_knight';
-import { beaconSquire } from './beacon_squire';
-import { beastToken } from './beast_token';
-import { blisteringHellion } from './blistering_hellion';
-import { bloodFrenzy } from './blood_frenzy';
-import { bloodReaver } from './blood_reaver';
-import { bloodTithe } from './blood_tithe';
-import { bloodfireBolt } from './bloodfire_bolt';
-import { bloodhungryGhoul } from './bloodhungry_ghoul';
-import { bloodsporeThrall } from './bloodspore_thrall';
-import { bloomcallerDruid } from './bloomcaller_druid';
-import { bogLurker } from './bog_lurker';
-import { bonewoodStalker } from './bonewood_stalker';
-import { boulderSpider } from './boulder_spider';
-import { brambleWarden } from './bramble_warden';
-import { brazierDisciple } from './brazier_disciple';
-import { brightforgeMarshal } from './brightforge_marshal';
-import { brightforgeWarlord } from './brightforge_warlord';
-import { brimstoneSkirmisher } from './brimstone_skirmisher';
-import { brineRebuke } from './brine_rebuke';
-import { bristlebackBoar } from './bristleback_boar';
-import { canopySpider } from './canopy_spider';
-import { canyonTitan } from './canyon_titan';
-import { censerBearer } from './censer_bearer';
-import { chantryGuard } from './chantry_guard';
-import { chargeOfTheForge } from './charge_of_the_forge';
-import { chokingMist } from './choking_mist';
-import { cinderAdept } from './cinder_adept';
-import { cindermawDemon } from './cindermaw_demon';
-import { cinderwingDrake } from './cinderwing_drake';
-import { cliffLynx } from './cliff_lynx';
-import { cloisterLancer } from './cloister_lancer';
-import { cloudriderKnight } from './cloudrider_knight';
-import { convergentVision } from './convergent_vision';
-import { coralhideBehemoth } from './coralhide_behemoth';
-import { councilVeto } from './council_veto';
-import { cragDragon } from './crag_dragon';
-import { craterElemental } from './crater_elemental';
-import { cryptGhoul } from './crypt_ghoul';
-import { dawnAcolyte } from './dawn_acolyte';
-import { dawnsVerdict } from './dawns_verdict';
-import { deepSowing } from './deep_sowing';
-import { deepgroveLeviathan } from './deepgrove_leviathan';
-import { dragBelow } from './drag_below';
-import { dragonsBreath } from './dragons_breath';
-import { dreadTyrant } from './dread_tyrant';
-import { drownTheTruth } from './drown_the_truth';
-import { duskmireShade } from './duskmire_shade';
-import { duskwingBat } from './duskwing_bat';
-import { elementalToken } from './elemental_token';
-import { emberHound } from './ember_hound';
-import { emberSnap } from './ember_snap';
-import { feralClash } from './feral_clash';
-import { fertileRift } from './fertile_rift';
-import { flameCut } from './flame_cut';
-import { flamecrestMentor } from './flamecrest_mentor';
-import { fogslipThief } from './fogslip_thief';
+import { adamantWill } from './adamant_will';
+import { aggressiveMammoth } from './aggressive_mammoth';
+import { ajanisPridemate } from './ajanis_pridemate';
+import { ancestorDragon } from './ancestor_dragon';
+import { angelicEdict } from './angelic_edict';
+import { arcaneEpiphany } from './arcane_epiphany';
+import { battleRattleShaman } from './battle_rattle_shaman';
+import { bearCub } from './bear_cub';
+import { beastKinRanger } from './beast_kin_ranger';
+import { bigfinBouncer } from './bigfin_bouncer';
+import { biogenicUpgrade } from './biogenic_upgrade';
+import { bishopsSoldier } from './bishops_soldier';
+import { biteDown } from './bite_down';
+import { bloodtitheCollector } from './bloodtithe_collector';
+import { brinebornCutthroat } from './brineborn_cutthroat';
+import { brokenWings } from './broken_wings';
+import { burrogBefuddler } from './burrog_befuddler';
+import { cancel } from './cancel';
+import { carnelianOrbOfDragonkind } from './carnelian_orb_of_dragonkind';
+import { catToken } from './cat_token';
+import { cemeteryRecruitment } from './cemetery_recruitment';
+import { clinquantSkymage } from './clinquant_skymage';
+import { corsairCaptain } from './corsair_captain';
+import { crosswayTroublemakers } from './crossway_troublemakers';
+import { crowOfDarkTidings } from './crow_of_dark_tidings';
+import { dazzlingAngel } from './dazzling_angel';
+import { deadlyPlot } from './deadly_plot';
+import { deadlyRiposte } from './deadly_riposte';
+import { deathBaron } from './death_baron';
+import { diregrafGhoul } from './diregraf_ghoul';
+import { dragonFodder } from './dragon_fodder';
+import { dragonlordsServant } from './dragonlords_servant';
+import { dropkickBomber } from './dropkick_bomber';
+import { druidOfTheCowl } from './druid_of_the_cowl';
+import { dwynensElite } from './dwynens_elite';
+import { eatenAlive } from './eaten_alive';
+import { eatenByPiranhas } from './eaten_by_piranhas';
+import { elfWarriorToken } from './elf_warrior_token';
+import { elspethsSmite } from './elspeths_smite';
+import { elvishArchdruid } from './elvish_archdruid';
+import { elvishRegrower } from './elvish_regrower';
+import { eruditeWizard } from './erudite_wizard';
+import { exclusionMage } from './exclusion_mage';
+import { faerieToken } from './faerie_token';
+import { felidarSavior } from './felidar_savior';
+import { fellingBlow } from './felling_blow';
+import { fieryAnnihilation } from './fiery_annihilation';
+import { fireElemental } from './fire_elemental';
+import { firespitterWhelp } from './firespitter_whelp';
+import { fleetingDistraction } from './fleeting_distraction';
 import { forest } from './forest';
-import { forgeCadet } from './forge_cadet';
-import { forgewingGriffin } from './forgewing_griffin';
-import { galewingFalcon } from './galewing_falcon';
-import { galvanicChanneler } from './galvanic_channeler';
-import { ghostlitPenitent } from './ghostlit_penitent';
-import { gildedConfessor } from './gilded_confessor';
-import { glassreefSentinel } from './glassreef_sentinel';
-import { gloamwoodElder } from './gloamwood_elder';
-import { gloomWisp } from './gloom_wisp';
-import { gloomsilkSpider } from './gloomsilk_spider';
-import { gorehornMinotaur } from './gorehorn_minotaur';
-import { graveHexer } from './grave_hexer';
-import { graveSentence } from './grave_sentence';
-import { gravebloomSprout } from './gravebloom_sprout';
-import { grimKindling } from './grim_kindling';
-import { groveTender } from './grove_tender';
-import { gutterfangRat } from './gutterfang_rat';
-import { hammerfallRaider } from './hammerfall_raider';
-import { harvestHymn } from './harvest_hymn';
-import { hearthfieldCleric } from './hearthfield_cleric';
-import { herdRoar } from './herd_roar';
-import { hopefulSquire } from './hopeful_squire';
-import { hushwingBat } from './hushwing_bat';
-import { inkwellScribe } from './inkwell_scribe';
+import { frenziedGoblin } from './frenzied_goblin';
+import { giantGrowth } from './giant_growth';
+import { goblinFirebomb } from './goblin_firebomb';
+import { goblinOriflamme } from './goblin_oriflamme';
+import { goblinSmuggler } from './goblin_smuggler';
+import { goblinToken } from './goblin_token';
+import { helpfulHunter } from './helpful_hunter';
+import { heraldOfFaith } from './herald_of_faith';
+import { herosDownfall } from './heros_downfall';
+import { highbornVampire } from './highborn_vampire';
+import { hinterlandSanctifier } from './hinterland_sanctifier';
+import { hungryGhoul } from './hungry_ghoul';
+import { icewindElemental } from './icewind_elemental';
+import { incineratingBlast } from './incinerating_blast';
+import { ingeniousLeonin } from './ingenious_leonin';
+import { inspiringOverseer } from './inspiring_overseer';
+import { intoTheRoil } from './into_the_roil';
 import { island } from './island';
-import { kelpweaverDruid } from './kelpweaver_druid';
-import { kilnSprite } from './kiln_sprite';
-import { kindlingCaller } from './kindling_caller';
-import { lanternwingAngel } from './lanternwing_angel';
-import { lastRites } from './last_rites';
-import { lavaFist } from './lava_fist';
-import { magmaLance } from './magma_lance';
-import { meadowGriffin } from './meadow_griffin';
-import { memoryLeech } from './memory_leech';
-import { mireProwler } from './mire_prowler';
-import { mistSprite } from './mist_sprite';
-import { mistcloakAmbusher } from './mistcloak_ambusher';
-import { mistfinDrake } from './mistfin_drake';
-import { mistgraveRevenant } from './mistgrave_revenant';
-import { mistyMeadow } from './misty_meadow';
-import { moltenRebuke } from './molten_rebuke';
-import { monkToken } from './monk_token';
-import { mossViper } from './moss_viper';
-import { mossbarkBear } from './mossbark_bear';
-import { mossfinLurker } from './mossfin_lurker';
+import { jazalGoldmane } from './jazal_goldmane';
+import { joragaInvocation } from './joraga_invocation';
+import { karganDragonrider } from './kargan_dragonrider';
+import { kindledFury } from './kindled_fury';
+import { kitesailCorsair } from './kitesail_corsair';
+import { leoninSkyhunter } from './leonin_skyhunter';
+import { leoninVanguard } from './leonin_vanguard';
+import { llanowarElves } from './llanowar_elves';
+import { maalfeldTwins } from './maalfeld_twins';
+import { magnigothSentry } from './magnigoth_sentry';
+import { mildManneredLibrarian } from './mild_mannered_librarian';
+import { mischievousMystic } from './mischievous_mystic';
+import { momentOfCraving } from './moment_of_craving';
+import { momentOfTriumph } from './moment_of_triumph';
 import { mountain } from './mountain';
-import { musterSergeant } from './muster_sergeant';
-import { nightsBargain } from './nights_bargain';
-import { nightshadeTonic } from './nightshade_tonic';
-import { nightveilWraith } from './nightveil_wraith';
-import { openPath } from './open_path';
-import { packPounce } from './pack_pounce';
-import { palmStrike } from './palm_strike';
-import { peakGiant } from './peak_giant';
-import { penance } from './penance';
-import { pitfireRaider } from './pitfire_raider';
+import { mysticArchaeologist } from './mystic_archaeologist';
+import { newHorizons } from './new_horizons';
+import { offerImmortality } from './offer_immortality';
+import { opt } from './opt';
+import { pacifism } from './pacifism';
+import { piratesCutlass } from './pirates_cutlass';
 import { plains } from './plains';
-import { prismaticDragon } from './prismatic_dragon';
-import { prismaticFount } from './prismatic_fount';
-import { purifyingFire } from './purifying_fire';
-import { pyreGhast } from './pyre_ghast';
-import { quakeBoar } from './quake_boar';
-import { radiantBlessing } from './radiant_blessing';
-import { raiseTheBanners } from './raise_the_banners';
-import { rallyTheMeadow } from './rally_the_meadow';
-import { readTheRoots } from './read_the_roots';
-import { reefScholar } from './reef_scholar';
-import { reefshellCrab } from './reefshell_crab';
-import { reefwingFledgling } from './reefwing_fledgling';
-import { refractedInsight } from './refracted_insight';
-import { rendFlesh } from './rend_flesh';
-import { ridgeMarauder } from './ridge_marauder';
-import { riptideRecall } from './riptide_recall';
-import { riteOfLanterns } from './rite_of_lanterns';
-import { robTheMind } from './rob_the_mind';
-import { rootWarden } from './root_warden';
-import { rootgnawBoar } from './rootgnaw_boar';
-import { rotIntoLoam } from './rot_into_loam';
-import { rotbarkTreefolk } from './rotbark_treefolk';
-import { rotwingCrow } from './rotwing_crow';
-import { sanguineChorister } from './sanguine_chorister';
-import { saprolingToken } from './saproling_token';
-import { scorchfangHound } from './scorchfang_hound';
-import { shatteredIntent } from './shattered_intent';
-import { shellOfTheDeep } from './shell_of_the_deep';
-import { shoalHatchling } from './shoal_hatchling';
-import { siftTheDepths } from './sift_the_depths';
-import { silverSpire } from './silver_spire';
-import { skyMessenger } from './sky_messenger';
-import { skyguardGriffin } from './skyguard_griffin';
-import { smokeWarlock } from './smoke_warlock';
-import { smolderingDevourer } from './smoldering_devourer';
-import { smolderingJungle } from './smoldering_jungle';
-import { snapjawStrike } from './snapjaw_strike';
-import { soldierToken } from './soldier_token';
-import { soulSiphon } from './soul_siphon';
-import { sparkVolley } from './spark_volley';
-import { spireJudgment } from './spire_judgment';
-import { spiritToken } from './spirit_token';
-import { spitfireImp } from './spitfire_imp';
-import { splittingFlame } from './splitting_flame';
-import { sporecall } from './sporecall';
-import { sporecapShambler } from './sporecap_shambler';
-import { springhornStag } from './springhorn_stag';
-import { squallSkimmer } from './squall_skimmer';
-import { staticJolt } from './static_jolt';
-import { stokeTheForge } from './stoke_the_forge';
-import { stormflare } from './stormflare';
-import { stormglassDrake } from './stormglass_drake';
-import { sunantlerMonarch } from './sunantler_monarch';
-import { sunbladePaladin } from './sunblade_paladin';
-import { sunbrand } from './sunbrand';
-import { sunlitCanyon } from './sunlit_canyon';
-import { sunmeadowHerald } from './sunmeadow_herald';
-import { sunsteelLancer } from './sunsteel_lancer';
-import { sureSwipe } from './sure_swipe';
+import { prayerOfBinding } from './prayer_of_binding';
+import { pridefulParent } from './prideful_parent';
+import { quickDrawKatana } from './quick_draw_katana';
+import { quickStudy } from './quick_study';
+import { ragingRedcap } from './raging_redcap';
+import { rapaciousDragon } from './rapacious_dragon';
+import { reassemblingSkeleton } from './reassembling_skeleton';
+import { savannahLions } from './savannah_lions';
+import { scorchingDragonfire } from './scorching_dragonfire';
+import { seizeTheSpoils } from './seize_the_spoils';
+import { skeletonArcher } from './skeleton_archer';
+import { skyrakerGiant } from './skyraker_giant';
+import { skyshipBuccaneer } from './skyship_buccaneer';
+import { snakeskinVeil } from './snakeskin_veil';
+import { spectralSailor } from './spectral_sailor';
+import { starlightSnare } from './starlight_snare';
+import { stormFleetSpy } from './storm_fleet_spy';
+import { stromkirkBloodthief } from './stromkirk_bloodthief';
+import { suspiciousShambler } from './suspicious_shambler';
+import { swabGoblin } from './swab_goblin';
 import { swamp } from './swamp';
-import { tanglejawCroc } from './tanglejaw_croc';
-import { templeBlade } from './temple_blade';
-import { templeDragon } from './temple_dragon';
-import { territorialBeast } from './territorial_beast';
-import { thorngladeArcher } from './thornglade_archer';
-import { thousandBlowsMonk } from './thousand_blows_monk';
-import { thunderheadDjinn } from './thunderhead_djinn';
-import { tidalInsight } from './tidal_insight';
-import { tidecrestMutant } from './tidecrest_mutant';
-import { timberlandRhino } from './timberland_rhino';
-import { titheCollector } from './tithe_collector';
-import { trailScout } from './trail_scout';
-import { tribeElder } from './tribe_elder';
-import { turnTheTide } from './turn_the_tide';
-import { twinStrike } from './twin_strike';
-import { undertideLore } from './undertide_lore';
-import { undertow } from './undertow';
-import { veilbornSpecter } from './veilborn_specter';
-import { venomDuel } from './venom_duel';
-import { verdantSurge } from './verdant_surge';
-import { vesperNovice } from './vesper_novice';
-import { vesperVow } from './vesper_vow';
-import { vesperhallMatriarch } from './vesperhall_matriarch';
-import { warrenHare } from './warren_hare';
-import { wavecrestMystic } from './wavecrest_mystic';
-import { wayfarerDruid } from './wayfarer_druid';
-import { wildBlossom } from './wild_blossom';
-import { wildlandColossus } from './wildland_colossus';
-import { witheringTouch } from './withering_touch';
+import { tajuruPathwarden } from './tajuru_pathwarden';
+import { terrorOfMountVelus } from './terror_of_mount_velus';
+import { thornwealdArcher } from './thornweald_archer';
+import { thrashingBrontodon } from './thrashing_brontodon';
+import { tolarianTerror } from './tolarian_terror';
+import { treasureToken } from './treasure_token';
+import { twinbladePaladin } from './twinblade_paladin';
+import { unchartedHaven } from './uncharted_haven';
+import { undyingMalice } from './undying_malice';
+import { untamedHunger } from './untamed_hunger';
+import { vampireInterloper } from './vampire_interloper';
+import { vampireNeonate } from './vampire_neonate';
+import { vampireSpawn } from './vampire_spawn';
+import { vengefulBloodwitch } from './vengeful_bloodwitch';
+import { volleyVeteran } from './volley_veteran';
+import { wildheartInvoker } from './wildheart_invoker';
+import { wildwoodScourge } from './wildwood_scourge';
+import { zombieToken } from './zombie_token';
 
-export const CORE_CARDS: readonly CardDef[] = [
+export const CORE_CARDS: CardDef[] = [
+  adamantWill,
+  aggressiveMammoth,
+  ajanisPridemate,
+  ancestorDragon,
+  angelicEdict,
+  arcaneEpiphany,
+  battleRattleShaman,
+  bearCub,
+  beastKinRanger,
+  bigfinBouncer,
+  biogenicUpgrade,
+  bishopsSoldier,
+  biteDown,
+  bloodtitheCollector,
+  brinebornCutthroat,
+  brokenWings,
+  burrogBefuddler,
+  cancel,
+  carnelianOrbOfDragonkind,
+  catToken,
+  cemeteryRecruitment,
+  clinquantSkymage,
+  corsairCaptain,
+  crosswayTroublemakers,
+  crowOfDarkTidings,
+  dazzlingAngel,
+  deadlyPlot,
+  deadlyRiposte,
+  deathBaron,
+  diregrafGhoul,
+  dragonFodder,
+  dragonlordsServant,
+  dropkickBomber,
+  druidOfTheCowl,
+  dwynensElite,
+  eatenAlive,
+  eatenByPiranhas,
+  elfWarriorToken,
+  elspethsSmite,
+  elvishArchdruid,
+  elvishRegrower,
+  eruditeWizard,
+  exclusionMage,
+  faerieToken,
+  felidarSavior,
+  fellingBlow,
+  fieryAnnihilation,
+  fireElemental,
+  firespitterWhelp,
+  fleetingDistraction,
   forest,
-  mountain,
-  plains,
+  frenziedGoblin,
+  giantGrowth,
+  goblinFirebomb,
+  goblinOriflamme,
+  goblinSmuggler,
+  goblinToken,
+  helpfulHunter,
+  heraldOfFaith,
+  herosDownfall,
+  highbornVampire,
+  hinterlandSanctifier,
+  hungryGhoul,
+  icewindElemental,
+  incineratingBlast,
+  ingeniousLeonin,
+  inspiringOverseer,
+  intoTheRoil,
   island,
+  jazalGoldmane,
+  joragaInvocation,
+  karganDragonrider,
+  kindledFury,
+  kitesailCorsair,
+  leoninSkyhunter,
+  leoninVanguard,
+  llanowarElves,
+  maalfeldTwins,
+  magnigothSentry,
+  mildManneredLibrarian,
+  mischievousMystic,
+  momentOfCraving,
+  momentOfTriumph,
+  mountain,
+  mysticArchaeologist,
+  newHorizons,
+  offerImmortality,
+  opt,
+  pacifism,
+  piratesCutlass,
+  plains,
+  prayerOfBinding,
+  pridefulParent,
+  quickDrawKatana,
+  quickStudy,
+  ragingRedcap,
+  rapaciousDragon,
+  reassemblingSkeleton,
+  savannahLions,
+  scorchingDragonfire,
+  seizeTheSpoils,
+  skeletonArcher,
+  skyrakerGiant,
+  skyshipBuccaneer,
+  snakeskinVeil,
+  spectralSailor,
+  starlightSnare,
+  stormFleetSpy,
+  stromkirkBloodthief,
+  suspiciousShambler,
+  swabGoblin,
   swamp,
-  groveTender,
-  mossViper,
-  emberHound,
-  canopySpider,
-  ashenDuelist,
-  cinderAdept,
-  ridgeMarauder,
-  brambleWarden,
-  timberlandRhino,
-  cinderwingDrake,
-  cragDragon,
-  emberSnap,
-  magmaLance,
-  verdantSurge,
-  feralClash,
-  readTheRoots,
-  mistSprite,
-  dawnAcolyte,
-  reefshellCrab,
-  beaconSquire,
-  reefScholar,
-  galewingFalcon,
-  sunbladePaladin,
-  cloudriderKnight,
-  auroraSeraph,
-  radiantBlessing,
-  undertow,
-  turnTheTide,
-  tidalInsight,
-  dawnsVerdict,
-  gloomWisp,
-  duskwingBat,
-  mireProwler,
-  graveHexer,
-  bogLurker,
-  cryptGhoul,
-  duskmireShade,
-  bloodReaver,
-  nightveilWraith,
-  dreadTyrant,
-  witheringTouch,
-  nightsBargain,
-  soulSiphon,
-  graveSentence,
-  kilnSprite,
-  squallSkimmer,
-  arcInitiate,
-  glassreefSentinel,
-  galvanicChanneler,
-  wavecrestMystic,
-  stormglassDrake,
-  thunderheadDjinn,
-  staticJolt,
-  stormflare,
-  brineRebuke,
-  refractedInsight,
-  shatteredIntent,
-  hopefulSquire,
-  warrenHare,
-  bloomcallerDruid,
-  bristlebackBoar,
-  sunmeadowHerald,
-  hearthfieldCleric,
-  thorngladeArcher,
-  mossbarkBear,
-  skyguardGriffin,
-  sunantlerMonarch,
-  rallyTheMeadow,
-  wildBlossom,
-  packPounce,
-  harvestHymn,
-  forgeCadet,
-  musterSergeant,
-  sunsteelLancer,
-  kindlingCaller,
-  bannerguardKnight,
-  hammerfallRaider,
-  brightforgeMarshal,
-  forgewingGriffin,
-  brightforgeWarlord,
-  raiseTheBanners,
-  moltenRebuke,
-  sunbrand,
-  chargeOfTheForge,
-  stokeTheForge,
-  gutterfangRat,
-  fogslipThief,
-  hushwingBat,
-  inkwellScribe,
-  memoryLeech,
-  mistcloakAmbusher,
-  veilbornSpecter,
-  mistgraveRevenant,
-  robTheMind,
-  dragBelow,
-  chokingMist,
-  siftTheDepths,
-  drownTheTruth,
-  gravebloomSprout,
-  rotwingCrow,
-  rootgnawBoar,
-  bloodsporeThrall,
-  bonewoodStalker,
-  sporecapShambler,
-  gloomsilkSpider,
-  rotbarkTreefolk,
-  gloamwoodElder,
-  venomDuel,
-  rotIntoLoam,
-  sporecall,
-  nightshadeTonic,
-  vesperNovice,
-  titheCollector,
-  chantryGuard,
-  ghostlitPenitent,
-  censerBearer,
-  sanguineChorister,
-  ashveilExecutioner,
-  lanternwingAngel,
-  gildedConfessor,
-  vesperhallMatriarch,
-  penance,
-  vesperVow,
-  riteOfLanterns,
-  lastRites,
-  bloodTithe,
-  spitfireImp,
-  bloodhungryGhoul,
-  pitfireRaider,
-  brimstoneSkirmisher,
-  blisteringHellion,
-  pyreGhast,
-  gorehornMinotaur,
-  scorchfangHound,
-  cindermawDemon,
-  splittingFlame,
-  bloodfireBolt,
-  rendFlesh,
-  bloodFrenzy,
-  grimKindling,
-  shoalHatchling,
-  reefwingFledgling,
-  kelpweaverDruid,
-  tidecrestMutant,
-  mossfinLurker,
-  tanglejawCroc,
-  mistfinDrake,
-  coralhideBehemoth,
-  deepgroveLeviathan,
-  snapjawStrike,
-  shellOfTheDeep,
-  adaptiveBloom,
-  undertideLore,
-  riptideRecall,
-  cloisterLancer,
-  templeBlade,
-  brazierDisciple,
-  ashwingKestrel,
-  flamecrestMentor,
-  thousandBlowsMonk,
-  craterElemental,
-  templeDragon,
-  palmStrike,
-  sparkVolley,
-  lavaFist,
-  twinStrike,
-  dragonsBreath,
-  flameCut,
-  cliffLynx,
-  trailScout,
-  tribeElder,
-  quakeBoar,
-  springhornStag,
-  boulderSpider,
-  territorialBeast,
-  peakGiant,
-  wildlandColossus,
-  openPath,
-  deepSowing,
-  fertileRift,
-  avalancheFury,
-  sureSwipe,
-  herdRoar,
-  silverSpire,
-  ashHarbor,
-  smolderingJungle,
-  sunlitCanyon,
-  mistyMeadow,
-  prismaticFount,
-  wayfarerDruid,
-  skyMessenger,
-  smokeWarlock,
-  rootWarden,
-  meadowGriffin,
-  smolderingDevourer,
-  canyonTitan,
-  prismaticDragon,
-  spireJudgment,
-  ashStorm,
-  councilVeto,
-  convergentVision,
-  purifyingFire,
-  soldierToken,
-  elementalToken,
-  saprolingToken,
-  spiritToken,
-  monkToken,
-  beastToken,
+  tajuruPathwarden,
+  terrorOfMountVelus,
+  thornwealdArcher,
+  thrashingBrontodon,
+  tolarianTerror,
+  treasureToken,
+  twinbladePaladin,
+  unchartedHaven,
+  undyingMalice,
+  untamedHunger,
+  vampireInterloper,
+  vampireNeonate,
+  vampireSpawn,
+  vengefulBloodwitch,
+  volleyVeteran,
+  wildheartInvoker,
+  wildwoodScourge,
+  zombieToken,
 ];

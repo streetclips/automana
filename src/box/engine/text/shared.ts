@@ -10,14 +10,20 @@ import {
   isRelicDef,
 } from '../state';
 import type {
+  AttachmentEffect,
   CardDef,
   CardId,
   Color,
+  CostReduction,
+  Count,
   Effect,
+  EffectCondition,
   EffectTarget,
   GameState,
   Keyword,
   PlayerId,
+  SpellFilter,
+  StaticAbility,
   Step,
   Target,
   TargetSpec,
@@ -51,13 +57,33 @@ export interface RulesGrammar {
   undying: string;
   evolve: string;
   prowess: string;
-  sacrificeCost: string;
   selves: Record<'pronoun' | 'creature' | 'sacrificed', SelfReference>;
   targetPhrase(spec: TargetSpec): string;
   repeatedPhrase(spec: TargetSpec): string;
   effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext): string;
   moreDamage(amount: number, target: string): string;
   andThen: string;
+  creatureEntersTapped: string;
+  kickerLine(cost: string): string;
+  additionalCostLine(cost: string): string;
+  costReductionLine(reduction: CostReduction): string;
+  enchantLine(spec: TargetSpec): string;
+  xCountersLine: string;
+  manaTimesLine(colors: readonly Color[], count: Count): string;
+  staticLine(ability: StaticAbility): string;
+  attachmentLine(def: CardDef, attachment: AttachmentEffect): string;
+  entersOpener(def: CardDef): string;
+  spellOpener(filter: SpellFilter): string;
+  subtypeOpener(event: TriggerEvent, subtype: string): string;
+  conditionPrefix(condition: EffectCondition, spec: TargetSpec | undefined): string;
+  equipLine(cost: string): string;
+  sorceryOnly: string;
+  onceOnly: string;
+  sacrificeAnotherCost: string;
+  exileSelfCost: string;
+  sacrificeSelfCost(def: CardDef): string;
+  attachedRef: string;
+  eachOpponent: string;
 }
 
 export interface StateWords {
@@ -101,6 +127,8 @@ function sentences(
   const named = new Set<number>();
   const ref: TargetRef = (target, role) => {
     if (target === 'self') return self[role];
+    if (target === 'attached') return grammar.attachedRef;
+    if (target === 'opponent') return grammar.eachOpponent;
     const spec = specs[target];
     if (!spec) return '';
     if (named.has(target)) return grammar.repeatedPhrase(spec);
@@ -116,7 +144,11 @@ function sentences(
       );
       return;
     }
-    const text = capitalize(grammar.effectSentence(effect, ref, context));
+    const sentence = grammar.effectSentence(effect, ref, context);
+    const conditionSpec = effect.if && 'target' in effect.if ? specs[effect.if.target] : undefined;
+    const text = capitalize(
+      effect.if ? `${grammar.conditionPrefix(effect.if, conditionSpec)}${lowerFirst(sentence)}` : sentence,
+    );
     if (effect.kind === 'discard' && effect.who !== 'opponent' && previous?.kind === 'draw' && lines.length > 0) {
       lines.push(`${withoutPeriod(lines.pop() as string)}${grammar.andThen}${lowerFirst(text)}`);
     } else lines.push(text);
@@ -126,14 +158,22 @@ function sentences(
 
 export function rulesText(grammar: RulesGrammar, def: CardDef): string[] {
   const lines: string[] = [];
+  if (def.kicker) lines.push(grammar.kickerLine(def.kicker));
+  if (def.sacrificeCreatureOr) lines.push(grammar.additionalCostLine(def.sacrificeCreatureOr));
+  if (def.costReduction) lines.push(grammar.costReductionLine(def.costReduction));
   if (def.keywords?.length) {
     const names = def.keywords.map((keyword, i) =>
       i === 0 ? grammar.keywordNames[keyword] : lowerFirst(grammar.keywordNames[keyword]),
     );
     lines.push(grammar.keywordLine(names.join(', ')));
   }
-  if (def.entersTapped) lines.push(grammar.entersTapped);
-  if (def.mana?.length) lines.push(grammar.manaAbility(def.mana));
+  if (def.enchant) lines.push(grammar.enchantLine(def.enchant));
+  if (def.entersTapped) lines.push(isCreatureDef(def) ? grammar.creatureEntersTapped : grammar.entersTapped);
+  if (def.xCounters) lines.push(grammar.xCountersLine);
+  if (def.mana?.length)
+    lines.push(def.manaTimes ? grammar.manaTimesLine(def.mana, def.manaTimes) : grammar.manaAbility(def.mana));
+  for (const ability of def.statics ?? []) lines.push(grammar.staticLine(ability));
+  if (def.attachment) lines.push(grammar.attachmentLine(def, def.attachment));
   if (def.spell) lines.push(sentences(grammar, def.spell.effects, def.spell.targets, { subject: def.name }, NO_SELF));
   (def.triggers ?? []).forEach((_, index) => lines.push(triggerText(grammar, def, index)));
   (def.activated ?? []).forEach((_, index) => lines.push(activatedText(grammar, def, index)));
@@ -148,22 +188,44 @@ export function triggerText(grammar: RulesGrammar, def: CardDef, index: number):
   if (!trigger) return '';
   const self = OPENER_NAMES_IT.has(trigger.on) ? grammar.selves.pronoun : grammar.selves.creature;
   const condition = trigger.condition ? `${grammar.triggerConditions[trigger.condition]}, ` : '';
-  const opener = (isRelicDef(def) ? grammar.relicOpeners[trigger.on] : undefined) ?? grammar.triggerOpeners[trigger.on];
+  const opener = triggerOpener(grammar, def, trigger.on, trigger.spells, trigger.subtype);
   return `${opener}, ${condition}${lowerFirst(sentences(grammar, trigger.effects, trigger.targets, { subject: self.subject, on: trigger.on }, self))}`;
+}
+
+function triggerOpener(
+  grammar: RulesGrammar,
+  def: CardDef,
+  event: TriggerEvent,
+  spells: SpellFilter | undefined,
+  subtype: string | undefined,
+): string {
+  if (isRelicDef(def) && grammar.relicOpeners[event]) return grammar.relicOpeners[event] as string;
+  if (subtype) return grammar.subtypeOpener(event, subtype);
+  if (event === 'enters') return grammar.entersOpener(def);
+  if (event === 'spell') return grammar.spellOpener(spells ?? 'instantOrSorcery');
+  return grammar.triggerOpeners[event];
 }
 
 export function activatedText(grammar: RulesGrammar, def: CardDef, index: number): string {
   const ability = def.activated?.[index];
   if (!ability) return '';
+  const only = ability.effects.length === 1 ? ability.effects[0] : undefined;
+  if (ability.sorcery && only?.kind === 'attach') return grammar.equipLine(ability.cost);
   const cost = [
     ability.cost && ability.cost !== '{0}' ? ability.cost : '',
     ability.tap ? '{T}' : '',
-    ability.sacrifice ? grammar.sacrificeCost : '',
+    ability.sacrificeAnother ? grammar.sacrificeAnotherCost : '',
+    ability.sacrifice ? grammar.sacrificeSelfCost(def) : '',
+    ability.exileSelf ? grammar.exileSelfCost : '',
   ]
     .filter(Boolean)
     .join(', ');
   const self = ability.sacrifice ? grammar.selves.sacrificed : grammar.selves.creature;
-  return `${capitalize(cost)}: ${sentences(grammar, ability.effects, ability.targets, { subject: self.subject }, self)}`;
+  const limits = [ability.sorcery ? grammar.sorceryOnly : '', ability.once ? grammar.onceOnly : '']
+    .filter(Boolean)
+    .map((limit) => ` ${limit}`)
+    .join('');
+  return `${capitalize(cost)}: ${sentences(grammar, ability.effects, ability.targets, { subject: self.subject }, self)}${limits}`;
 }
 
 function permanentLabel(words: StateWords, s: GameState, id: CardId): string {

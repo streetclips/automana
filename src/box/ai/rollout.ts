@@ -76,6 +76,7 @@ function targetImpact(s: GameState, player: PlayerId, effect: Effect, targets: T
       return side * (effect.amount >= remaining ? value : effect.amount * 0.3);
     case 'destroy':
     case 'bounce':
+    case 'exile':
       return side * value;
     case 'pump':
       if (effect.toughness < 0 && -effect.toughness >= remaining) return side * value;

@@ -4,15 +4,22 @@ import type { Refusal } from '../refusals';
 import { isPlayerTarget } from '../targets';
 import {
   COLORS,
+  type AttachmentEffect,
   type CardDef,
   type CardId,
   type CardType,
   type Color,
+  type CostReduction,
+  type Count,
   type Effect,
+  type EffectCondition,
   type GameEvent,
   type GameState,
   type Keyword,
+  type PermanentKind,
   type PlayerId,
+  type SpellFilter,
+  type StaticAbility,
   type Step,
   type Target,
   type TargetSpec,
@@ -60,6 +67,8 @@ const KEYWORD_NAMES: Record<Keyword, string> = {
   hexproof: 'Antimaleficio',
   evolve: 'Evolucionar',
   prowess: 'Destreza',
+  indestructible: 'Indestructible',
+  ward: 'Custodia {2}',
 };
 
 const KEYWORD_ABILITIES: Record<Keyword, string> = {
@@ -80,6 +89,8 @@ const KEYWORD_ABILITIES: Record<Keyword, string> = {
   hexproof: 'antimaleficio',
   evolve: 'evolucionar',
   prowess: 'destreza',
+  indestructible: 'indestructible',
+  ward: 'custodia',
 };
 
 const KEYWORD_REMINDERS: Record<Keyword, string> = {
@@ -101,6 +112,8 @@ const KEYWORD_REMINDERS: Record<Keyword, string> = {
   evolve: 'Recibe un contador +1/+1 siempre que otra criatura con más fuerza o más resistencia entre bajo tu control.',
   prowess:
     'Siempre que lances un hechizo que no sea de criatura, esta criatura obtiene +1/+1 hasta el final del turno.',
+  indestructible: 'El daño y los efectos que dicen «destruir» no la destruyen.',
+  ward: 'Siempre que esta criatura se convierta en objetivo de un hechizo o habilidad que controla un oponente, contrarréstalo a menos que ese jugador pague {2}.',
 };
 
 const STEP_NAMES: Record<Step, string> = {
@@ -123,6 +136,8 @@ const STEP_NAMES: Record<Step, string> = {
 const TYPE_NAMES: Record<CardType, string> = {
   land: 'Tierra',
   creature: 'Criatura',
+  artifact: 'Artefacto',
+  enchantment: 'Encantamiento',
   instant: 'Instantáneo',
   sorcery: 'Conjuro',
   relic: 'Reliquia',
@@ -189,6 +204,7 @@ function formatPump(power: number, toughness: number, keywords: readonly Keyword
 
 function tokenDescription(defId: string, amount: number): string {
   const token = getCardDef(defId);
+  if (!token.types.includes('creature')) return `${plural(amount, 'ficha', 'fichas')} de ${token.name}`;
   const form = plural(amount, 'card', 'cards');
   const colors = token.colors?.length
     ? andList(token.colors.map((color) => COLOR_WORDS[color][form]))
@@ -198,22 +214,57 @@ function tokenDescription(defId: string, amount: number): string {
   return `${noun} ${colors} ${token.power}/${token.toughness}${keywords}`;
 }
 
+function creatureNoun(spec: Extract<TargetSpec, { kind: 'creature' }>, article: 'la' | 'una'): string {
+  const words = [article === 'la' ? (spec.other ? 'otra' : 'la') : spec.other ? 'otra' : 'una'];
+  words.push(spec.subtype ? `criatura ${spec.subtype}` : 'criatura');
+  if (spec.tapped) words.push('girada');
+  if (spec.combat === 'attacking') words.push('atacante');
+  if (spec.combat === 'attackingOrBlocking') words.push('atacante o bloqueadora');
+  words.push('objetivo');
+  if (spec.maxPower !== undefined) words.push(`con fuerza de ${spec.maxPower} o menos`);
+  if (spec.controller === 'you') words.push(article === 'la' ? 'que controlas' : 'que controles');
+  if (spec.controller === 'opponent') words.push(article === 'la' ? 'que controla un oponente' : 'que controle un oponente');
+  return words.join(' ');
+}
+
+const PERMANENT_WORDS: Record<PermanentKind, string> = {
+  artifact: 'artefacto',
+  enchantment: 'encantamiento',
+  creature: 'criatura',
+  flyingCreature: 'criatura con la habilidad de volar',
+  land: 'tierra',
+  nonland: 'permanente que no sea tierra',
+};
+
+function permanentNoun(spec: Extract<TargetSpec, { kind: 'permanent' }>): string {
+  const kinds = spec.types?.length
+    ? spec.types.map((kind) => PERMANENT_WORDS[kind]).join(' o ')
+    : 'permanente';
+  const owner = spec.controller === 'you' ? ' que controlas' : spec.controller === 'opponent' ? ' que controla un oponente' : '';
+  return `el ${kinds} objetivo${owner}`;
+}
+
+function graveyardNoun(spec: Extract<TargetSpec, { kind: 'graveyard' }>): string {
+  const kind = spec.cards === 'creature' ? 'de criatura' : 'de permanente';
+  return `la carta ${kind}${spec.subtype ? ` ${spec.subtype}` : ''} objetivo de tu cementerio`;
+}
+
 function targetPhrase(spec: TargetSpec): string {
   switch (spec.kind) {
     case 'any':
       return 'cualquier objetivo';
-    case 'creature': {
-      const noun = spec.tapped ? 'la criatura girada objetivo' : 'la criatura objetivo';
-      if (spec.controller === 'you') return `${noun} que controlas`;
-      if (spec.controller === 'opponent') return `${noun} que no controlas`;
-      return noun;
-    }
+    case 'creature':
+      return creatureNoun(spec, 'la');
+    case 'permanent':
+      return permanentNoun(spec);
     case 'player':
       if (spec.controller === 'opponent') return 'el oponente objetivo';
       if (spec.controller === 'you') return 'ti';
       return 'el jugador objetivo';
     case 'spell':
       return 'el hechizo objetivo';
+    case 'graveyard':
+      return graveyardNoun(spec);
   }
 }
 
@@ -221,18 +272,18 @@ function targetChoice(spec: TargetSpec): string {
   switch (spec.kind) {
     case 'any':
       return 'cualquier objetivo';
-    case 'creature': {
-      const noun = spec.tapped ? 'una criatura girada objetivo' : 'una criatura objetivo';
-      if (spec.controller === 'you') return `${noun} que controles`;
-      if (spec.controller === 'opponent') return `${noun} que no controles`;
-      return noun;
-    }
+    case 'creature':
+      return creatureNoun(spec, 'una');
+    case 'permanent':
+      return permanentNoun(spec).replace(/^el /, 'un ');
     case 'player':
       if (spec.controller === 'opponent') return 'un oponente objetivo';
       if (spec.controller === 'you') return 'a ti mismo';
       return 'un jugador objetivo';
     case 'spell':
       return 'un hechizo objetivo';
+    case 'graveyard':
+      return graveyardNoun(spec).replace(/^la /, 'una ');
   }
 }
 
@@ -240,12 +291,27 @@ function repeatedPhrase(spec: TargetSpec): string {
   switch (spec.kind) {
     case 'creature':
       return 'esa criatura';
+    case 'permanent':
+      return 'ese permanente';
     case 'player':
       return 'ese jugador';
     case 'spell':
       return 'ese hechizo';
     case 'any':
       return 'ese objetivo';
+    case 'graveyard':
+      return 'esa carta';
+  }
+}
+
+function countNoun(count: Count): string {
+  switch (count.kind) {
+    case 'attacking':
+      return 'criatura atacante';
+    case 'creatures':
+      return count.subtype ? `${count.subtype} que controlas` : 'criatura que controlas';
+    case 'instantsAndSorceriesInGraveyard':
+      return 'carta de instantáneo y de conjuro en tu cementerio';
   }
 }
 
@@ -314,6 +380,11 @@ function withSubject(subject: string, predicate: string): string {
 function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext): string {
   switch (effect.kind) {
     case 'damage':
+      if (effect.times)
+        return withSubject(
+          context.subject,
+          `hace ${withA(ref(effect.to, 'object'))} una cantidad de daño igual al número de ${countNoun(effect.times)}.`,
+        );
       return withSubject(context.subject, `hace ${damagePoints(effect.amount)} ${withA(ref(effect.to, 'object'))}.`);
     case 'pump':
       return withSubject(
@@ -329,6 +400,7 @@ function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext
     case 'draw':
       return `Roba ${cardsCount(effect.amount)}.`;
     case 'gainLife':
+      if (effect.times) return `Ganas ${lifeAmount(effect.amount)} por cada ${countNoun(effect.times)}.`;
       return `Ganas ${lifeAmount(effect.amount)}.`;
     case 'loseLife':
       return effect.who === 'opponent'
@@ -359,6 +431,32 @@ function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext
       return `Puedes jugar ${extraLandsText(effect.amount)} este turno.`;
     case 'searchLand':
       return searchLandSentence(effect.land, effect.battlefield, effect.hand ?? 0, effect.tapped ?? false);
+    case 'pumpAttackers':
+      return 'Las criaturas atacantes que controlas obtienen +X/+X hasta el final del turno, donde X es el número de criaturas atacantes.';
+    case 'distributeCounters':
+      return `Distribuye ${countWord(effect.amount)} contadores +1/+1 entre una, dos o tres criaturas objetivo y luego duplica el número de contadores +1/+1 sobre cada una de esas criaturas.`;
+    case 'exile':
+      return `Exilia ${ref(effect.to, 'object')}.`;
+    case 'exileIfDies':
+      return `Si ${ref(effect.to, 'subject')} fuera a morir este turno, en vez de eso, exíliala.`;
+    case 'mill':
+      return `Muele ${cardsCount(effect.amount)}.`;
+    case 'scry':
+      return `Adivina ${effect.amount}.`;
+    case 'returnToHand':
+      return `Regresa ${ref(effect.to, 'object')} a tu mano.`;
+    case 'returnSelf':
+      return `Regresa esta carta de tu cementerio al campo de batalla${effect.tapped ? ' girada' : ''}.`;
+    case 'attach':
+      return `Anéxalo a ${ref(effect.to, 'object')}.`;
+    case 'tap':
+      return `Gira ${ref(effect.to, 'object')}.`;
+    case 'cantBlock':
+      return withSubject(ref(effect.to, 'subject'), 'no puede bloquear este turno.');
+    case 'unblockable':
+      return withSubject(ref(effect.to, 'subject'), 'no puede ser bloqueada este turno.');
+    case 'doom':
+      return `Cuando ${ref(effect.to, 'subject')} haga daño de combate este turno, sacrifícala.`;
   }
 }
 
@@ -373,6 +471,13 @@ const TRIGGER_OPENERS: Record<TriggerEvent, string> = {
   damagesPlayer: 'Siempre que esta criatura haga daño de combate a un jugador',
   lifeGain: 'Siempre que ganes vidas',
   landfall: 'Aterrizaje — Siempre que una tierra que controlas entre',
+  beginCombat: 'Al comienzo del combate en tu turno',
+  endStep: 'Al comienzo de tu paso final',
+  youAttack: 'Siempre que una o más criaturas que controlas ataquen',
+  draw: 'Siempre que robes una carta',
+  secondDraw: 'Siempre que robes tu segunda carta cada turno',
+  allyCounters:
+    'Siempre que se pongan uno o más contadores +1/+1 sobre otra criatura que no sea Hidra que controlas',
 };
 
 const RELIC_OPENERS: Partial<Record<TriggerEvent, string>> = {
@@ -383,7 +488,94 @@ const RELIC_OPENERS: Partial<Record<TriggerEvent, string>> = {
 const TRIGGER_CONDITIONS: Record<TriggerCondition, string> = {
   opponentDamaged: 'si un oponente recibió daño este turno',
   emptyHand: 'si no tienes cartas en la mano',
+  opponentLostLife: 'si un oponente perdió vidas este turno',
+  attackedThisTurn: 'si atacaste este turno',
+  threeCreatures: 'si controlas tres o más criaturas',
+  anotherElf: 'si controlas otro Elfo',
+  opponentsTurn: 'si es el turno de un oponente',
 };
+
+function costReductionLine(reduction: CostReduction): string {
+  if ('per' in reduction) return `Este hechizo cuesta {1} menos en lanzarse por cada ${countNoun(reduction.per)}.`;
+  return `Este hechizo cuesta {${reduction.amount}} menos en lanzarse si controlas un ${reduction.ifControl}.`;
+}
+
+function staticLine(ability: StaticAbility): string {
+  switch (ability.kind) {
+    case 'anthem': {
+      const subjects = ability.subtypes?.length ? ability.subtypes.join(' y ') : 'criaturas';
+      const who = `${ability.other ? 'Las otras' : 'Las'} ${ability.attacking ? 'criaturas atacantes' : subjects} que controlas`;
+      const power = ability.power ?? 0;
+      const toughness = ability.toughness ?? 0;
+      const keywords = ability.keywords ?? [];
+      if (power === 0 && toughness === 0) return `${who} tienen ${keywordList(keywords)}.`;
+      const has = keywords.length ? ` y tienen ${keywordList(keywords)}` : '';
+      return `${who} obtienen ${formatModifier(power, toughness)}${has}.`;
+    }
+    case 'keywordIf': {
+      const keyword = KEYWORD_ABILITIES[ability.keyword];
+      if (ability.condition === 'attacking') return `Esta criatura tiene ${keyword} mientras esté atacando.`;
+      if (ability.condition === 'controlDragon') return `Mientras controles un Dragón, esta criatura tiene ${keyword}.`;
+      return `Mientras tengas 25 o más vidas, esta criatura tiene ${keyword}.`;
+    }
+    case 'cantBlock':
+      return 'Esta criatura no puede bloquear.';
+    case 'spellDiscount':
+      return `Los hechizos de ${ability.subtype} que lanzas cuestan {${ability.amount}} menos en lanzarse.`;
+  }
+}
+
+function attachmentLine(def: CardDef, attachment: AttachmentEffect): string {
+  if (attachment.landMana)
+    return `La tierra encantada tiene «{T}: Agrega ${countWord(attachment.landMana)} manás de un mismo color».`;
+  const noun = def.enchant ? 'La criatura encantada' : 'La criatura equipada';
+  const parts: string[] = [];
+  if (attachment.loseAbilities) parts.push('pierde todas sus habilidades');
+  if (attachment.base) parts.push(`tiene fuerza y resistencia base de ${attachment.base[0]}/${attachment.base[1]}`);
+  const power = attachment.power ?? 0;
+  const toughness = attachment.toughness ?? 0;
+  if (power !== 0 || toughness !== 0) parts.push(`obtiene ${formatModifier(power, toughness)}`);
+  if (attachment.keywords?.length) parts.push(`tiene ${keywordList(attachment.keywords)}`);
+  if (attachment.cantAttack && attachment.cantBlock) parts.push('no puede atacar ni bloquear');
+  else if (attachment.cantBlock) parts.push('no puede bloquear');
+  if (attachment.doesntUntap) parts.push('no se endereza durante el paso de enderezar de su controlador');
+  const sentence = `${noun} ${andList(parts)}.`;
+  return attachment.yourTurn ? `Durante tu turno, ${lowerFirst(sentence)}` : sentence;
+}
+
+function entersOpener(def: CardDef): string {
+  if (def.types.includes('creature')) return TRIGGER_OPENERS.enters;
+  if (def.enchant) return 'Cuando esta Aura entre';
+  if (def.subtypes?.includes('Equipment')) return 'Cuando este Equipo entre';
+  if (def.types.includes('enchantment')) return 'Cuando este encantamiento entre';
+  return 'Cuando este artefacto entre';
+}
+
+function spellOpener(filter: SpellFilter): string {
+  if (filter === 'any') return 'Siempre que lances un hechizo';
+  if (filter === 'noncreatureOrDragon') return 'Siempre que lances un hechizo que no sea de criatura o un hechizo de Dragón';
+  return TRIGGER_OPENERS.spell;
+}
+
+function subtypeOpener(event: TriggerEvent, subtype: string): string {
+  if (event === 'allyDies') return `Siempre que otro ${subtype} que controlas muera`;
+  if (event === 'allyEnters') return `Siempre que otro ${subtype} que controlas entre`;
+  return TRIGGER_OPENERS[event];
+}
+
+function conditionPrefix(condition: EffectCondition, spec: TargetSpec | undefined): string {
+  if ('kicked' in condition) return 'Si este hechizo fue estimulado, ';
+  if ('targetSubtype' in condition)
+    return spec?.kind === 'graveyard' ? `Si es una carta de ${condition.targetSubtype}, ` : `Si esa criatura es un ${condition.targetSubtype}, `;
+  if ('payMana' in condition) return `Puedes pagar ${condition.payMana}. Si lo haces, `;
+  return `Puedes pagar ${lifeAmount(condition.payLife)}. Si lo haces, `;
+}
+
+function sacrificeSelfCost(def: CardDef): string {
+  if (def.types.includes('creature')) return 'sacrificar esta criatura';
+  if (def.token) return 'sacrificar esta ficha';
+  return def.types.includes('artifact') ? 'sacrificar este artefacto' : 'sacrificar este encantamiento';
+}
 
 function manaChoice(colors: readonly Color[]): string {
   if (colors.length === COLORS.length) return 'un maná de cualquier color';
@@ -522,6 +714,16 @@ function describeEventParts(s: GameState, event: GameEvent, viewer: PlayerId): T
     }
     case 'extraLands':
       return line`${act(event.player, viewer, 'puedes', 'puede')} jugar ${extraLandsText(event.amount)} este turno.`;
+    case 'exile':
+      return line`Se exilia ${cardRefParts(s, event.card, viewer)}.`;
+    case 'mill':
+      return line`${act(event.player, viewer, 'mueles', 'muele')} ${mention(s, event.card)}.`;
+    case 'attach':
+      return line`${capitalizeParts(cardRefParts(s, event.card, viewer))} queda anexado a ${cardRefParts(s, event.to, viewer)}.`;
+    case 'scry':
+      return line`${act(event.player, viewer, 'adivinas', 'adivina')} ${event.top + event.bottom}.`;
+    case 'sacrifice':
+      return line`${act(event.player, viewer, 'sacrificas', 'sacrifica')} ${mention(s, event.card)}.`;
     case 'resolve':
     case 'enter':
       return null;
@@ -616,6 +818,12 @@ function refusal(refused: Refusal): string {
       return `${refused.blocker} no puede bloquear a ${refused.attacker}`;
     case 'menace':
       return `${refused.attacker} tiene la habilidad de amenaza y no puede ser bloqueada excepto por dos o más criaturas`;
+    case 'abilityUsed':
+      return 'esa habilidad solo puede activarse una vez';
+    case 'invalidSacrifice':
+      return 'esa criatura no puede sacrificarse para esto';
+    case 'invalidX':
+      return 'elige un valor válido para X';
   }
 }
 
@@ -630,7 +838,6 @@ const RULES: RulesGrammar = {
   undying: `${TRIGGER_OPENERS.dies}, si no tenía contadores +1/+1 sobre ella, regrésala al campo de batalla bajo el control de su propietario con un contador +1/+1.`,
   evolve: `${TRIGGER_OPENERS.allyEnters}, si la fuerza o la resistencia de esa criatura es mayor que la de esta criatura, pon un contador +1/+1 sobre esta criatura.`,
   prowess: KEYWORD_REMINDERS.prowess,
-  sacrificeCost: 'sacrificar esta criatura',
   selves: {
     pronoun: { subject: '', object: 'ella' },
     creature: { subject: 'esta criatura', object: 'esta criatura' },
@@ -641,6 +848,29 @@ const RULES: RulesGrammar = {
   effectSentence,
   moreDamage: (amount, target) => `y ${damagePoints(amount)} ${withA(target)}.`,
   andThen: ' y luego ',
+  creatureEntersTapped: 'Esta criatura entra girada.',
+  kickerLine: (cost) => `Estímulo ${cost}.`,
+  additionalCostLine: (cost) =>
+    `Como coste adicional para lanzar este hechizo, sacrifica una criatura o paga ${cost}.`,
+  costReductionLine,
+  enchantLine: (spec) =>
+    spec.kind === 'permanent' && spec.types?.includes('land') ? 'Encantar tierra.' : 'Encantar criatura.',
+  xCountersLine: 'Esta criatura entra con X contadores +1/+1.',
+  manaTimesLine: (colors, count) => `{T}: Agrega ${manaChoice(colors)} por cada ${countNoun(count)}.`,
+  staticLine,
+  attachmentLine,
+  entersOpener,
+  spellOpener,
+  subtypeOpener,
+  conditionPrefix,
+  equipLine: (cost) => `Equipar ${cost}.`,
+  sorceryOnly: 'Activa esta habilidad solo como un conjuro.',
+  onceOnly: 'Activa esta habilidad solo una vez.',
+  sacrificeAnotherCost: 'sacrificar otra criatura',
+  exileSelfCost: 'exiliar esta carta de tu cementerio',
+  sacrificeSelfCost,
+  attachedRef: 'la criatura encantada',
+  eachOpponent: 'cada oponente',
 };
 
 const STATE: StateWords = {

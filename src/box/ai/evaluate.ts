@@ -1,8 +1,13 @@
 import {
+  abilitiesLost,
+  cantAttack,
+  cantBlock,
+  doesntUntap,
   getCardDef,
   isCreature,
   isLand,
   opponent,
+  staticStats,
   type CardId,
   type GameState,
   type Keyword,
@@ -28,8 +33,13 @@ function counters(s: GameState, id: CardId): number {
   return s.cards[id]?.counters ?? 0;
 }
 
-function printedKeywords(s: GameState, id: CardId): readonly Keyword[] {
-  return getCardDef(s.cards[id]?.def ?? '').keywords ?? [];
+function lastingKeywords(s: GameState, id: CardId): readonly Keyword[] {
+  return s.cards[id]?.zone === 'battlefield' ? staticStats(s, id).keywords : (getCardDef(s.cards[id]?.def ?? '').keywords ?? []);
+}
+
+function lastingPower(s: GameState, id: CardId): number {
+  if (s.cards[id]?.zone === 'battlefield') return staticStats(s, id).power;
+  return (getCardDef(s.cards[id]?.def ?? '').power ?? 0) + counters(s, id);
 }
 
 const LASTING_TRIGGERS: ReadonlySet<TriggerEvent> = new Set([
@@ -42,12 +52,20 @@ const LASTING_TRIGGERS: ReadonlySet<TriggerEvent> = new Set([
   'landfall',
 ]);
 
+const PACIFIED_SHARE = 0.15;
+const LOCKED_SHARE = 0.2;
+const CANT_BLOCK_PENALTY = 1;
+
 export function creatureValue(s: GameState, id: CardId): number {
   const def = getCardDef(s.cards[id]?.def ?? '');
-  const power = (def.power ?? 0) + counters(s, id);
-  const toughness = (def.toughness ?? 0) + counters(s, id);
+  const onBattlefield = s.cards[id]?.zone === 'battlefield';
+  const stats = onBattlefield
+    ? staticStats(s, id)
+    : { power: (def.power ?? 0) + counters(s, id), toughness: (def.toughness ?? 0) + counters(s, id) };
+  const power = Math.max(0, stats.power);
+  const toughness = stats.toughness;
   let value = 1 + power * 1.5 + toughness;
-  for (const keyword of printedKeywords(s, id)) {
+  for (const keyword of lastingKeywords(s, id)) {
     switch (keyword) {
       case 'flying':
         value += 1 + power * 0.6;
@@ -94,15 +112,43 @@ export function creatureValue(s: GameState, id: CardId): number {
       case 'prowess':
         value += 0.8;
         break;
+      case 'indestructible':
+        value += 2 + toughness * 0.3;
+        break;
+      case 'ward':
+        value += 1;
+        break;
       case 'haste':
       case 'flash':
         break;
     }
   }
-  if (def.mana?.length) value += 1.2;
-  if (def.activated?.length) value += 1;
-  for (const trigger of def.triggers ?? []) if (LASTING_TRIGGERS.has(trigger.on)) value += 1;
+  const lost = onBattlefield && abilitiesLost(s, id);
+  if (!lost) {
+    if (def.mana?.length) value += 1.2;
+    if (def.activated?.length) value += 1;
+    if (def.statics?.length) value += 1;
+    for (const trigger of def.triggers ?? []) if (LASTING_TRIGGERS.has(trigger.on)) value += 1;
+  }
+  if (!onBattlefield) return value;
+  if (cantAttack(s, id) && cantBlock(s, id)) return value * PACIFIED_SHARE;
+  if (doesntUntap(s, id) && s.cards[id]?.tapped) return value * LOCKED_SHARE;
+  if (cantBlock(s, id)) value -= CANT_BLOCK_PENALTY;
   return value;
+}
+
+const TREASURE_VALUE = 0.8;
+const EQUIPMENT_VALUE = 1;
+const ENCHANTMENT_VALUE = 1.5;
+const MANA_ROCK_VALUE = 1.5;
+
+function permanentValue(s: GameState, id: CardId): number {
+  const def = getCardDef(s.cards[id]?.def ?? '');
+  if (def.sacrificeForMana) return TREASURE_VALUE;
+  if (def.enchant) return 0;
+  if (def.mana?.length) return MANA_ROCK_VALUE;
+  if (def.attachment) return EQUIPMENT_VALUE;
+  return ENCHANTMENT_VALUE;
 }
 
 export const CARD_IN_HAND_VALUE = 2.3;
@@ -116,7 +162,7 @@ function sideScore(s: GameState, player: PlayerId): number {
     else if (isLand(s, id)) {
       lands += 1;
       score += lands <= 6 ? 1.5 : 0.4;
-    }
+    } else score += permanentValue(s, id);
   }
   score += ps.hand.length * CARD_IN_HAND_VALUE;
   if (ps.library.length < 4) score -= (4 - ps.library.length) * 3;
@@ -127,15 +173,17 @@ function exposurePenalty(s: GameState, player: PlayerId): number {
   if (s.activePlayer !== player) return 0;
   const opp = opponent(player);
   const attackers = s.players[opp].battlefield
-    .filter((id) => isCreature(s, id) && !printedKeywords(s, id).includes('defender'))
+    .filter((id) => isCreature(s, id) && !lastingKeywords(s, id).includes('defender') && !cantAttack(s, id))
     .map((id) => ({
-      power: (getCardDef(s.cards[id]?.def ?? '').power ?? 0) + counters(s, id),
-      flying: printedKeywords(s, id).includes('flying'),
+      power: lastingPower(s, id),
+      flying: lastingKeywords(s, id).includes('flying'),
     }))
     .sort((a, b) => b.power - a.power);
-  const blockers = s.players[player].battlefield.filter((id) => isCreature(s, id) && !s.cards[id]?.tapped);
+  const blockers = s.players[player].battlefield.filter(
+    (id) => isCreature(s, id) && !s.cards[id]?.tapped && !cantBlock(s, id),
+  );
   let flyingBlockers = blockers.filter((id) => {
-    const keywords = printedKeywords(s, id);
+    const keywords = lastingKeywords(s, id);
     return keywords.includes('flying') || keywords.includes('reach');
   }).length;
   let groundBlockers = blockers.length - flyingBlockers;

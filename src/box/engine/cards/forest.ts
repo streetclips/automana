@@ -2,9 +2,9 @@ import type { CardDef } from '../types';
 
 export const forest: CardDef = {
   id: 'forest',
-  name: 'Bosque',
+  name: 'Forest',
   types: ['land'],
   supertypes: ['Basic'],
-  subtypes: ['Bosque'],
+  subtypes: ['Forest'],
   mana: ['G'],
 };

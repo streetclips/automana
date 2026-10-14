@@ -2,9 +2,9 @@ import type { CardDef } from '../types';
 
 export const plains: CardDef = {
   id: 'plains',
-  name: 'Llanura',
+  name: 'Plains',
   types: ['land'],
   supertypes: ['Basic'],
-  subtypes: ['Llanura'],
+  subtypes: ['Plains'],
   mana: ['W'],
 };

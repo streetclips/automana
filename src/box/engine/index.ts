@@ -1,21 +1,19 @@
 export * from './types';
 export { allCardDefs, getCardDef, getCost, hasCardDef, registerCard } from './registry';
-export { RELIC_DEFS } from './relics';
 export {
-  BRIGHTFORGE,
-  CINDERMAW,
-  CROSSROADS,
+  CATS,
   DECK_LIST,
-  DEEPGROVE,
   DEFAULT_DECK_ID,
-  EMBERWILD,
-  FLAMECREST,
-  GLOAMWOOD,
-  MISTGRAVE,
-  STORMGLASS,
-  SUNMEADOW,
-  VESPERHALL,
-  WILDLAND,
+  ELVES,
+  GOBLINS,
+  HEALING,
+  INFERNO,
+  PAIRS,
+  PIRATES,
+  PRIMAL,
+  UNDEAD,
+  VAMPIRES,
+  WIZARDS,
   cardColors,
   deckIdOf,
   deckSize,
@@ -23,6 +21,7 @@ export {
   getDeck,
   hasDeck,
   localizeDeck,
+  pairDeck,
   resolveDeck,
 } from './decks';
 export type { DeckDef, DeckEntry, DeckSpec } from './decks';
@@ -38,6 +37,11 @@ export { activationBlocker, castBlocker, landPlayError } from './rules';
 export {
   OPENING_HAND,
   STARTING_LIFE,
+  abilitiesLost,
+  cantAttack,
+  cantBlock,
+  doesntUntap,
+  staticStats,
   EVOLVE_TRIGGER,
   PROWESS_TRIGGER,
   UNDYING_TRIGGER,

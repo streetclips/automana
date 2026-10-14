@@ -13,10 +13,10 @@ import { DEFAULT_DECK_ID, expandDeck, resolveDeck, type DeckSpec } from './decks
 import { defaultPlayerNames, refusalText } from './describe';
 import { resolveTopOfStack } from './effects';
 import { parseCost } from './mana';
-import { getCardDef, getCost, hasCardDef } from './registry';
+import { getCardDef, hasCardDef } from './registry';
 import type { Refusal } from './refusals';
 import { normalizeSeed, random, shuffleInPlace } from './rng';
-import { activateError, castError, landPlayError } from './rules';
+import { activateError, addCost, castCost, castError, landPlayError } from './rules';
 import {
   DEFAULT_TURN_LIMIT,
   MAX_HAND_SIZE,
@@ -25,24 +25,29 @@ import {
   PROWESS_TRIGGER,
   STARTING_LIFE,
   allCreatures,
+  canAfford,
   cloneState,
   defOf,
+  doesntUntap,
   drawCards,
   findPayment,
   getCard,
   getToughness,
   hasKeyword,
+  isCreature,
   isInstantOrSorceryDef,
+  isPermanentDef,
   isRelicDef,
   moveCard,
   newId,
+  onBattlefield,
   opponent,
+  payWith,
   queueTriggers,
-  tapCards,
   triggerSources,
   triggeredAbility,
 } from './state';
-import { targetCombos, targetsError } from './targets';
+import { isPlayerTarget, targetCombos, targetsError } from './targets';
 import type {
   Action,
   CardId,
@@ -52,6 +57,7 @@ import type {
   PendingTrigger,
   PlayerId,
   PlayerState,
+  StackItem,
   Step,
   Target,
 } from './types';
@@ -97,6 +103,7 @@ export function emptyPlayer(id: PlayerId, name: string): PlayerState {
     hand: [],
     battlefield: [],
     graveyard: [],
+    exile: [],
     command: [],
     landsPlayedThisTurn: 0,
     mulligans: 0,
@@ -105,6 +112,9 @@ export function emptyPlayer(id: PlayerId, name: string): PlayerState {
     drewFromEmptyLibrary: false,
     conceded: false,
     damagedThisTurn: false,
+    lostLifeThisTurn: false,
+    attackedThisTurn: false,
+    drawsThisTurn: 0,
     extraLandsThisTurn: 0,
   };
 }
@@ -152,8 +162,7 @@ function checkSetup(setup: PlayerSetup): void {
   }
   for (const id of setup.battlefield ?? []) {
     if (!hasCardDef(id)) throw new Error(`Unknown card definition "${id}"`);
-    const def = getCardDef(id);
-    if (!def.types.includes('land') && !def.types.includes('creature'))
+    if (!isPermanentDef(getCardDef(id)))
       throw new Error(`"${id}" is not a permanent, so it cannot start on the battlefield`);
   }
   for (const id of setup.relics ?? []) {
@@ -385,22 +394,38 @@ function performAction(s: GameState, action: Action): void {
     case 'cast': {
       expectPending(s, 'priority', player);
       const targets = action.targets ?? [];
-      const error = castError(s, player, action.card, targets);
+      const x = action.x ?? 0;
+      const error = castError(s, player, action.card, targets, x, action.sacrifice);
       if (error) illegal(error);
-      const payment = findPayment(s, player, getCost(getCard(s, action.card).def), {
-        excludeFromDemand: action.card,
-      });
-      if (!payment) illegal({ code: 'notEnoughMana' });
-      tapCards(s, payment);
-      moveCard(s, action.card, 'stack');
-      s.stack.push({ id: newId(s, 's'), kind: 'spell', controller: player, card: action.card, targets: [...targets] });
-      s.events.push({ t: 'cast', player, card: action.card, targets: [...targets] });
-      if (isInstantOrSorceryDef(defOf(s, action.card))) {
-        for (const id of triggerSources(s, player)) {
-          queueTriggers(s, id, 'spell', player);
-          if (hasKeyword(s, id, 'prowess'))
-            s.triggers.push({ id: newId(s, 't'), controller: player, source: id, ability: PROWESS_TRIGGER });
+      const def = defOf(s, action.card);
+      let cost = castCost(s, player, action.card, x, action.sacrifice !== undefined);
+      let kicked = false;
+      if (def.kicker) {
+        const withKicker = addCost(cost, parseCost(def.kicker));
+        if (canAfford(s, player, withKicker)) {
+          cost = withKicker;
+          kicked = true;
         }
+      }
+      const payment = findPayment(s, player, cost, { excludeFromDemand: action.card });
+      if (!payment) illegal({ code: 'notEnoughMana' });
+      payWith(s, payment);
+      if (action.sacrifice !== undefined) sacrifice(s, action.sacrifice);
+      moveCard(s, action.card, 'stack');
+      const item: StackItem = { id: newId(s, 's'), kind: 'spell', controller: player, card: action.card, targets: [...targets] };
+      if (x > 0) item.x = x;
+      if (kicked) item.kicked = true;
+      s.stack.push(item);
+      s.events.push({ t: 'cast', player, card: action.card, targets: [...targets] });
+      for (const id of triggerSources(s, player)) {
+        queueTriggers(s, id, 'spell', player, action.card);
+        if (isInstantOrSorceryDef(def) && hasKeyword(s, id, 'prowess'))
+          s.triggers.push({ id: newId(s, 't'), controller: player, source: id, ability: PROWESS_TRIGGER });
+      }
+      if (!wardPaid(s, player, targets)) {
+        s.stack.pop();
+        moveCard(s, action.card, 'graveyard');
+        s.events.push({ t: 'counter', card: action.card, player });
       }
       s.pending = null;
       s.passes = 0;
@@ -410,7 +435,7 @@ function performAction(s: GameState, action: Action): void {
     case 'activate': {
       expectPending(s, 'priority', player);
       const targets = action.targets ?? [];
-      const error = activateError(s, player, action.card, action.ability, targets);
+      const error = activateError(s, player, action.card, action.ability, targets, action.sacrifice);
       if (error) illegal(error);
       const ability = defOf(s, action.card).activated?.[action.ability];
       if (!ability) illegal({ code: 'noSuchAbility' });
@@ -418,8 +443,11 @@ function performAction(s: GameState, action: Action): void {
         excludeSource: ability.tap ? action.card : undefined,
       });
       if (!payment) illegal({ code: 'notEnoughMana' });
-      tapCards(s, payment);
-      if (ability.tap) getCard(s, action.card).tapped = true;
+      payWith(s, payment);
+      const card = getCard(s, action.card);
+      if (ability.tap) card.tapped = true;
+      if (ability.once) card.spent = true;
+      if (action.sacrifice !== undefined) sacrifice(s, action.sacrifice);
       s.stack.push({
         id: newId(s, 's'),
         kind: 'activated',
@@ -429,7 +457,9 @@ function performAction(s: GameState, action: Action): void {
         targets: [...targets],
       });
       s.events.push({ t: 'activate', player, card: action.card, ability: action.ability, targets: [...targets] });
-      if (ability.sacrifice) moveCard(s, action.card, 'graveyard');
+      if (ability.sacrifice) sacrifice(s, action.card);
+      if (ability.exileSelf) moveCard(s, action.card, 'exile');
+      if (!wardPaid(s, player, targets)) s.stack.pop();
       s.pending = null;
       s.passes = 0;
       s.priority = player;
@@ -462,7 +492,14 @@ function performAction(s: GameState, action: Action): void {
       const trigger = s.triggers.find((candidate) => candidate.id === decision.trigger);
       if (!trigger) illegal({ code: 'triggerGone' });
       const ability = triggeredAbility(defOf(s, trigger.source), trigger.ability);
-      const error = targetsError(s, player, ability?.targets ?? [], action.targets ?? []);
+      const error = targetsError(
+        s,
+        player,
+        ability?.targets ?? [],
+        action.targets ?? [],
+        trigger.source,
+        ability?.minTargets,
+      );
       if (error) illegal(error);
       s.triggers = s.triggers.filter((candidate) => candidate.id !== trigger.id);
       pushTrigger(s, trigger, action.targets);
@@ -483,6 +520,24 @@ function performAction(s: GameState, action: Action): void {
     default:
       illegal({ code: 'unknownAction', type: (action as { type: string }).type });
   }
+}
+
+function sacrifice(s: GameState, id: CardId): void {
+  s.events.push({ t: 'sacrifice', card: id, player: getCard(s, id).controller });
+  moveCard(s, id, 'graveyard');
+}
+
+export const WARD_COST = '{2}';
+
+function wardPaid(s: GameState, player: PlayerId, targets: Target[]): boolean {
+  for (const target of targets) {
+    if (isPlayerTarget(target) || !onBattlefield(s, target.card)) continue;
+    if (getCard(s, target.card).controller === player || !hasKeyword(s, target.card, 'ward')) continue;
+    const payment = findPayment(s, player, parseCost(WARD_COST));
+    if (!payment) return false;
+    payWith(s, payment);
+  }
+  return true;
 }
 
 function nextMulliganDecision(s: GameState): void {
@@ -548,12 +603,32 @@ function runStateBasedActions(s: GameState): void {
     const dying = allCreatures(s).filter((id) => {
       const card = getCard(s, id);
       const toughness = getToughness(s, id);
-      return toughness <= 0 || card.damage >= toughness || (card.deathtouchDamage && card.damage > 0);
+      if (toughness <= 0) return true;
+      if (hasKeyword(s, id, 'indestructible')) return false;
+      return card.damage >= toughness || (card.deathtouchDamage && card.damage > 0);
     });
-    if (dying.length === 0) return;
+    const detached = detachedPermanents(s);
+    if (dying.length === 0 && detached.length === 0) return;
     const watchers: [CardId[], CardId[]] = [triggerSources(s, 0), triggerSources(s, 1)];
     for (const id of dying) moveCard(s, id, 'graveyard', { watchers: watchers[getCard(s, id).controller] });
+    for (const id of detached) {
+      const card = getCard(s, id);
+      if (card.zone !== 'battlefield') continue;
+      if (defOf(s, id).enchant) moveCard(s, id, 'graveyard');
+      else delete card.attachedTo;
+    }
   }
+}
+
+function detachedPermanents(s: GameState): CardId[] {
+  return [...s.players[0].battlefield, ...s.players[1].battlefield].filter((id) => {
+    const attached = getCard(s, id).attachedTo;
+    if (attached === undefined) return false;
+    if (!onBattlefield(s, attached)) return true;
+    const enchant = defOf(s, id).enchant;
+    if (enchant) return enchant.kind === 'creature' && !isCreature(s, attached);
+    return !isCreature(s, attached);
+  });
 }
 
 function putNextTriggerOnStack(s: GameState): boolean {
@@ -568,7 +643,7 @@ function putNextTriggerOnStack(s: GameState): boolean {
     return false;
   }
   if (ability.targets.length > 0) {
-    if (targetCombos(s, trigger.controller, ability.targets).length === 0) {
+    if (targetCombos(s, trigger.controller, ability.targets, trigger.source, ability.minTargets).length === 0) {
       s.triggers.splice(index, 1);
       return false;
     }
@@ -581,6 +656,7 @@ function putNextTriggerOnStack(s: GameState): boolean {
 }
 
 function pushTrigger(s: GameState, trigger: PendingTrigger, targets: Target[]): void {
+  if (!wardPaid(s, trigger.controller, targets)) return;
   s.stack.push({
     id: newId(s, 's'),
     kind: 'trigger',
@@ -609,7 +685,7 @@ function beginStep(s: GameState): void {
     case 'untap':
       for (const id of s.players[active].battlefield) {
         const card = getCard(s, id);
-        card.tapped = false;
+        if (!doesntUntap(s, id)) card.tapped = false;
         card.summoningSick = false;
       }
       s.players[active].landsPlayedThisTurn = 0;
@@ -622,12 +698,17 @@ function beginStep(s: GameState): void {
       return;
     case 'main1':
     case 'main2':
+      s.priority = active;
+      s.passes = 0;
+      return;
     case 'end':
+      for (const id of triggerSources(s, active)) queueTriggers(s, id, 'endStep', active);
       s.priority = active;
       s.passes = 0;
       return;
     case 'beginCombat':
       s.combat = { attackers: [], blocks: [], blockersDeclared: false, blocked: [], firstStrikers: null };
+      for (const id of triggerSources(s, active)) queueTriggers(s, id, 'beginCombat', active);
       return;
     case 'declareAttackers':
       if (eligibleAttackers(s).length > 0) s.pending = { kind: 'declareAttackers', player: active };
@@ -713,6 +794,9 @@ function goToNextStep(s: GameState): void {
     }
     for (const ps of s.players) {
       ps.damagedThisTurn = false;
+      ps.lostLifeThisTurn = false;
+      ps.attackedThisTurn = false;
+      ps.drawsThisTurn = 0;
       ps.extraLandsThisTurn = 0;
     }
     s.events.push({ t: 'turn', turn: s.turn, player: s.activePlayer });
