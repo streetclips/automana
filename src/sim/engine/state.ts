@@ -106,7 +106,3 @@ export function clone(s: State): State {
 export function defOf(s: State, uid: number): CardDef {
   return s.ctx.defs[uid];
 }
-
-export function isPlayerCard(s: State, uid: number): boolean {
-  return uid < s.ctx.players;
-}

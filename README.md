@@ -8,7 +8,6 @@ A solo, in-hand dueling card game. This repo holds the complete game: the rules 
 |---|---|
 | `npm run typecheck` | Type-checks everything in `src/` |
 | `npm run preview` | Card preview at `http://localhost:4400`, reloaded on every save |
-| `npm run play` | Play a game in the browser at `http://localhost:4401`, in Spanish or English, on the simulator's rules engine |
 | `npm run pnp` | `dist/palmwalker-pnp-en.pdf` and `palmwalker-pnp-es.pdf`: print-and-play PDFs for [Imprenta Soriano](https://imprentasoriano.com/producto/baraja-de-cartas) |
 | `npm run build` | `typecheck`, then `pnp` |
 | `npm run art` | `art/{card id}.jpg`: AI illustrations for the cards with no image yet. `npm run art -- brood uprising` regenerates those cards |
@@ -27,23 +26,6 @@ Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrom
 3. `en` and `es` switch the language and keep the scroll position.
 4. Saving reloads the page. A change in `src/content/` or the render code restarts the server; a CSS change or a new image in `art/` only reloads the page.
 5. A render error shows its stack trace in the page, which reloads once you fix it.
-
-## Play in the browser
-
-`npm run play` serves the game at `http://localhost:4401` (`PORT` changes it), in Spanish at `/es` (the default) or English at `/en`; **EN · ES** in the header switches language and keeps the game. You take the seat of the simulator's AI: the rules engine of `npm run sim` runs the game and asks you every decision.
-
-1. **New game:** pick a colour pair, a Nemesis and a seed (blank = random). The same seed gives the same shuffles: **Restart** replays it from the first decision.
-2. **In your hands:** the page lays the cards out the way you hold them (rulebook, section 8). The left hand is the Table, one fan from left to right: the Ruin, the face-down Threats and the Omen, the Nemesis's creatures and yours. Only the left edge of each card shows, and position is state: a lowered card is tapped and a sideways Threat is a waiting Counterspell. The right hand is the Grimoire, one packet from front to back: your hand fanned, the library on the common Palmwalker back (its count is your life), and the graveyard.
-3. **Your turn:** glowing cards have actions. Click one for its menu: cast it, on a target if it needs one. The bar between your hands says what the game is waiting for; `Enter` presses its orange button.
-4. **Nemesis turn:** it plays by itself and stops only when you must block or can answer with an instant. **Pass until my turn** skips its remaining windows. Steps with nothing to decide are skipped, on your turn too.
-5. **Animations:** after each decision the events play one at a time, each with a caption: cards fly between zones (library to hand when you draw, library to graveyard when you take damage, Threat deck to Ruin when the Nemesis does), attackers lower and lunge towards the other side of the fan, damaged creatures shake, and life changes float over both counters. Click or press `Enter` to skip; the **Animation** button switches between normal, fast and off.
-6. **Reading the game:** hover a card to zoom it in the side panel, with its current state: keywords, damage, attack, block. On the strips, a number pairs each attacker (orange) with its blocker (blue), red is damage, `Zz` is summoning sickness, and a coloured power/toughness differs from the printed one. Beside the fan, both sides' life, the Omen, the Ruin and your mana: how much is left of the 3 you get each round. Chips mark the effects in play, such as Refraction Golem's tax. The log under the zoom lists every event, in yellow the ones since your last decision. Click the graveyard or the Ruin to see all their cards.
-7. **Undo:** `Z` or **Undo** takes back your last decision, as many times as you like.
-8. **Saved:** the browser keeps the game as its seed plus your decisions, so a reload or a server restart resumes it. After a rule or card change the game replays on the new rules and continues from the first decision that no longer fits.
-
-The engine pays each spell from your mana, tapping Elvish Grovekeeper only when the mana runs out, and follows the simulator's [rule interpretations](#rule-interpretations).
-
-The interface texts of both languages live in `src/play/strings.ts`, and card names come from `src/content/`. The engine logs in English; the page rewrites each log line in the chosen language with the patterns in `src/play/strings.ts`, so a new log line in `src/sim/engine/` needs its pattern there, or it shows in English.
 
 ## Print and play
 
@@ -151,7 +133,6 @@ src/
 ├── i18n/               UI strings per locale + current locale
 ├── render/             HTML components: card.ts (Grimoire and Threat cards and their backs), faces.ts (the 4-state reference card), art.ts (card illustrations), icons.ts (SVG tap and Threat symbols, type glyphs, collection symbols and the Grimoire back's compass rose)
 ├── preview/            serves the live card preview: pages and web server
-├── play/               the game in the browser: the rules engine with you as the player, the view of both hands, its animations and web server
 ├── pnp/                builds the print-and-play PDFs for the print shop
 ├── art/                generates the card illustrations with OpenRouter
 ├── sim/                balance simulator
