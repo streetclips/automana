@@ -5,9 +5,9 @@ export const REFERENCE: Reference = {
     {
       title: "YOUR TURN",
       items: [
-        "Untap: raise everything.",
+        "Untap: raise everything. Mana back to 3.",
         "Draw 1 (−1 life). Skip it on turn 1.",
-        "Main: spells (3 mana per round).",
+        "Main: cast spells.",
         "Combat.",
         "Second main.",
         "End: damage wears off.",
@@ -19,8 +19,9 @@ export const REFERENCE: Reference = {
         "Untap.",
         "Execute the Omen.",
         "Reveal a new Omen (−1 life).",
-        "Attack: you block, instants allowed.",
+        "Attack: you block.",
         "End: damage wears off.",
+        "Instants any time, with the mana you kept.",
       ],
     },
     {
@@ -47,9 +48,9 @@ export const REFERENCE: Reference = {
     {
       title: "TU TURNO",
       items: [
-        "Enderezar: levanta todo.",
+        "Enderezar: levanta todo. El maná vuelve a 3.",
         "Roba 1 (−1 vida). En el turno 1 no robas.",
-        "Principal: hechizos (3 de maná por ronda).",
+        "Principal: lanza hechizos.",
         "Combate.",
         "Segunda principal.",
         "Final: el daño desaparece.",
@@ -61,8 +62,9 @@ export const REFERENCE: Reference = {
         "Enderezar.",
         "Ejecuta el Presagio.",
         "Revela un nuevo Presagio (−1 vida).",
-        "Ataque: tú bloqueas y puedes lanzar instantáneos.",
+        "Ataque: tú bloqueas.",
         "Final: el daño desaparece.",
+        "Instantáneos cuando quieras, con el maná que guardaste.",
       ],
     },
     {
