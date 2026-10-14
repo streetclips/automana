@@ -10,6 +10,7 @@ import {
   type GameState,
   type PlayerId,
 } from '../engine';
+import { nemesisBlocks } from '../nemesis/mind';
 import { creatureValue, evaluate, WIN_SCORE } from './evaluate';
 import { rollout } from './rollout';
 
@@ -241,7 +242,8 @@ export function attackValue(s: GameState, player: PlayerId, attackers: CardId[])
   let t = rollout(applyAction(s, { type: 'declareAttackers', player, attackers }), 1);
   if (t.pending?.kind === 'declareBlockers') {
     const defender = t.pending.player;
-    t = rollout(applyAction(t, { type: 'declareBlockers', player: defender, blocks: chooseBlocks(t, defender) }), 1);
+    const blocks = t.players[defender].nemesis ? nemesisBlocks(t, defender) : chooseBlocks(t, defender);
+    t = rollout(applyAction(t, { type: 'declareBlockers', player: defender, blocks }), 1);
   }
   return evaluate(t, player);
 }

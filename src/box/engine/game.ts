@@ -12,6 +12,7 @@ import {
 import { DEFAULT_DECK_ID, expandDeck, resolveDeck, type DeckSpec } from './decks';
 import { defaultPlayerNames, refusalText } from './describe';
 import { resolveTopOfStack } from './effects';
+import { afterCast, arrangeThreatDeck, nemesisDrawStep, syncNemesisLife } from './nemesis';
 import { parseCost } from './mana';
 import { getCardDef, hasCardDef } from './registry';
 import type { Refusal } from './refusals';
@@ -84,6 +85,7 @@ export interface PlayerSetup {
   battlefield?: string[];
   relics?: string[];
   drawOnFirstTurn?: boolean;
+  nemesis?: boolean;
 }
 
 export interface GameOptions {
@@ -231,6 +233,7 @@ export function createGame(options: GameOptions = {}): GameState {
       s.players[player].library.push(id);
     }
     shuffleInPlace(s, s.players[player].library);
+    if (options.players?.[player]?.nemesis) arrangeThreatDeck(s, player);
   }
   for (const player of [0, 1] as const) {
     const setup = options.players?.[player];
@@ -252,7 +255,8 @@ export function createGame(options: GameOptions = {}): GameState {
     }
   }
   const coin: PlayerId = random(s) < 0.5 ? 0 : 1;
-  s.startingPlayer = options.startingPlayer ?? coin;
+  const nemesis = ([0, 1] as const).find((player) => s.players[player].nemesis);
+  s.startingPlayer = nemesis !== undefined ? opponent(nemesis) : (options.startingPlayer ?? coin);
   s.activePlayer = s.startingPlayer;
   s.events.push({ t: 'start', startingPlayer: s.startingPlayer });
   drawCards(s, s.startingPlayer, openingHandSize(s, s.startingPlayer));
@@ -268,6 +272,7 @@ export function createGame(options: GameOptions = {}): GameState {
 }
 
 export function openingHandSize(s: GameState, player: PlayerId): number {
+  if (s.players[player].nemesis) return 0;
   return s.players[player].openingHand ?? OPENING_HAND;
 }
 
@@ -427,6 +432,7 @@ function performAction(s: GameState, action: Action): void {
         moveCard(s, action.card, 'graveyard');
         s.events.push({ t: 'counter', card: action.card, player });
       }
+      afterCast(s, player, action.card);
       s.pending = null;
       s.passes = 0;
       s.priority = player;
@@ -592,6 +598,7 @@ function endGame(s: GameState, winner: PlayerId | null, reason: GameOverReason):
 function runStateBasedActions(s: GameState): void {
   if (s.pending?.kind === 'gameOver') return;
   for (let guard = 0; guard < 100; guard++) {
+    syncNemesisLife(s);
     const reasons = s.players.map(losingReason);
     const losers = ([0, 1] as const).filter((player) => reasons[player] !== null);
     const firstLoser = losers[0];
@@ -694,7 +701,8 @@ function beginStep(s: GameState): void {
       for (const id of triggerSources(s, active)) queueTriggers(s, id, 'upkeep', active);
       return;
     case 'draw':
-      if (s.turn !== 1 || s.players[active].drawOnFirstTurn) drawCards(s, active, 1);
+      if (s.players[active].nemesis) nemesisDrawStep(s, active);
+      else if (s.turn !== 1 || s.players[active].drawOnFirstTurn) drawCards(s, active, 1);
       return;
     case 'main1':
     case 'main2':
@@ -798,6 +806,7 @@ function goToNextStep(s: GameState): void {
       ps.attackedThisTurn = false;
       ps.drawsThisTurn = 0;
       ps.extraLandsThisTurn = 0;
+      ps.spellsCastThisTurn = 0;
     }
     s.events.push({ t: 'turn', turn: s.turn, player: s.activePlayer });
     if (s.turn > s.turnLimit) {

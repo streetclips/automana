@@ -8,6 +8,7 @@ import {
   type GameState,
   type PlayerId,
 } from '../engine';
+import { feedCounter, hideFaceDownThreats } from '../nemesis/mind';
 import { chooseAttackers, chooseBlocks } from './combat';
 import { chooseCardsToBottom, chooseCardsToDiscard, chooseLand, shouldKeep } from './heuristics';
 import { actionValue, bestAction, repeatedActionValue } from './rollout';
@@ -65,6 +66,8 @@ function choosePriorityAction(s: GameState, player: PlayerId): Action {
   const legal = getLegalActions(s);
   const lands = legal.filter((action) => action.type === 'playLand');
   if (lands.length > 0) return chooseLand(s, player, lands);
+  const fed = feedCounter(s, player, legal);
+  if (fed) return fed;
 
   const top = s.stack.at(-1);
   if (top && top.controller === player) return pass;
@@ -89,7 +92,8 @@ function choosePriorityAction(s: GameState, player: PlayerId): Action {
   return best;
 }
 
-export function chooseAction(s: GameState, player: PlayerId): Action {
+export function chooseAction(state: GameState, player: PlayerId): Action {
+  const s = hideFaceDownThreats(state);
   const pending = s.pending;
   if (!pending || pending.kind === 'gameOver') throw new Error('the game is not waiting for a decision');
   if (pending.player !== player) throw new Error(`player ${player} is not the one deciding`);
