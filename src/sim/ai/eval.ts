@@ -1,9 +1,9 @@
 import { DEATHTOUCH, DEFENDER, FLYING, type Mana, REACH, TRAMPLE } from "../engine/defs";
-import { GROVEKEEPER, ashActive, bestRuinCreature, kwOf, overflowPower, ruinCreatures } from "../engine/engine";
+import { GROVEKEEPER, kwOf } from "../engine/engine";
 import { MAX_CREATURES, type Perm, type State, defOf } from "../engine/state";
 import type { DecisionCtx } from "./know";
 import {
-  W, castFactor, kaelValue, landsValue, lifeScore, manaCtx, mineValue, nemDefValue, nemScore, nemValue,
+  W, castFactor, kaelValue, landsValue, lifeScore, manaCtx, mineValue, nemScore, nemValue,
   omenThreat, staticPow, staticTough, cardValue,
 } from "./values";
 
@@ -15,8 +15,8 @@ interface Body {
   kw: number;
 }
 
-function body(s: State, p: Perm): Body {
-  return { p: Math.max(0, staticPow(s, p)), t: staticTough(s, p), kw: kwOf(s, p) };
+function body(p: Perm): Body {
+  return { p: Math.max(0, staticPow(p)), t: staticTough(p), kw: kwOf(p) };
 }
 
 function canBlock(b: Body, a: Body): boolean {
@@ -39,12 +39,12 @@ function strongest(list: Body[], ok: (a: Body, i: number) => boolean): number {
 export function allOutDamage(s: State): number {
   const atk: Body[] = [];
   for (const p of s.mine) {
-    const b = body(s, p);
+    const b = body(p);
     if (b.t > 0 && b.p > 0 && !(b.kw & DEFENDER)) atk.push(b);
   }
   if (!atk.length) return 0;
   const blockers: Body[] = [];
-  for (const p of s.nem) if (!p.tapped && !p.pacified) blockers.push(body(s, p));
+  for (const p of s.nem) if (!p.tapped && !p.pacified) blockers.push(body(p));
   const assigned: (Body | null)[] = atk.map(() => null);
   const used = blockers.map(() => false);
   const step = (ok: (b: Body, a: Body) => boolean): void => {
@@ -65,8 +65,7 @@ export function allOutDamage(s: State): number {
   };
   step((b, a) => kills(b, a) && !kills(a, b));
   step((b, a) => kills(b, a));
-  const shield = ashActive(s) ? 2 : 0;
-  if (unblocked() - shield >= s.faceDown.length) step(() => true);
+  if (unblocked() >= s.faceDown.length) step(() => true);
   return unblocked();
 }
 
@@ -94,17 +93,16 @@ export function upkeepLethal(s: State): boolean {
   for (const uid of s.lands) if (defOf(s, uid).color === "R") red++;
   let dmg = 0;
   for (const uid of s.hand) if (defOf(s, uid).id === "ember-bolt" && red > 0) { red--; dmg += 3; }
-  if (ashActive(s)) dmg -= 2;
   return dmg >= s.faceDown.length;
 }
 
 function danger(s: State, eff: number): number {
-  let d = s.ctx.nemesis === "vorthrax" ? (s.phase === 1 ? 1 : 2) : 0;
-  const mine = s.mine.map((p) => body(s, p)).filter((b) => b.t > 0);
+  let d = 0;
+  const mine = s.mine.map((p) => body(p)).filter((b) => b.t > 0);
   const attackers: Body[] = [];
   for (const p of s.nem) {
     if (p.pacified || (p.frozen && p.tapped)) continue;
-    const a = body(s, p);
+    const a = body(p);
     if (a.kw & DEFENDER || a.p <= 0) continue;
     if (mine.some((b) => canBlock(b, a) && kills(b, a) && !kills(a, b))) continue;
     attackers.push(a);
@@ -130,8 +128,7 @@ function danger(s: State, eff: number): number {
   }
   if (s.omen >= 0) {
     const od = defOf(s, s.omen);
-    if (od.kind === "creature" && s.nem.length >= MAX_CREATURES) d += overflowPower(s, s.omen);
-    else if (od.kind === "creature" && s.ctx.nemesis === "vorthrax" && s.phase === 2) d += od.power + (s.ctx.heroic ? 1 : 0);
+    if (od.kind === "creature" && s.nem.length >= MAX_CREATURES) d += od.power;
   }
   return W.danger * Math.max(0, d + W.dangerMargin - eff);
 }
@@ -139,7 +136,7 @@ function danger(s: State, eff: number): number {
 function material(s: State): number {
   let v = s.library.length - s.faceDown.length;
   for (const p of s.mine) v += mineValue(s, p);
-  for (const p of s.nem) v -= nemValue(s, p);
+  for (const p of s.nem) v -= nemValue(p);
   return Math.max(-40, Math.min(40, v));
 }
 
@@ -151,7 +148,7 @@ export function evaluate(s: State, dc: DecisionCtx): number {
   const n = s.faceDown.length;
   let v = lifeScore(eff) - nemScore(n);
   for (const p of s.mine) v += mineValue(s, p);
-  for (const p of s.nem) v -= nemValue(s, p);
+  for (const p of s.nem) v -= nemValue(p);
   const m = manaCtx(s);
   for (const uid of s.hand) v += dc.unknown[uid] ? dc.avgCard : cardValue(s, defOf(s, uid), eff, dc.avgCard) * castFactor(defOf(s, uid), m);
   v += landsValue(s.lands.length);
@@ -160,12 +157,7 @@ export function evaluate(s: State, dc: DecisionCtx): number {
   v -= W.counter * s.counters.length;
   v -= danger(s, eff);
   const combat = allOutDamage(s);
-  const shield = ashActive(s) ? 2 : 0;
-  if (combat + burnNextTurn(s) - shield >= n) v += W.lethal;
-  v -= W.clock * Math.min(12, n / (Math.max(0, combat - shield) + W.selfMill));
-  if (s.ctx.nemesis === "morwen" && s.phase === 1 && ruinCreatures(s) >= 3) {
-    const i = bestRuinCreature(s);
-    if (i >= 0) v -= W.tithe * nemDefValue(s, defOf(s, s.ruin[i]));
-  }
+  if (combat + burnNextTurn(s) >= n) v += W.lethal;
+  v -= W.clock * Math.min(12, n / (combat + W.selfMill));
   return v;
 }

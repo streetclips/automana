@@ -1,23 +1,15 @@
 .pw-face .halves { left: .4em; right: .4em; top: .4em; bottom: 1.45em; display: flex; flex-direction: column; gap: .5em; }
 .pw-face .half { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .5em; }
-.pw-face.nemesis .half:not(.flip) { flex: 2.2; }
 .pw-face .half.flip { transform: rotate(180deg); }
 .pw-face .hhead { flex: none; height: 1.9em; display: flex; align-items: center; gap: .45em; padding: 0 .6em; white-space: nowrap; overflow: hidden; }
-.pw-face .hhead .state { font-family: Copperplate, serif; font-weight: bold; font-size: 1.4em; color: var(--f-mark, var(--c-d)); }
-.pw-face.nemesis .hhead .state, .pw-face.reference .hhead .state { font-size: 1.15em; }
+.pw-face .hhead .state { font-family: Copperplate, serif; font-weight: bold; font-size: 1.4em; color: var(--c-d); }
+.pw-face.reference .hhead .state { font-size: 1.15em; }
 .pw-face .hhead .hname { font-size: 1em; font-style: italic; overflow: hidden; text-overflow: ellipsis; }
 .pw-face .hbody { flex: 1; min-height: 0; padding: .4em .6em; font-size: 1.12em; line-height: 1.22; }
 .pw-face .hbody p { margin: 0 0 .3em; text-wrap: pretty; }
-.pw-face.nemesis .hbody { font-size: 1.08em; }
 .pw-face.reference .hbody { font-size: .98em; }
 .pw-face.reference .hbody p { margin: 0 0 .15em; }
 .pw-face .facetag { left: 0; right: 0; bottom: .15em; text-align: center; font-family: Copperplate, serif; font-size: .9em; letter-spacing: .12em; color: #fff3d9; text-shadow: 0 .05em .15em rgba(0,0,0,.6); }
-.pw-face .facetag .icon { display: inline-block; width: 1.25em; height: 1.25em; margin-right: .45em; vertical-align: -.25em; }
 
 .pw-face.walker { --c-d: #6b2d14; --f-1: #f1d58c; --f-2: #8c6118; --f-bar: #fbefd2; --f-box: #f8f2e3; }
 .pw-face.reference { --c-d: #3b342b; --f-1: #ddd5c6; --f-2: #5d564b; --f-bar: #f4f0e7; --f-box: #f7f4ee; }
-.pw-face.nemesis { --f-bar: #3b1610; --f-box: #f0e2d6; --f-ink: #f6dcc4; --f-mark: #ffb15c; --f-sheen: .2; }
-.nem-R { --f-1: #b4401f; --f-2: #45120d; }
-.nem-G { --f-1: #3f7d39; --f-2: #0f2913; }
-.nem-B { --f-1: #54406a; --f-2: #2c1e37; }
-.nem-U { --f-1: #3a6fae; --f-2: #0f2344; }

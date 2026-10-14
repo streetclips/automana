@@ -2,26 +2,8 @@ import type { Nemesis } from "../types";
 
 export const MORWEN: Nemesis = {
   id: "morwen", color: "B",
-  en: {
-    name: "Morwen, the Lich Queen",
-    phase1: [
-      "<b>GRAVE TITHE</b> — At the end of each Nemesis turn, if the Ruin holds 3 or more creatures, return the highest-power one to the Table.",
-    ],
-    flip: "<b>UPRISING</b>: return the 2 highest-power creatures from the Ruin to the Table.",
-    phase2: [
-      "<b>WITHERING</b> — Your creatures get −1/−1.",
-    ],
-  },
-  es: {
-    name: "Morwen, la Reina Liche",
-    phase1: [
-      "<b>DIEZMO DE TUMBA</b> — Al final de cada turno de la Némesis, si la Ruina tiene 3 criaturas o más, devuelve a la Mesa la de mayor fuerza.",
-    ],
-    flip: "<b>LEVANTAMIENTO</b>: devuelve a la Mesa las 2 criaturas de mayor fuerza de la Ruina.",
-    phase2: [
-      "<b>MARCHITEZ</b> — Tus criaturas obtienen −1/−1.",
-    ],
-  },
+  en: { name: "Morwen, the Lich Queen" },
+  es: { name: "Morwen, la Reina Liche" },
   threats: [
     {
       id: "wandering-skeleton", color: "T", cost: [], type: "creature", qty: 3, pt: "2/1", threat: true,

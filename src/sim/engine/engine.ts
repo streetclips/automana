@@ -2,7 +2,7 @@ import { type Action, type Agent, CHARGE, DISCHARGE, ULTIMATE } from "./agent";
 import { DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, type Mana, REACH, TRAMPLE, VIGILANCE } from "./defs";
 import { type Rng, shuffle } from "./rng";
 import {
-  FACE, FLIP_AT, HAND_LIMIT, MAX_CREATURES, MAX_LANDS, OPENING_HAND, T,
+  FACE, HAND_LIMIT, MAX_CREATURES, MAX_LANDS, OPENING_HAND, T,
   type Ctx, type Perm, type State, type Task, type Window, defOf, newPerm,
 } from "./state";
 
@@ -36,49 +36,35 @@ export function nemLife(s: State): number {
   return s.faceDown.length;
 }
 
-export function kwOf(s: State, p: Perm): number {
-  let k = p.def.kw | p.akw;
-  if (p.uid >= s.ctx.players && s.phase === 2) {
-    if (s.ctx.nemesis === "vaskara") k |= TRAMPLE;
-    else if (s.ctx.nemesis === "vorthrax") k |= HASTE;
-  }
-  return k;
+export function kwOf(p: Perm): number {
+  return p.def.kw | p.akw;
 }
 
-export function pw(s: State, p: Perm): number {
-  let v = p.def.power + p.ap + p.tp;
-  if (p.uid < s.ctx.players) {
-    if (s.phase === 2 && s.ctx.nemesis === "morwen") v -= 1;
-  } else {
-    if (s.ctx.heroic) v += 1;
-    if (s.phase === 2 && s.ctx.nemesis === "vaskara") v += 1;
-  }
-  return v;
+export function pw(p: Perm): number {
+  return p.def.power + p.ap + p.tp;
 }
 
-export function tg(s: State, p: Perm): number {
-  let v = p.def.toughness + p.at + p.tt;
-  if (p.uid < s.ctx.players && s.phase === 2 && s.ctx.nemesis === "morwen") v -= 1;
-  return v;
+export function tg(p: Perm): number {
+  return p.def.toughness + p.at + p.tt;
 }
 
-export function hp(s: State, p: Perm): number {
-  return tg(s, p) - p.damage;
+export function hp(p: Perm): number {
+  return tg(p) - p.damage;
 }
 
-export function canBlock(s: State, blocker: Perm, attacker: Perm): boolean {
-  return !(kwOf(s, attacker) & FLYING) || (kwOf(s, blocker) & (FLYING | REACH)) !== 0;
+export function canBlock(blocker: Perm, attacker: Perm): boolean {
+  return !(kwOf(attacker) & FLYING) || (kwOf(blocker) & (FLYING | REACH)) !== 0;
 }
 
-export function kills(s: State, a: Perm, b: Perm): boolean {
-  const pa = pw(s, a);
+export function kills(a: Perm, b: Perm): boolean {
+  const pa = pw(a);
   if (pa <= 0 || b.shield) return false;
-  return (kwOf(s, a) & DEATHTOUCH) !== 0 || pa >= hp(s, b);
+  return (kwOf(a) & DEATHTOUCH) !== 0 || pa >= hp(b);
 }
 
-export function lethalFor(s: State, a: Perm, b: Perm): number {
-  const rest = Math.max(0, hp(s, b));
-  return kwOf(s, a) & DEATHTOUCH ? Math.min(1, rest) : rest;
+export function lethalFor(a: Perm, b: Perm): number {
+  const rest = Math.max(0, hp(b));
+  return kwOf(a) & DEATHTOUCH ? Math.min(1, rest) : rest;
 }
 
 export function findMine(s: State, uid: number): Perm | undefined {
@@ -91,20 +77,12 @@ export function findNem(s: State, uid: number): Perm | undefined {
   return undefined;
 }
 
-export function ashActive(s: State): boolean {
-  return s.ctx.nemesis === "vorthrax" && s.phase === 1;
-}
-
-export function overflowPower(s: State, uid: number): number {
-  return defOf(s, uid).power + (s.ctx.heroic ? 1 : 0) + (s.phase === 2 && s.ctx.nemesis === "vaskara" ? 1 : 0);
-}
-
 export function nemTarget(s: State): Perm | undefined {
   let best: Perm | undefined;
   for (const p of s.mine) {
     if (!best) { best = p; continue; }
-    const a = pw(s, p), b = pw(s, best);
-    if (a > b || (a === b && tg(s, p) > tg(s, best))) best = p;
+    const a = pw(p), b = pw(best);
+    if (a > b || (a === b && tg(p) > tg(best))) best = p;
   }
   return best;
 }
@@ -119,12 +97,6 @@ export function bestRuinCreature(s: State): number {
     if (d.power > b.power || (d.power === b.power && d.toughness >= b.toughness)) best = i;
   }
   return best;
-}
-
-export function ruinCreatures(s: State): number {
-  let n = 0;
-  for (const uid of s.ruin) if (defOf(s, uid).kind === "creature") n++;
-  return n;
 }
 
 export function loseLife(s: State, n: number): void {
@@ -185,15 +157,8 @@ export function toBottom(s: State, uid: number): void {
   s.known[uid] = 1;
 }
 
-export function damageNemesis(s: State, n: number, agent: Agent): number {
-  if (s.over || n <= 0) return 0;
-  if (ashActive(s) && s.ash > 0) {
-    const prevented = Math.min(s.ash, n);
-    s.ash -= prevented;
-    n -= prevented;
-    log(s, `Ash Hide prevents ${prevented}`);
-  }
-  if (n <= 0) return 0;
+export function damageNemesis(s: State, n: number): void {
+  if (s.over || n <= 0) return;
   const k = Math.min(n, s.faceDown.length);
   for (let i = 0; i < k; i++) {
     const uid = s.faceDown.shift()!;
@@ -201,51 +166,17 @@ export function damageNemesis(s: State, n: number, agent: Agent): number {
     s.ruin.push(uid);
   }
   log(s, `Nemesis takes ${n} (${nemLife(s)} left)`);
-  if (s.faceDown.length === 0) { s.over = 1; return n; }
-  checkFlip(s, agent);
-  return n;
+  if (s.faceDown.length === 0) s.over = 1;
 }
 
-export function reveal(s: State, agent: Agent): void {
+export function reveal(s: State): void {
   if (s.over || s.omen >= 0) return;
   const uid = s.faceDown.shift();
   if (uid === undefined) { s.over = 1; return; }
   s.omen = uid;
   s.known[uid] = 0;
   log(s, `reveals Omen ${nm(s, uid)} (${nemLife(s)} left)`);
-  if (s.faceDown.length === 0) { s.over = 1; return; }
-  checkFlip(s, agent);
-}
-
-function runNow(s: State, agent: Agent, tasks: Task[]): void {
-  const until = s.q.length;
-  s.q.unshift(...tasks);
-  drain(s, agent, until);
-}
-
-export function checkFlip(s: State, agent: Agent): void {
-  if (s.phase !== 1 || s.over || s.faceDown.length > FLIP_AT) return;
-  s.phase = 2;
-  s.flipRound = s.round;
-  log(s, "Phase 2!");
-  switch (s.ctx.nemesis) {
-    case "vorthrax":
-      nemGain(s, 3);
-      break;
-    case "vaskara":
-      runNow(s, agent, [{ k: T.EXEC_OMEN, u: -1 }, { k: T.REVEAL, u: -1 }]);
-      break;
-    case "morwen":
-      for (let i = 0; i < 2; i++) if (!returnFromRuin(s)) break;
-      break;
-    case "mirror-archmage": {
-      const p = nemTarget(s);
-      if (p) bounceMine(s, p);
-      nemGain(s, 2);
-      break;
-    }
-  }
-  sba(s, agent);
+  if (s.faceDown.length === 0) s.over = 1;
 }
 
 function returnFromRuin(s: State): boolean {
@@ -280,11 +211,11 @@ export function sba(s: State, agent: Agent): void {
     const deadMine: Perm[] = [];
     const deadNem: Perm[] = [];
     for (const p of s.mine) {
-      const t = tg(s, p);
+      const t = tg(p);
       if (t <= 0 || p.damage >= t || p.dt) deadMine.push(p);
     }
     for (const p of s.nem) {
-      const t = tg(s, p);
+      const t = tg(p);
       if (t <= 0 || p.damage >= t || p.dt) deadNem.push(p);
     }
     if (!deadMine.length && !deadNem.length) return;
@@ -316,16 +247,15 @@ export function enterNem(s: State, uid: number, executed: boolean): void {
   const d = defOf(s, uid);
   if (s.nem.length >= MAX_CREATURES) {
     if (executed) {
-      const dmg = overflowPower(s, uid);
-      log(s, `Overflow: ${d.name} deals ${dmg}`);
-      loseLife(s, dmg);
+      log(s, `Overflow: ${d.name} deals ${d.power}`);
+      loseLife(s, d.power);
       toBottom(s, uid);
     } else s.ruin.push(uid);
     return;
   }
   const p = newPerm(uid, d);
   s.nem.push(p);
-  log(s, `${d.name} enters (${pw(s, p)}/${tg(s, p)})`);
+  log(s, `${d.name} enters (${pw(p)}/${tg(p)})`);
   switch (d.id) {
     case "vorthraxs-herald":
     case "crypt-horror":
@@ -350,7 +280,7 @@ export function enterMine(s: State, uid: number, agent: Agent, target: number): 
       break;
     case "blood-acolyte":
       loseLife(s, 1);
-      damageNemesis(s, 1, agent);
+      damageNemesis(s, 1);
       break;
     case "cinder-hound": {
       const t = findAny(s, target >= 0 ? target : agent.hound(s));
@@ -362,7 +292,7 @@ export function enterMine(s: State, uid: number, agent: Agent, target: number): 
       break;
     }
     case "pyre-titan":
-      damageNemesis(s, 2, agent);
+      damageNemesis(s, 2);
       break;
     case "grovesinger-druid":
       gainLife(s, 2);
@@ -398,25 +328,16 @@ export function sources(s: State): number[] {
   return have;
 }
 
-export function refraction(s: State): number {
-  return s.ctx.nemesis === "mirror-archmage" && s.phase === 1 && s.spells === 0 ? 1 : 0;
-}
-
-export function wardActive(s: State): boolean {
-  return s.ctx.nemesis === "mirror-archmage" && s.phase === 2 && s.spells === 0;
-}
-
-export function canAfford(s: State, uid: number, pay: boolean, have = sources(s)): boolean {
+export function canAfford(s: State, uid: number, have = sources(s)): boolean {
   const d = defOf(s, uid);
-  const extra = refraction(s) + (pay && wardActive(s) ? 2 : 0);
-  if (have[5] < d.mv + extra) return false;
+  if (have[5] < d.mv) return false;
   if (d.pips.length === 1) return have[COLOR_INDEX[d.pips[0]]] > 0;
   const need = [0, 0, 0, 0, 0];
   for (const c of d.pips) if (++need[COLOR_INDEX[c]] > have[COLOR_INDEX[c]]) return false;
   return true;
 }
 
-function payMana(s: State, uid: number, extra: number): void {
+function payMana(s: State, uid: number): void {
   const d = defOf(s, uid);
   const tapLand = (c: number): boolean => {
     for (let i = 0; i < s.lands.length; i++) {
@@ -438,7 +359,7 @@ function payMana(s: State, uid: number, extra: number): void {
     const hd = defOf(s, h);
     if (hd.kind === "instant") for (const c of hd.pips) need[COLOR_INDEX[c]]++;
   }
-  for (let n = d.generic + extra; n > 0; n--) {
+  for (let n = d.generic; n > 0; n--) {
     const left = sources(s);
     let best = -1;
     let bestScore = Infinity;
@@ -497,11 +418,11 @@ export function sorcerySpeed(d: { kind: string }): boolean {
   return d.kind !== "instant";
 }
 
-export function castable(s: State, uid: number, main: boolean, pay: boolean, have = sources(s)): boolean {
+export function castable(s: State, uid: number, main: boolean, have = sources(s)): boolean {
   const d = defOf(s, uid);
   if (sorcerySpeed(d) && !main) return false;
   if (d.kind === "creature" && s.mine.length >= MAX_CREATURES) return false;
-  return canAfford(s, uid, pay, have);
+  return canAfford(s, uid, have);
 }
 
 function castSpell(s: State, a: Extract<Action, { t: "cast" }>, agent: Agent): void {
@@ -509,16 +430,9 @@ function castSpell(s: State, a: Extract<Action, { t: "cast" }>, agent: Agent): v
   const i = s.hand.indexOf(a.uid);
   if (i < 0) throw new Error(`${d.name} is not in hand`);
   s.hand.splice(i, 1);
-  const ward = wardActive(s);
-  payMana(s, a.uid, refraction(s) + (ward && a.pay ? 2 : 0));
-  s.spells++;
-  let countered = false;
+  payMana(s, a.uid);
   if (s.counters.length) {
     toBottom(s, s.counters.shift()!);
-    countered = true;
-  }
-  if (ward && !a.pay) countered = true;
-  if (countered) {
     s.grave.push(a.uid);
     log(s, `casts ${d.name}: countered`);
     count(s, `countered:${d.id}`);
@@ -574,7 +488,7 @@ function resolveSpell(s: State, uid: number, target: number, agent: Agent): void
       if (target === 1 && s.omen >= 0) {
         toBottom(s, s.omen);
         s.omen = -1;
-        reveal(s, agent);
+        reveal(s);
       }
       if (!s.over) scry(s, 1, agent);
       break;
@@ -619,13 +533,13 @@ function resolveSpell(s: State, uid: number, target: number, agent: Agent): void
       break;
     }
     case "drain-essence":
-      damageNemesis(s, 2, agent);
+      damageNemesis(s, 2);
       gainLife(s, 2);
       break;
     case "ember-bolt":
     case "kindle": {
       const n = d.id === "ember-bolt" ? 3 : 2;
-      if (target === FACE) damageNemesis(s, n, agent);
+      if (target === FACE) damageNemesis(s, n);
       else {
         const p = findAny(s, target);
         if (p) { damageCreature(p, n, false); sba(s, agent); }
@@ -673,7 +587,7 @@ function kael(s: State, a: Extract<Action, { t: "kael" }>, agent: Agent): void {
     log(s, "Kael ultimate");
     count(s, "kael:ultimate");
     for (const p of s.mine) p.tp += 1;
-    damageNemesis(s, 3, agent);
+    damageNemesis(s, 3);
   }
 }
 
@@ -712,41 +626,40 @@ export function nemAttackers(s: State): number[] {
   const res: number[] = [];
   for (const p of s.nem) {
     if (p.tapped || p.pacified) continue;
-    const k = kwOf(s, p);
+    const k = kwOf(p);
     if (k & DEFENDER) continue;
     if (p.sick && !(k & HASTE)) continue;
     let deterred = false;
     for (const b of s.mine) {
-      if (!b.tapped && canBlock(s, b, p) && kills(s, b, p) && !kills(s, p, b)) { deterred = true; break; }
+      if (!b.tapped && canBlock(b, p) && kills(b, p) && !kills(p, b)) { deterred = true; break; }
     }
     if (!deterred) res.push(p.uid);
   }
   return res;
 }
 
-function strongest(s: State, list: Perm[], ok: (a: Perm) => boolean): number {
+function strongest(list: Perm[], ok: (a: Perm) => boolean): number {
   let best = -1;
   for (let i = 0; i < list.length; i++) {
     const a = list[i];
     if (!ok(a)) continue;
     if (best < 0) { best = i; continue; }
     const b = list[best];
-    const pa = pw(s, a), pb = pw(s, b);
-    if (pa > pb || (pa === pb && tg(s, a) > tg(s, b))) best = i;
+    const pa = pw(a), pb = pw(b);
+    if (pa > pb || (pa === pb && tg(a) > tg(b))) best = i;
   }
   return best;
 }
 
-export function unblockedToNemesis(s: State, attackers: Perm[], blockers: (Perm | null)[]): number {
+export function unblockedToNemesis(attackers: Perm[], blockers: (Perm | null)[]): number {
   let dmg = 0;
   for (let i = 0; i < attackers.length; i++) {
     const a = attackers[i];
-    const pa = Math.max(0, pw(s, a));
+    const pa = Math.max(0, pw(a));
     const b = blockers[i];
     if (!b) dmg += pa;
-    else if (kwOf(s, a) & TRAMPLE) dmg += Math.max(0, pa - lethalFor(s, a, b));
+    else if (kwOf(a) & TRAMPLE) dmg += Math.max(0, pa - lethalFor(a, b));
   }
-  if (ashActive(s)) dmg = Math.max(0, dmg - s.ash);
   return dmg;
 }
 
@@ -759,13 +672,13 @@ export function nemBlocks(s: State): void {
   const step = (ok: (b: Perm, a: Perm) => boolean): void => {
     for (const b of free) {
       if (used.has(b)) continue;
-      const i = strongest(s, order, (a) => assigned[order.indexOf(a)] === null && canBlock(s, b, a) && ok(b, a));
+      const i = strongest(order, (a) => assigned[order.indexOf(a)] === null && canBlock(b, a) && ok(b, a));
       if (i >= 0) { assigned[i] = b; used.add(b); }
     }
   };
-  step((b, a) => kills(s, b, a) && !kills(s, a, b));
-  step((b, a) => kills(s, b, a));
-  if (unblockedToNemesis(s, order, assigned) >= nemLife(s)) step(() => true);
+  step((b, a) => kills(b, a) && !kills(a, b));
+  step((b, a) => kills(b, a));
+  if (unblockedToNemesis(order, assigned) >= nemLife(s)) step(() => true);
   s.atk = order.map((p) => p.uid);
   s.blk = assigned.map((b) => (b ? b.uid : -1));
   if (s.atk.length) log(s, `attacks with ${order.map((p, i) => `${p.def.name}${assigned[i] ? ` (blocked by ${assigned[i]!.def.name})` : ""}`).join(", ")}`);
@@ -776,8 +689,8 @@ export function declareAttack(s: State, uids: number[]): void {
   s.blk = [];
   for (const uid of uids) {
     const p = findMine(s, uid);
-    if (!p || p.tapped || (p.sick && !(kwOf(s, p) & HASTE)) || kwOf(s, p) & DEFENDER) throw new Error(`Illegal attacker ${uid}`);
-    if (!(kwOf(s, p) & VIGILANCE)) p.tapped = true;
+    if (!p || p.tapped || (p.sick && !(kwOf(p) & HASTE)) || kwOf(p) & DEFENDER) throw new Error(`Illegal attacker ${uid}`);
+    if (!(kwOf(p) & VIGILANCE)) p.tapped = true;
     s.atk.push(uid);
     s.blk.push(-1);
   }
@@ -799,22 +712,22 @@ function fight(s: State, attackers: (Perm | undefined)[], defendersMine: boolean
     perAttacker.push(0);
     const a = attackers[i];
     if (!a) continue;
-    const pa = Math.max(0, pw(s, a));
-    const ka = kwOf(s, a);
+    const pa = Math.max(0, pw(a));
+    const ka = kwOf(a);
     const bu = s.blk[i];
     const b = bu >= 0 ? (defendersMine ? findMine(s, bu) : findNem(s, bu)) : undefined;
     let dealt = 0;
     if (bu >= 0) {
       if (b) {
-        const toB = ka & TRAMPLE ? Math.min(pa, lethalFor(s, a, b)) : pa;
+        const toB = ka & TRAMPLE ? Math.min(pa, lethalFor(a, b)) : pa;
         const excess = pa - toB;
         if (!b.shield) dealt += toB;
         hits.push({ to: b, n: toB, dt: (ka & DEATHTOUCH) !== 0 });
         toPlayer += excess;
         perAttacker[i] = excess;
-        const pb = Math.max(0, pw(s, b));
-        hits.push({ to: a, n: pb, dt: (kwOf(s, b) & DEATHTOUCH) !== 0 });
-        if (kwOf(s, b) & LIFELINK && !a.shield) {
+        const pb = Math.max(0, pw(b));
+        hits.push({ to: a, n: pb, dt: (kwOf(b) & DEATHTOUCH) !== 0 });
+        if (kwOf(b) & LIFELINK && !a.shield) {
           if (defendersMine) gainMine += pb;
           else gainNem += pb;
         }
@@ -831,26 +744,15 @@ function fight(s: State, attackers: (Perm | undefined)[], defendersMine: boolean
 export function playerCombatDamage(s: State, agent: Agent): void {
   const attackers = s.atk.map((u) => findMine(s, u));
   const r = fight(s, attackers, false);
-  let prevented = ashActive(s) ? Math.min(s.ash, r.toPlayer) : 0;
-  const order = attackers.map((_, i) => i).sort((x, y) => {
-    const lx = attackers[x] && kwOf(s, attackers[x]!) & LIFELINK ? 1 : 0;
-    const ly = attackers[y] && kwOf(s, attackers[y]!) & LIFELINK ? 1 : 0;
-    return lx - ly;
-  });
   let gainMine = r.gainMine;
-  for (const i of order) {
-    const a = attackers[i];
-    let n = r.perAttacker[i];
-    const cut = Math.min(prevented, n);
-    prevented -= cut;
-    n -= cut;
-    if (a && kwOf(s, a) & LIFELINK) gainMine += n;
-  }
+  attackers.forEach((a, i) => {
+    if (a && kwOf(a) & LIFELINK) gainMine += r.perAttacker[i];
+  });
   for (const h of r.hits) damageCreature(h.to, h.n, h.dt);
   gainLife(s, gainMine);
   nemGain(s, r.gainNem);
   sba(s, agent);
-  damageNemesis(s, r.toPlayer, agent);
+  damageNemesis(s, r.toPlayer);
   s.atk = [];
   s.blk = [];
 }
@@ -860,7 +762,7 @@ function nemCombatDamage(s: State, agent: Agent): void {
   const r = fight(s, attackers, true);
   let gainNem = r.gainNem;
   attackers.forEach((a, i) => {
-    if (a && kwOf(s, a) & LIFELINK) gainNem += r.perAttacker[i];
+    if (a && kwOf(a) & LIFELINK) gainNem += r.perAttacker[i];
   });
   for (const h of r.hits) damageCreature(h.to, h.n, h.dt);
   nemGain(s, gainNem);
@@ -917,7 +819,6 @@ function resolveThreat(s: State, uid: number, agent: Agent): void {
       if (s.faceDown.length === 0) { s.over = 1; break; }
       if (defOf(s, next).kind === "creature") enterNem(s, next, true);
       else toBottom(s, next);
-      checkFlip(s, agent);
       break;
     }
     case "insect-plague":
@@ -965,33 +866,6 @@ function discardLeftmost(s: State): void {
   log(s, `you discard ${nm(s, uid)}`);
 }
 
-function endStep(s: State): void {
-  switch (s.ctx.nemesis) {
-    case "vorthrax":
-      log(s, s.phase === 1 ? "Smolder" : "Inferno");
-      loseLife(s, s.phase === 1 ? 1 : 2);
-      break;
-    case "vaskara":
-      if (s.nem.length <= 2) {
-        log(s, "Brood");
-        s.q.unshift({ k: T.EXEC_OMEN, u: -1 }, { k: T.REVEAL, u: -1 });
-      }
-      break;
-    case "morwen":
-      if (s.phase === 1 && ruinCreatures(s) >= 3 && s.nem.length < MAX_CREATURES) {
-        log(s, "Grave Tithe");
-        returnFromRuin(s);
-      }
-      break;
-    case "mirror-archmage":
-      if (s.hand.length >= (s.phase === 1 ? 3 : 2)) {
-        log(s, "Mind Tide");
-        discardLeftmost(s);
-      }
-      break;
-  }
-}
-
 export function cleanup(s: State): void {
   for (const p of s.mine) { p.damage = 0; p.dt = false; p.tp = 0; p.tt = 0; p.shield = false; }
   for (const p of s.nem) { p.damage = 0; p.dt = false; p.tp = 0; p.tt = 0; p.shield = false; }
@@ -1031,7 +905,7 @@ function process(s: State, task: Task, agent: Agent): void {
       resolveThreat(s, task.u, agent);
       break;
     case T.REVEAL:
-      reveal(s, agent);
+      reveal(s);
       break;
     case T.ATTACK: {
       const atk = nemAttackers(s);
@@ -1048,7 +922,7 @@ function process(s: State, task: Task, agent: Agent): void {
       s.blk = s.atk.map((u, i) => {
         const b = findMine(s, blk[i] ?? -1);
         const a = findNem(s, u);
-        if (!b || !a || b.tapped || used.has(b.uid) || !canBlock(s, b, a)) return -1;
+        if (!b || !a || b.tapped || used.has(b.uid) || !canBlock(b, a)) return -1;
         used.add(b.uid);
         return b.uid;
       });
@@ -1058,24 +932,19 @@ function process(s: State, task: Task, agent: Agent): void {
     case T.DAMAGE:
       nemCombatDamage(s, agent);
       break;
-    case T.EOT:
-      endStep(s);
-      break;
     case T.CLEANUP:
       cleanup(s);
       break;
   }
 }
 
-export function drain(s: State, agent: Agent, until = 0): void {
-  while (s.q.length > until && !s.over) process(s, s.q.shift()!, agent);
+export function drain(s: State, agent: Agent): void {
+  while (s.q.length && !s.over) process(s, s.q.shift()!, agent);
   if (s.over) s.q.length = 0;
 }
 
 export function beginNemesisTurn(s: State): void {
   s.active = 1;
-  s.spells = 0;
-  s.ash = 2;
   for (const p of s.nem) {
     p.sick = false;
     if (p.frozen) p.frozen = false;
@@ -1084,7 +953,7 @@ export function beginNemesisTurn(s: State): void {
   for (const p of s.mine) p.sick = false;
   s.q.push(
     { k: T.START, u: -1 }, { k: T.EXEC_OMEN, u: -1 }, { k: T.REVEAL, u: -1 }, { k: T.PRE, u: -1 },
-    { k: T.ATTACK, u: -1 }, { k: T.END, u: -1 }, { k: T.EOT, u: -1 }, { k: T.CLEANUP, u: -1 },
+    { k: T.ATTACK, u: -1 }, { k: T.END, u: -1 }, { k: T.CLEANUP, u: -1 },
   );
 }
 
@@ -1096,8 +965,6 @@ export function nemesisTurn(s: State, agent: Agent): void {
 export function beginPlayerTurn(s: State, agent: Agent): void {
   s.round++;
   s.active = 0;
-  s.spells = 0;
-  s.ash = 2;
   s.landPlayed = false;
   s.kaelUsed = false;
   s.tapped = 0;
@@ -1108,7 +975,7 @@ export function beginPlayerTurn(s: State, agent: Agent): void {
   }
   if (s.log && !s.over) {
     const names = (uids: number[]): string => uids.map((u) => nm(s, u)).join(", ") || "—";
-    const board = (ps: Perm[]): string => ps.map((p) => `${p.def.name} ${pw(s, p)}/${tg(s, p)}${p.tapped ? " (tapped)" : ""}${p.pacified ? " (pacified)" : ""}`).join(", ") || "—";
+    const board = (ps: Perm[]): string => ps.map((p) => `${p.def.name} ${pw(p)}/${tg(p)}${p.tapped ? " (tapped)" : ""}${p.pacified ? " (pacified)" : ""}`).join(", ") || "—";
     log(s, `hand [${names(s.hand)}] · lands ${s.lands.map((u) => defOf(s, u).color).join("") || "—"} · Kael ${s.kael} · board [${board(s.mine)}] · Nemesis [${board(s.nem)}] · Omen ${s.omen >= 0 ? nm(s, s.omen) : "—"} · life ${s.library.length} vs ${s.faceDown.length}`);
   }
 }
@@ -1152,8 +1019,8 @@ export function setup(ctx: Ctx, rp: Rng, rn: Rng): State {
   const omen = faceDown.shift()!;
   return {
     ctx, round: 0, active: 0, first: true, library, hand, grave: [], lands: [], tapped: 0, mine: [], kael: 1, kaelUsed: false,
-    landPlayed: false, spells: 0, omen, faceDown, ruin: [], nem: [], counters: [], phase: 1, ash: 2, atk: [], blk: [],
-    pend: -1, pendTarget: -1, q: [], known: new Uint8Array(ctx.defs.length), over: 0, flipRound: 0, mulligan: false, log: null, tally: null,
+    landPlayed: false, omen, faceDown, ruin: [], nem: [], counters: [], atk: [], blk: [],
+    pend: -1, pendTarget: -1, q: [], known: new Uint8Array(ctx.defs.length), over: 0, mulligan: false, log: null, tally: null,
   };
 }
 

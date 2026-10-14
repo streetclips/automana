@@ -2,28 +2,8 @@ import type { Nemesis } from "../types";
 
 export const VASKARA: Nemesis = {
   id: "vaskara", color: "G",
-  en: {
-    name: "Vaskara, the Brood Mother",
-    phase1: [
-      "<b>BROOD</b> — At the end of each Nemesis turn, if Vaskara has 2 or fewer creatures, she also executes the new Omen and reveals another.",
-    ],
-    flip: "<b>HATCHING</b>: execute the Omen at once and reveal another.",
-    phase2: [
-      "<b>FRENZY</b> — Nemesis creatures get +1/+0 and have <b>Trample</b>.",
-      "<b>Brood</b> stays active.",
-    ],
-  },
-  es: {
-    name: "Vaskara, la Madre Enjambre",
-    phase1: [
-      "<b>NIDADA</b> — Al final de cada turno de la Némesis, si Vaskara tiene 2 criaturas o menos, ejecuta también el nuevo Presagio y revela otro.",
-    ],
-    flip: "<b>ECLOSIÓN</b>: ejecuta el Presagio en el acto y revela otro.",
-    phase2: [
-      "<b>FRENESÍ</b> — Las criaturas de la Némesis obtienen +1/+0 y tienen <b>Arrollar</b>.",
-      "<b>Nidada</b> sigue activa.",
-    ],
-  },
+  en: { name: "Vaskara, the Brood Mother" },
+  es: { name: "Vaskara, la Madre Enjambre" },
   threats: [
     {
       id: "ravenous-larva", color: "T", cost: [], type: "creature", qty: 4, pt: "1/1", threat: true,

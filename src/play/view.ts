@@ -5,11 +5,11 @@ import { getLocale } from "../i18n/locale";
 import { SRC, artPath, readCss } from "../lib/paths";
 import { artCss } from "../render/art";
 import { renderCard, renderThreatBack } from "../render/card";
-import { nemesisFace, walkerFace } from "../render/faces";
+import { walkerFace } from "../render/faces";
 import { pips } from "../render/pips";
 import { DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, NEMESIS_LIST, PAIRS, REACH, TRAMPLE, VIGILANCE } from "../sim/engine/defs";
-import { ashActive, findMine, findNem, kills, kwOf, pw, refraction, sources, tg, wardActive } from "../sim/engine/engine";
-import { FLIP_AT, HAND_LIMIT, MAX_LANDS, type Perm, type State, defOf, isPlayerCard } from "../sim/engine/state";
+import { findMine, findNem, kills, kwOf, pw, sources, tg } from "../sim/engine/engine";
+import { HAND_LIMIT, MAX_LANDS, type Perm, type State, defOf, isPlayerCard } from "../sim/engine/state";
 import { type Ask, type Item, nameOf, stats } from "./agent";
 import type { GameSpec, Snapshot } from "./game";
 import { type Move, landFace, moves, zoneOf } from "./motion";
@@ -113,9 +113,9 @@ function creature(s: State, p: Perm, ask: Ask | null, split: boolean): string {
   const t = ui();
   const mine = s.mine.includes(p);
   const cls = ["item", "creature", mine ? "mine" : "nem", split ? "split" : ""];
-  const k = kwOf(s, p);
-  const power = pw(s, p);
-  const tough = tg(s, p);
+  const k = kwOf(p);
+  const power = pw(p);
+  const tough = tg(p);
   const changed = power !== p.def.power || tough !== p.def.toughness;
   const tags = [...(changed ? [`${power}/${tough}`] : []), ...KEYWORDS.flatMap((bit, i) => (k & bit ? [t.keywords[i]] : []))];
   const badges: string[] = [];
@@ -163,9 +163,6 @@ function effects(s: State): string[] {
   const t = ui();
   const out: string[] = [];
   if (s.round === 0) return out;
-  if (ashActive(s)) out.push(t.ashHide(s.ash));
-  if (refraction(s)) out.push(t.refractionNow);
-  if (wardActive(s)) out.push(t.wardNow);
   if (s.counters.length) out.push(t.counterNow(s.counters.length));
   return out;
 }
@@ -178,19 +175,10 @@ function threatDeck(s: State): string {
     : `<details class="slot item pack ruin" data-anchor="ruin" data-title="${ruinTitle}"><summary><div class="pile-top" data-key="${last}">${card(s, last)}</div>`
       + `<span class="pill">${s.ruin.length}</span></summary>${pileList(s, t.ruin, s.ruin)}</details>`;
   const n = s.faceDown.length;
-  const deck = `<div class="slot item pack threat" data-anchor="threat" data-counter="nemesis" data-count="${n}" data-title="${esc(plain(t.threatDeck(n)))}">`
+  const deck = `<div class="slot item pack threat" data-anchor="threat counter" data-counter="nemesis" data-count="${n}" data-title="${esc(plain(t.threatDeck(n)))}">`
     + `${renderThreatBack()}<span class="num">${n}</span></div>`;
   const omen = s.omen >= 0 ? slot(card(s, s.omen), { cls: ["item", "omen"], key: s.omen, title: t.omen }) : `<div class="slot item omen">${EMPTY}</div>`;
   return ruin + deck + omen;
-}
-
-function nemesisCard(s: State): string {
-  const t = ui();
-  const nemesis = NEMESIS_LIST.find((n) => n.id === s.ctx.nemesis)!;
-  return slot(nemesisFace(nemesis, s.phase === 1 ? "A" : "B"), {
-    cls: ["item", "nemesis", s.ctx.heroic ? "heroic" : ""], key: "nemesis", data: { state: s.phase, anchor: "counter" },
-    title: `${nemesis[getLocale()].name} · ${t.phase(s.phase)}${s.ctx.heroic ? t.heroicTag : ""}`, tags: effects(s),
-  });
 }
 
 function kael(s: State, ask: Ask | null, split: boolean): string {
@@ -221,8 +209,8 @@ function status(s: State): string {
   const nemesis = NEMESIS_LIST.find((n) => n.id === s.ctx.nemesis)!;
   const ruinCreatures = s.ruin.filter((u) => defOf(s, u).kind === "creature").length;
   const nem = [
-    `<b>${nemesis[getLocale()].name.split(",")[0]}</b> · ${t.phase(s.phase)}${s.ctx.heroic ? t.heroicTag : ""}`,
-    `${t.life(s.faceDown.length)}${s.phase === 1 ? ` · ${t.flipAt(FLIP_AT)}` : ""}`,
+    `<b>${nemesis[getLocale()].name.split(",")[0]}</b>`,
+    t.life(s.faceDown.length),
     s.omen >= 0 ? t.omenIs(nameOf(s, s.omen)) : "",
     `${t.ruin} · <b>${s.ruin.length}</b>${ruinCreatures ? ` · ${t.creatures(ruinCreatures)}` : ""}`,
     ...effects(s).map((e) => `<span class="chip">${pips(esc(e))}</span>`),
@@ -237,7 +225,6 @@ function tableHold(s: State, ask: Ask | null): string {
   const t = ui();
   const fan = [
     threatDeck(s),
-    nemesisCard(s),
     ...s.nem.map((p) => creature(s, p, ask, false)),
     ...s.counters.map((uid) => slot(card(s, uid), { cls: ["item", "nem", "sideways"], key: uid, title: t.counterNow(1) })),
     ...s.mine.map((p, i) => creature(s, p, ask, i === 0)),
@@ -268,10 +255,10 @@ function grimoireHold(s: State, ask: Ask | null): string {
     + `<span class="chev">›</span><div class="zone">${grave}<p class="label">${t.graveyard} · <b>${s.grave.length}</b></p></div></div></section>`;
 }
 
-function outcome(s: State, blocker: Perm, attacker: Perm): string {
+function outcome(blocker: Perm, attacker: Perm): string {
   const t = ui();
-  const kill = kills(s, blocker, attacker);
-  const die = kills(s, attacker, blocker);
+  const kill = kills(blocker, attacker);
+  const die = kills(attacker, blocker);
   return kill ? (die ? t.trade : t.killsIt) : die ? t.diesBlocking : t.bothSurvive;
 }
 
@@ -305,9 +292,9 @@ function prompt(snap: Snapshot): string {
     const a = findNem(s, u)!;
     const options = ask.options[i].map((b) => {
       const p = findMine(s, b)!;
-      return `<label><input type="radio" name="block${i}" value="${b}"> ${esc(stats(s, p))} <i>${outcome(s, p, a)}</i></label>`;
+      return `<label><input type="radio" name="block${i}" value="${b}"> ${esc(stats(p))} <i>${outcome(p, a)}</i></label>`;
     });
-    return `<div class="block-row"><b>${esc(stats(s, a))}</b><label><input type="radio" name="block${i}" value="-1" checked> ${t.noBlock}</label>${options.join("")}</div>`;
+    return `<div class="block-row"><b>${esc(stats(a))}</b><label><input type="radio" name="block${i}" value="-1" checked> ${t.noBlock}</label>${options.join("")}</div>`;
   });
   return `<section class="prompt">${head}<div class="blocks">${rows.join("")}</div><div class="buttons"><button data-blocks data-primary>${t.confirmBlocks}</button></div></section>`;
 }
@@ -356,7 +343,7 @@ export function renderGame(spec: GameSpec, snap: Snapshot, animate: boolean): { 
   const pair = PAIRS.find((p) => p.key === spec.pair)!;
   const nemesis = NEMESIS_LIST.find((n) => n.id === spec.nemesis)!;
   return {
-    title: t.title(`${pair.halves[0][locale].name} + ${pair.halves[1][locale].name}`, nemesis[locale].name, spec.heroic, spec.seed),
+    title: t.title(`${pair.halves[0][locale].name} + ${pair.halves[1][locale].name}`, nemesis[locale].name, spec.seed),
     turn: s.over ? t.gameOver : s.round === 0 ? t.setup : turnOf(String(s.round), s.active ? "Nemesis" : "You"),
     table: tableHold(s, ask) + prompt(snap) + grimoireHold(s, ask),
     log: log(s, snap.mark),
@@ -378,7 +365,6 @@ export function renderShell(): string {
 <dialog id="setup"><form method="dialog"><h2>${t.newGame}</h2>
 <label>${t.grimoire}<select name="pair">${pairs}</select></label>
 <label>${t.nemesisLabel}<select name="nemesis">${nemeses}</select></label>
-<label class="check"><input type="checkbox" name="heroic"> ${t.heroicCheck}</label>
 <label>${t.seed}<input name="seed" inputmode="numeric" placeholder="${t.random}"></label>
 <div class="buttons"><button value="cancel">${t.cancel}</button><button value="start" class="go">${t.start}</button></div></form></dialog>
 <script>const UI = ${JSON.stringify(t.client)};\n${readFileSync(join(SRC, "play/client.js"), "utf8")}</script></body></html>`;

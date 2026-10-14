@@ -2,7 +2,7 @@ import { type Action, CHARGE, DISCHARGE, PASS, ULTIMATE } from "../engine/agent"
 import { DEFENDER, HASTE } from "../engine/defs";
 import {
   applyAction, castable, declareAttack, endPlayerTurn, findMine, findNem, kwOf, nemBlocks, nemesisTurn,
-  playerCombatDamage, pw, sources, wardActive,
+  playerCombatDamage, pw, sources,
 } from "../engine/engine";
 import { FACE, MAX_CREATURES, MAX_LANDS, type Perm, type State, clone, defOf } from "../engine/state";
 import { evaluate } from "./eval";
@@ -56,14 +56,9 @@ function distinctCards(s: State, uids: number[]): number[] {
   return out;
 }
 
-export function canAttack(s: State, p: Perm): boolean {
-  const k = kwOf(s, p);
-  return !p.tapped && (!p.sick || (k & HASTE) !== 0) && !(k & DEFENDER) && pw(s, p) > 0;
-}
-
-function payOptions(s: State): boolean[] {
-  if (s.counters.length) return [false];
-  return wardActive(s) ? [true, false] : [false];
+export function canAttack(p: Perm): boolean {
+  const k = kwOf(p);
+  return !p.tapped && (!p.sick || (k & HASTE) !== 0) && !(k & DEFENDER) && pw(p) > 0;
 }
 
 export class Planner {
@@ -161,7 +156,7 @@ export class Planner {
   }
 
   private combat(s: State): void {
-    const eligible = s.mine.filter((p) => canAttack(s, p));
+    const eligible = s.mine.filter((p) => canAttack(p));
     const charge = !s.kaelUsed && s.kael < 4;
     const total = 1 << eligible.length;
     for (let mask = 0; mask < total; mask++) {
@@ -184,7 +179,7 @@ export class Planner {
   }
 
   private attack(s: State): void {
-    const eligible = s.mine.filter((p) => canAttack(s, p));
+    const eligible = s.mine.filter((p) => canAttack(p));
     const total = 1 << eligible.length;
     for (let mask = 0; mask < total; mask++) {
       if (mask > 0 && this.over()) break;
@@ -253,27 +248,25 @@ export class Planner {
     const out: Action[] = [];
     const have = sources(s);
     for (const uid of distinctCards(s, s.hand)) {
-      for (const pay of payOptions(s)) {
-        if (!castable(s, uid, main, pay, have)) continue;
-        for (const target of targetsFor(uid)) out.push({ t: "cast", uid, target, pay });
-      }
+      if (!castable(s, uid, main, have)) continue;
+      for (const target of targetsFor(uid)) out.push({ t: "cast", uid, target });
     }
     return out;
   }
 
   private combatPossible(s: State): boolean {
-    if (s.mine.some((p) => canAttack(s, p))) return true;
+    if (s.mine.some((p) => canAttack(p))) return true;
     if (s.mine.length >= MAX_CREATURES) return false;
     const have = sources(s);
-    return s.hand.some((u) => defOf(s, u).kind === "creature" && defOf(s, u).kw & HASTE && castable(s, u, true, false, have));
+    return s.hand.some((u) => defOf(s, u).kind === "creature" && defOf(s, u).kw & HASTE && castable(s, u, true, have));
   }
 
   private preCombat(s: State): Action[] {
     const out: Action[] = this.landAllowed(s) ? this.lands(s) : [];
     if (!this.combatPossible(s)) return out;
     const blockers = distinct(s.nem.filter((p) => !p.tapped && !p.pacified));
-    const attackers = distinct(s.mine.filter((p) => canAttack(s, p)));
-    const bait = s.ctx.nemesis === "mirror-archmage" && s.spells === 0 && (wardActive(s) || s.counters.length > 0);
+    const attackers = distinct(s.mine.filter((p) => canAttack(p)));
+    const bait = s.counters.length > 0;
     out.push(...this.casts(s, true, (uid) => {
       const d = defOf(s, uid);
       if (d.kind === "creature") {

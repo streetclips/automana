@@ -7,7 +7,7 @@ import { buildDeck } from "../pnp/deck";
 import { impose } from "../pnp/imposition";
 import { artCss } from "../render/art";
 import { renderCard } from "../render/card";
-import { nemesisFace, referenceFace, walkerFace, type Face } from "../render/faces";
+import { referenceFace, walkerFace, type Face } from "../render/faces";
 
 export type View = "cards" | "pnp";
 
@@ -55,7 +55,7 @@ function sections(locale: Locale): Section[] {
     { id: "walker", title: `${s.walker} · ${s.reference}`, slots: [...faceSlots("walker", walkerFace), ...faceSlots("reference", referenceFace)] },
     { id: "lands", title: s.lands, slots: GRIMOIRES.map((g) => slot(renderCard(g.land), g.land)) },
     ...GRIMOIRES.map((g) => ({ id: g.id, title: `${s.halfGrimoire} · ${g[locale].name}`, slots: g.cards.map(cardSlot) })),
-    ...NEMESES.map((n) => ({ id: n.id, title: `${n[locale].name} · ${s.threatDeck}`, slots: [...faceSlots(n.id, (face) => nemesisFace(n, face)), ...n.threats.map(cardSlot)] })),
+    ...NEMESES.map((n) => ({ id: n.id, title: `${n[locale].name} · ${s.threatDeck}`, slots: n.threats.map(cardSlot) })),
   ];
 }
 

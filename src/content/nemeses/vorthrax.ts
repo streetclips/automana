@@ -2,30 +2,8 @@ import type { Nemesis } from "../types";
 
 export const VORTHRAX: Nemesis = {
   id: "vorthrax", color: "R",
-  en: {
-    name: "Vorthrax, the Ash Tyrant",
-    phase1: [
-      "<b>ASH HIDE</b> — Prevent the first 2 damage dealt to Vorthrax each turn.",
-      "<b>SMOLDER</b> — At the end of each Nemesis turn, Vorthrax deals 1 damage to you.",
-    ],
-    flip: "<b>REKINDLE</b>: return the 3 rearmost Ruin cards face-down to the bottom.",
-    phase2: [
-      "<b>INFERNO</b> — Nemesis creatures have <b>Haste</b>.",
-      "At the end of each Nemesis turn, Vorthrax deals 2 damage to you.",
-    ],
-  },
-  es: {
-    name: "Vorthrax, el Tirano de Ceniza",
-    phase1: [
-      "<b>PIEL DE CENIZA</b> — Previene los primeros 2 puntos de daño que recibe Vorthrax cada turno.",
-      "<b>RESCOLDO</b> — Al final de cada turno de la Némesis, Vorthrax te hace 1 de daño.",
-    ],
-    flip: "<b>REAVIVAR</b>: devuelve boca abajo al fondo las 3 últimas cartas de la Ruina.",
-    phase2: [
-      "<b>INFIERNO</b> — Las criaturas de la Némesis tienen <b>Prisa</b>.",
-      "Al final de cada turno de la Némesis, Vorthrax te hace 2 de daño.",
-    ],
-  },
+  en: { name: "Vorthrax, the Ash Tyrant" },
+  es: { name: "Vorthrax, el Tirano de Ceniza" },
   threats: [
     {
       id: "ash-imp", color: "T", cost: [], type: "creature", qty: 2, pt: "1/1", threat: true,

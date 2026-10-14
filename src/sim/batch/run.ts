@@ -21,15 +21,14 @@ const seed = Number(args.get("seed") ?? 1);
 const workers = Math.max(1, Number(args.get("workers") ?? availableParallelism()));
 const pairs = args.get("pairs")?.toUpperCase().split(",");
 const nemeses = args.get("nemeses")?.split(",");
-const modes = (args.get("modes") ?? "normal,heroic").split(",");
 const chunk = Number(args.get("chunk") ?? 20);
 
 const all = allConfigs();
 const selected = all
   .map((cfg, index) => ({ cfg, index }))
-  .filter(({ cfg }) => (!pairs || pairs.includes(cfg.pair.key)) && (!nemeses || nemeses.includes(cfg.nemesis.id)) && modes.includes(cfg.heroic ? "heroic" : "normal"));
+  .filter(({ cfg }) => (!pairs || pairs.includes(cfg.pair.key)) && (!nemeses || nemeses.includes(cfg.nemesis.id)));
 if (!selected.length || !Number.isFinite(games) || games < 1) {
-  console.error("Usage: npm run sim -- [--games 1000] [--seed 1] [--workers N] [--pairs W/U,R/G] [--nemeses vorthrax,morwen] [--modes normal,heroic]");
+  console.error("Usage: npm run sim -- [--games 1000] [--seed 1] [--workers N] [--pairs W/U,R/G] [--nemeses vorthrax,morwen]");
   process.exit(1);
 }
 

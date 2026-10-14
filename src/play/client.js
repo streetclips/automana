@@ -65,7 +65,7 @@ function measure() {
   const keys = new Map();
   for (const el of table.querySelectorAll("[data-key]")) keys.set(el.dataset.key, { el, rect: cardRect(el), cls: el.className, data: { ...el.dataset } });
   const anchors = new Map();
-  for (const el of table.querySelectorAll("[data-anchor]")) anchors.set(el.dataset.anchor, cardRect(el));
+  for (const el of table.querySelectorAll("[data-anchor]")) for (const name of el.dataset.anchor.split(" ")) anchors.set(name, cardRect(el));
   const counts = new Map();
   for (const el of table.querySelectorAll("[data-counter]")) counts.set(el.dataset.counter, { el, value: Number(el.dataset.count) });
   return { keys, anchors, counts };
@@ -167,7 +167,7 @@ function react(el, old, duration) {
   if (el.dataset.state !== old.data.state) {
     const state = Number(el.dataset.state);
     const options = { duration: duration * 1.6, easing: "ease-in-out" };
-    if (el.dataset.key === "nemesis" || (state <= 2) !== (Number(old.data.state) <= 2)) {
+    if ((state <= 2) !== (Number(old.data.state) <= 2)) {
       animateCard([{ transform: "scaleX(1)" }, { transform: "scaleX(0)", offset: 0.5 }, { transform: "scaleX(1)" }], options);
     } else quiet(card.animate([{ transform: `rotate(${state % 2 ? 180 : 0}deg)` }, { transform: `rotate(${state % 2 ? 0 : 180}deg)` }], options));
   }
@@ -304,7 +304,6 @@ function openSetup() {
   if (game) {
     form.pair.value = game.pair;
     form.nemesis.value = game.nemesis;
-    form.heroic.checked = game.heroic;
   }
   form.seed.value = "";
   setup.returnValue = "";
@@ -424,7 +423,6 @@ setup.addEventListener("close", () => {
   game = {
     pair: form.get("pair"),
     nemesis: form.get("nemesis"),
-    heroic: form.get("heroic") === "on",
     seed: Number.isInteger(seed) ? seed : Math.floor(Math.random() * 1e6),
     decisions: [],
   };

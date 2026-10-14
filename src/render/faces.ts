@@ -1,7 +1,5 @@
 import { KAEL, REFERENCE } from "../content";
-import type { Nemesis } from "../content/types";
 import { getLocale, t } from "../i18n/locale";
-import { collectionIcon } from "./icons";
 import { pips } from "./pips";
 
 export type Face = "A" | "B";
@@ -12,14 +10,13 @@ interface Half {
   body: string[];
 }
 
-function fourStateCard(cls: string, upright: Half, flipped: Half, face: Face, collection?: string): string {
+function fourStateCard(cls: string, upright: Half, flipped: Half, face: Face): string {
   const half = (h: Half, flip: boolean) => `
 <div class="half${flip ? " flip" : ""}">
   <div class="hhead"><span class="state">${h.state}</span><span class="hname">${h.name}</span></div>
   <div class="hbody">${h.body.map((p) => `<p>${pips(p)}</p>`).join("")}</div>
 </div>`;
-  const set = collection ? collectionIcon(collection) : "";
-  return `<div class="pw-card pw-face ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${set}${t().face} ${face}</div></div>`;
+  return `<div class="pw-card pw-face ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${t().face} ${face}</div></div>`;
 }
 
 export function walkerFace(face: Face): string {
@@ -28,20 +25,6 @@ export function walkerFace(face: Face): string {
   return face === "A"
     ? fourStateCard("walker", half("I", [k.charge]), half("II", [k.charge]), face)
     : fourStateCard("walker", half("III", [k.charge, k.discharge]), half("IV", [k.discharge, k.ultimate]), face);
-}
-
-export function nemesisFace(nemesis: Nemesis, face: Face): string {
-  const s = t();
-  const n = nemesis[getLocale()];
-  const phase = face === "A" ? s.phase1 : s.phase2;
-  const body = face === "A" ? [...n.phase1, `${s.flipTrigger} ${n.flip}`] : n.phase2;
-  return fourStateCard(
-    `nemesis nem-${nemesis.color}`,
-    { state: phase, name: n.name, body },
-    { state: `${phase} · ${s.heroicTag}`, name: n.name.split(",")[0], body: [s.heroic] },
-    face,
-    nemesis.id,
-  );
 }
 
 export function referenceFace(face: Face): string {

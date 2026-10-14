@@ -2,11 +2,8 @@ import { getCard } from "../content";
 import { getLocale } from "../i18n/locale";
 import { type Action, type Agent, CHARGE, DISCHARGE, PASS, ULTIMATE } from "../sim/engine/agent";
 import { DEFENDER, HASTE } from "../sim/engine/defs";
-import {
-  ARCHIVIST, bestRuinCreature, canBlock, castable, findMine, findNem, kwOf, nemAttackers, pw, refraction, ruinCreatures,
-  sources, targets, tg, wardActive,
-} from "../sim/engine/engine";
-import { FACE, MAX_CREATURES, MAX_LANDS, type Perm, type State, type Window, clone, defOf } from "../sim/engine/state";
+import { ARCHIVIST, canBlock, castable, findMine, findNem, kwOf, nemAttackers, pw, sources, targets, tg } from "../sim/engine/engine";
+import { FACE, MAX_LANDS, type Perm, type State, type Window, clone, defOf } from "../sim/engine/state";
 import { ROMAN, cardName, landName, ui } from "./strings";
 
 export type Answer = Action | boolean | number[] | "skip";
@@ -52,17 +49,17 @@ export function nameOf(s: State, uid: number): string {
   return cardName(defOf(s, uid).id);
 }
 
-export function stats(s: State, p: Perm): string {
-  return `${cardName(p.def.id)} ${pw(s, p)}/${tg(s, p)}`;
+export function stats(p: Perm): string {
+  return `${cardName(p.def.id)} ${pw(p)}/${tg(p)}`;
 }
 
 function who(s: State, uid: number, self = -1): string {
   if (uid === FACE) return ui().nemesis;
   if (uid === self) return ui().itself;
   const n = findNem(s, uid);
-  if (n) return stats(s, n);
+  if (n) return stats(n);
   const m = findMine(s, uid);
-  if (m) return ui().yours(stats(s, m));
+  if (m) return ui().yours(stats(m));
   return ui().fromGrave(nameOf(s, uid));
 }
 
@@ -70,32 +67,27 @@ function onTable(s: State, uid: number): boolean {
   return uid >= 0 && (findMine(s, uid) ?? findNem(s, uid)) !== undefined;
 }
 
-function canAttack(s: State, p: Perm): boolean {
-  const k = kwOf(s, p);
+function canAttack(p: Perm): boolean {
+  const k = kwOf(p);
   return !p.tapped && (!p.sick || (k & HASTE) !== 0) && !(k & DEFENDER);
 }
 
-function castLabel(s: State, uid: number, target: number, pay: boolean): string {
+function castLabel(s: State, uid: number, target: number): string {
   const d = defOf(s, uid);
   const t = ui();
   const parts = [d.id === "bend-fate" ? (target === 1 ? t.bendBottom : t.bendKeep) : target === -1 ? t.cast : t.castOn(who(s, target, uid))];
-  if (refraction(s)) parts.push(t.refraction);
   if (s.counters.length) parts.push(t.counterspell);
-  else if (wardActive(s)) parts.push(pay ? t.wardPay : t.wardCountered);
   return parts.join(" · ");
 }
 
 function castItems(s: State, main: boolean): Item[] {
   const items: Item[] = [];
   const have = sources(s);
-  const pays = wardActive(s) && !s.counters.length ? [true, false] : [false];
   for (const uid of s.hand) {
+    if (!castable(s, uid, main, have)) continue;
     const aimed = defOf(s, uid).id !== "bend-fate";
-    for (const pay of pays) {
-      if (!castable(s, uid, main, pay, have)) continue;
-      for (const target of targets(s, uid)) {
-        items.push({ label: castLabel(s, uid, target, pay), answer: { t: "cast", uid, target, pay }, src: uid, target: aimed && onTable(s, target) ? target : undefined });
-      }
+    for (const target of targets(s, uid)) {
+      items.push({ label: castLabel(s, uid, target), answer: { t: "cast", uid, target }, src: uid, target: aimed && onTable(s, target) ? target : undefined });
     }
   }
   return items;
@@ -133,22 +125,6 @@ function combatNote(s: State): string {
   return s.atk.map((u, i) => (s.blk[i] >= 0 ? ui().blocked(who(s, u), who(s, s.blk[i])) : ui().unblocked(who(s, u)))).join(" · ");
 }
 
-function endNote(s: State): string {
-  const t = ui();
-  switch (s.ctx.nemesis) {
-    case "vorthrax":
-      return s.phase === 1 ? t.smolder : t.inferno;
-    case "vaskara":
-      return s.nem.length <= 2 ? t.brood(s.nem.length, s.omen >= 0 ? nameOf(s, s.omen) : "") : t.noBrood;
-    case "morwen": {
-      const i = bestRuinCreature(s);
-      return s.phase === 1 && ruinCreatures(s) >= 3 && s.nem.length < MAX_CREATURES && i >= 0 ? t.tithe(nameOf(s, s.ruin[i])) : t.quietEnd;
-    }
-    case "mirror-archmage":
-      return s.hand.length >= (s.phase === 1 ? 3 : 2) ? t.mindTide(nameOf(s, s.hand[0])) : t.noMindTide;
-  }
-}
-
 function windowText(s: State, w: Window): [string, string] {
   const t = ui();
   switch (w) {
@@ -165,7 +141,7 @@ function windowText(s: State, w: Window): [string, string] {
     case "blocks":
       return [t.blocksTitle, combatNote(s)];
     case "end":
-      return [t.endTitle, endNote(s)];
+      return [t.endTitle, t.endNote];
   }
 }
 
@@ -233,7 +209,7 @@ export class ReplayAgent implements Agent {
 
   attack(s: State): number[] {
     const t = ui();
-    const from = s.mine.filter((p) => canAttack(s, p)).map((p) => p.uid);
+    const from = s.mine.filter((p) => canAttack(p)).map((p) => p.uid);
     if (!from.length) return [];
     return this.pick(s, { title: t.attackTitle, note: t.attackNote, from, min: 0, max: from.length, ordered: false, tray: false, confirm: t.attack, none: t.noAttack });
   }
@@ -262,7 +238,7 @@ export class ReplayAgent implements Agent {
   block(s: State): number[] {
     const options = s.atk.map((u) => {
       const a = findNem(s, u);
-      return a ? s.mine.filter((b) => !b.tapped && canBlock(s, b, a)).map((b) => b.uid) : [];
+      return a ? s.mine.filter((b) => !b.tapped && canBlock(b, a)).map((b) => b.uid) : [];
     });
     if (options.every((o) => !o.length)) return s.atk.map(() => -1);
     return this.take(s, { kind: "blocks", title: ui().blockTitle, note: ui().blockNote, attackers: s.atk.slice(), options }) as number[];

@@ -6,7 +6,7 @@ export const ULTIMATE = 3;
 
 export type Action =
   | { t: "land"; uid: number }
-  | { t: "cast"; uid: number; target: number; pay: boolean }
+  | { t: "cast"; uid: number; target: number }
   | { t: "kael"; ab: number; target: number }
   | { t: "archivist" }
   | { t: "pass" };

@@ -72,14 +72,14 @@ export function publicKey(s: State): number {
   for (const p of s.mine) mixPerm(p);
   mix(s.nem.length + 500);
   for (const p of s.nem) mixPerm(p);
-  mix(s.kael * 8 + (s.kaelUsed ? 1 : 0) + (s.landPlayed ? 2 : 0) + s.spells * 64);
+  mix(s.kael * 8 + (s.kaelUsed ? 1 : 0) + (s.landPlayed ? 2 : 0));
   mix(s.omen + 600);
   mix(s.faceDown.length + 700);
   for (let i = 0; i < s.faceDown.length; i++) if (s.known[s.faceDown[i]]) mix(i * 64 + s.faceDown[i] + 9000);
   mix(s.ruin.length + 800);
   for (const u of s.ruin) mix(u);
   for (const u of s.counters) mix(u + 900);
-  mix(s.phase * 16 + s.ash + s.over * 256 + s.active * 1024);
+  mix(s.over * 256 + s.active * 1024);
   for (let i = 0; i < s.atk.length; i++) mix(s.atk[i] * 64 + s.blk[i] + 2);
   mix(s.pend * 64 + s.pendTarget + 3);
   mix(s.q.length + 1100);

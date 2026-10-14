@@ -1,8 +1,8 @@
 import { type Action, type Agent, PASS } from "../engine/agent";
 import { TRAMPLE } from "../engine/defs";
 import {
-  ARCHIVIST, applyAction, ashActive, canBlock, castable, findMine, findNem, kills, kwOf, lethalFor, nemAttackers, pw,
-  sources, stepTask, targets, wardActive,
+  ARCHIVIST, applyAction, canBlock, castable, findMine, findNem, kills, kwOf, lethalFor, nemAttackers, pw,
+  sources, stepTask, targets,
 } from "../engine/engine";
 import { FACE, type Perm, type State, T, type Window, clone, defOf } from "../engine/state";
 import { WIN } from "./eval";
@@ -18,7 +18,7 @@ export function quickScore(s: State): number {
   const eff = s.library.length - 1;
   let v = lifeScore(eff) - nemScore(s.faceDown.length);
   for (const p of s.mine) v += mineValue(s, p);
-  for (const p of s.nem) v -= nemValue(s, p);
+  for (const p of s.nem) v -= nemValue(p);
   const m = manaCtx(s);
   for (const uid of s.hand) v += handValue(s, uid, eff, AVG, m);
   return v;
@@ -54,20 +54,16 @@ export class Heuristic implements Agent {
 
   private instant(s: State, uid: number, target: number): Action | null {
     if (s.counters.length) return null;
-    const pay = wardActive(s);
-    if (!castable(s, uid, false, pay)) return null;
+    if (!castable(s, uid, false)) return null;
     if (!targets(s, uid).includes(target)) return null;
-    return { t: "cast", uid, target, pay };
+    return { t: "cast", uid, target };
   }
 
   private lethal(s: State): Action | null {
     const bolts = s.hand.filter((u) => defOf(s, u).id === "ember-bolt");
     if (!bolts.length || s.counters.length) return null;
-    const red = sources(s)[3];
-    const extra = wardActive(s) ? 2 : 0;
-    const usable = Math.min(bolts.length, red, Math.max(0, sources(s)[5] - extra));
-    const dmg = usable * 3 - (ashActive(s) ? s.ash : 0);
-    if (usable && dmg >= s.faceDown.length) return this.instant(s, bolts[0], FACE);
+    const usable = Math.min(bolts.length, sources(s)[3]);
+    if (usable && usable * 3 >= s.faceDown.length) return this.instant(s, bolts[0], FACE);
     return null;
   }
 
@@ -108,10 +104,10 @@ export class Heuristic implements Agent {
     if (uid < 0) return null;
     const attackers = nemAttackers(s).map((u) => findNem(s, u)!);
     if (!attackers.length) return null;
-    attackers.sort((a, b) => nemValue(s, b) - nemValue(s, a));
+    attackers.sort((a, b) => nemValue(b) - nemValue(a));
     const top = attackers[0];
-    const incoming = attackers.reduce((n, p) => n + Math.max(0, pw(s, p)), 0);
-    if (nemValue(s, top) < W.freezeMin && s.library.length - 1 - incoming > 3) return null;
+    const incoming = attackers.reduce((n, p) => n + Math.max(0, pw(p)), 0);
+    if (nemValue(top) < W.freezeMin && s.library.length - 1 - incoming > 3) return null;
     return this.instant(s, uid, top.uid);
   }
 
@@ -194,32 +190,31 @@ export class Heuristic implements Agent {
     if (!free.length) return res;
     const used = new Set<Perm>();
     const eff = s.library.length - 1;
-    const eot = s.ctx.nemesis === "vorthrax" ? (s.phase === 1 ? 1 : 2) : 0;
-    const order = atk.map((_, i) => i).filter((i) => atk[i]).sort((x, y) => pw(s, atk[y]!) - pw(s, atk[x]!));
+    const order = atk.map((_, i) => i).filter((i) => atk[i]).sort((x, y) => pw(atk[y]!) - pw(atk[x]!));
     const assign = (i: number, ok: (b: Perm, a: Perm) => boolean): void => {
       const a = atk[i]!;
       let pick: Perm | null = null;
       for (const b of free) {
-        if (used.has(b) || !canBlock(s, b, a) || !ok(b, a)) continue;
+        if (used.has(b) || !canBlock(b, a) || !ok(b, a)) continue;
         if (!pick || mineValue(s, b) < mineValue(s, pick)) pick = b;
       }
       if (pick) { res[i] = pick.uid; used.add(pick); }
     };
-    for (const i of order) assign(i, (b, a) => kills(s, b, a) && !kills(s, a, b));
-    for (const i of order) if (res[i] < 0) assign(i, (b, a) => !kills(s, a, b));
-    for (const i of order) if (res[i] < 0) assign(i, (b, a) => kills(s, b, a) && mineValue(s, b) <= nemValue(s, a) * W.tradeRatio);
+    for (const i of order) assign(i, (b, a) => kills(b, a) && !kills(a, b));
+    for (const i of order) if (res[i] < 0) assign(i, (b, a) => !kills(a, b));
+    for (const i of order) if (res[i] < 0) assign(i, (b, a) => kills(b, a) && mineValue(s, b) <= nemValue(a) * W.tradeRatio);
     const incoming = (): number => {
       let d = 0;
       order.forEach((i) => {
         const a = atk[i]!;
-        const p = Math.max(0, pw(s, a));
+        const p = Math.max(0, pw(a));
         if (res[i] < 0) d += p;
-        else if (kwOf(s, a) & TRAMPLE) d += Math.max(0, p - lethalFor(s, a, findMine(s, res[i])!));
+        else if (kwOf(a) & TRAMPLE) d += Math.max(0, p - lethalFor(a, findMine(s, res[i])!));
       });
       return d;
     };
-    while (incoming() + eot >= eff - W.chumpMargin) {
-      const i = order.find((k) => res[k] < 0 && free.some((b) => !used.has(b) && canBlock(s, b, atk[k]!)));
+    while (incoming() >= eff - W.chumpMargin) {
+      const i = order.find((k) => res[k] < 0 && free.some((b) => !used.has(b) && canBlock(b, atk[k]!)));
       if (i === undefined) break;
       assign(i, () => true);
       if (res[i] < 0) break;
@@ -287,7 +282,7 @@ export class Heuristic implements Agent {
     let best = -1;
     let bestV = -Infinity;
     for (const p of s.nem) {
-      const v = (p.def.toughness + p.tt - p.damage <= 1 ? 100 : 0) + nemValue(s, p);
+      const v = (p.def.toughness + p.tt - p.damage <= 1 ? 100 : 0) + nemValue(p);
       if (v > bestV) { bestV = v; best = p.uid; }
     }
     if (best >= 0) return best;
@@ -299,6 +294,6 @@ export class Heuristic implements Agent {
   }
 
   tideOrder(s: State, uids: number[]): number[] {
-    return uids.slice().sort((a, b) => nemValue(s, findNem(s, a)!) - nemValue(s, findNem(s, b)!));
+    return uids.slice().sort((a, b) => nemValue(findNem(s, a)!) - nemValue(findNem(s, b)!));
   }
 }

@@ -87,34 +87,6 @@ const RULES_TEXT: Record<string, string[]> = {
   "mass-illusion": ["Lower all your creatures."],
 };
 
-const NEMESIS_TEXT: Record<NemesisId, string[]> = {
-  vorthrax: [
-    "Prevent the first 2 damage dealt to Vorthrax each turn.",
-    "At the end of each Nemesis turn, Vorthrax deals 1 damage to you.",
-    "return the 3 rearmost Ruin cards face-down to the bottom.",
-    "Nemesis creatures have Haste.",
-    "At the end of each Nemesis turn, Vorthrax deals 2 damage to you.",
-  ],
-  vaskara: [
-    "At the end of each Nemesis turn, if Vaskara has 2 or fewer creatures, she also executes the new Omen and reveals another.",
-    "execute the Omen at once and reveal another.",
-    "Nemesis creatures get +1/+0 and have Trample.",
-    "Brood stays active.",
-  ],
-  morwen: [
-    "At the end of each Nemesis turn, if the Ruin holds 3 or more creatures, return the highest-power one to the Table.",
-    "return the 2 highest-power creatures from the Ruin to the Table.",
-    "Your creatures get −1/−1.",
-  ],
-  "mirror-archmage": [
-    "The first spell you cast each turn costs {1} more.",
-    "At the end of each Nemesis turn, if you have 3 or more cards in hand, discard the leftmost one.",
-    "return your highest-power creature to your hand, then return the 2 rearmost Ruin cards face-down to the bottom.",
-    "The first spell you cast each turn is countered unless you pay {2}.",
-    "Mind Tide now triggers with 2 or more cards in hand.",
-  ],
-};
-
 const KAEL_TEXT = [
   "(+1 state): a creature you control gets +1/+0 until end of turn.",
   "(−2 states): Kael deals 2 damage to a creature.",
@@ -157,11 +129,6 @@ function toDef(card: Card): CardDef {
 const DEFS = new Map<string, CardDef>();
 for (const card of [...GRIMOIRES.flatMap((g) => g.cards), ...NEMESES.flatMap((n) => n.threats)]) DEFS.set(card.id, toDef(card));
 
-for (const n of NEMESES) {
-  const id = n.id as NemesisId;
-  if (!NEMESIS_TEXT[id]) throw new Error(`Simulator has no rules for Nemesis ${n.id}`);
-  expect(n.id, plain([...n.en.phase1, n.en.flip, ...n.en.phase2].join(" ")), NEMESIS_TEXT[id]);
-}
 expect("Kael", plain([KAEL.en.charge, KAEL.en.discharge, KAEL.en.ultimate].join(" ")), KAEL_TEXT);
 
 for (const id of Object.keys(RULES_TEXT)) if (!DEFS.has(id)) throw new Error(`Simulator rules for unknown card ${id}`);

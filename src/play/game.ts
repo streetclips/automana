@@ -7,7 +7,6 @@ import { type Answer, type Ask, Pending, ReplayAgent } from "./agent";
 export interface GameSpec {
   pair: string;
   nemesis: string;
-  heroic: boolean;
   seed: number;
   decisions: Answer[];
 }
@@ -33,7 +32,7 @@ export function replay(spec: GameSpec): Snapshot {
   if (!pair || !nemesis) throw new Error(`Unknown game: ${spec.pair} vs ${spec.nemesis}`);
   const rp = rng(hash32(spec.seed, 1));
   const rn = rng(hash32(spec.seed, 2));
-  const s = setup(buildCtx(pair, nemesis, spec.heroic), rp, rn);
+  const s = setup(buildCtx(pair, nemesis), rp, rn);
   const agent = new ReplayAgent(spec.decisions.slice());
   const frames: Frame[] = [];
   const lines: string[] = [];

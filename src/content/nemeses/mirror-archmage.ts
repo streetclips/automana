@@ -2,30 +2,8 @@ import type { Nemesis } from "../types";
 
 export const MIRROR_ARCHMAGE: Nemesis = {
   id: "mirror-archmage", color: "U",
-  en: {
-    name: "The Mirror Archmage",
-    phase1: [
-      "<b>REFRACTION</b> — The first spell you cast each turn costs {1} more.",
-      "<b>MIND TIDE</b> — At the end of each Nemesis turn, if you have 3 or more cards in hand, discard the leftmost one.",
-    ],
-    flip: "<b>REFLECTION</b>: return your highest-power creature to your hand, then return the 2 rearmost Ruin cards face-down to the bottom.",
-    phase2: [
-      "<b>MIRROR WARD</b> — The first spell you cast each turn is countered unless you pay {2}.",
-      "<b>Mind Tide</b> now triggers with 2 or more cards in hand.",
-    ],
-  },
-  es: {
-    name: "El Archimago Espejo",
-    phase1: [
-      "<b>REFRACCIÓN</b> — El primer hechizo que lanzas cada turno cuesta {1} más.",
-      "<b>MAREA MENTAL</b> — Al final de cada turno de la Némesis, si tienes 3 cartas o más en la mano, descarta la de más a la izquierda.",
-    ],
-    flip: "<b>REFLEJO</b>: devuelve a tu mano tu criatura de mayor fuerza y después devuelve boca abajo al fondo las 2 últimas cartas de la Ruina.",
-    phase2: [
-      "<b>GUARDA ESPECULAR</b> — El primer hechizo que lanzas cada turno se contrarresta salvo que pagues {2}.",
-      "<b>Marea Mental</b> se activa ya con 2 cartas o más en la mano.",
-    ],
-  },
+  en: { name: "The Mirror Archmage" },
+  es: { name: "El Archimago Espejo" },
   threats: [
     {
       id: "fragile-illusion", color: "T", cost: [], type: "creature", qty: 2, pt: "3/1", threat: true,

@@ -3,8 +3,8 @@ import { Heuristic } from "./ai/heuristic";
 import { type Action, type Agent, CHARGE, ULTIMATE } from "./engine/agent";
 import { NEMESIS_LIST, PAIRS } from "./engine/defs";
 import {
-  applyAction, beginNemesisTurn, beginPlayerTurn, damageNemesis, declareAttack, drain, enterMine, enterNem, mulligan,
-  nemAttackers, nemBlocks, playerCombatDamage, pw, sba, setup, tg,
+  applyAction, beginNemesisTurn, beginPlayerTurn, declareAttack, drain, enterMine, enterNem, mulligan,
+  nemAttackers, nemBlocks, playerCombatDamage, pw, sba, setup,
 } from "./engine/engine";
 import { rng } from "./engine/rng";
 import { FACE, type Perm, type State, type Window, buildCtx, defOf } from "./engine/state";
@@ -19,10 +19,10 @@ class Scripted extends Heuristic {
   }
 }
 
-function game(pairKey: string, nemesis: string, heroic = false): { s: State; uid: (id: string, nth?: number) => number; agent: Scripted } {
+function game(pairKey: string, nemesis: string): { s: State; uid: (id: string, nth?: number) => number; agent: Scripted } {
   const pair = PAIRS.find((p) => p.key === pairKey)!;
   const nem = NEMESIS_LIST.find((n) => n.id === nemesis)!;
-  const s = setup(buildCtx(pair, nem, heroic), rng(1), rng(2));
+  const s = setup(buildCtx(pair, nem), rng(1), rng(2));
   const uid = (id: string, nth = 0): number => {
     let seen = 0;
     for (let i = 0; i < s.ctx.defs.length; i++) if (s.ctx.defs[i].id === id && seen++ === nth) return i;
@@ -110,18 +110,16 @@ test("Nemesis blocks: safe block first, then the trick wins it (rulebook example
   assert.deepEqual(s.blk, [fiend.uid, -1]);
   land(s, "battle-fury", uid);
   put(s, s.hand, uid("battle-fury"));
-  applyAction(s, { t: "cast", uid: uid("battle-fury"), target: hound.uid, pay: false }, agent);
+  applyAction(s, { t: "cast", uid: uid("battle-fury"), target: hound.uid }, agent);
   setNemLife(s, 8);
   playerCombatDamage(s, agent);
   assert.equal(s.nem.length, 0);
   assert.equal(s.mine.length, 1);
-  assert.equal(s.faceDown.length, 10, "3 − 2 Ash Hide = 1 → 7 → Rekindle +3");
-  assert.equal(s.phase, 2);
+  assert.equal(s.faceDown.length, 5, "the unblocked Raider deals 3");
 });
 
 test("Desperation block only when unblocked damage is lethal", () => {
   const { s, uid, agent } = game("R/G", "vorthrax");
-  s.phase = 2;
   const raider = mine(s, uid("firebrand-raider"), agent);
   const spider = mine(s, uid("spider-of-the-canopy"), agent);
   const sentinel = nem(s, uid("magma-sentinel"));
@@ -133,34 +131,23 @@ test("Desperation block only when unblocked damage is lethal", () => {
   assert.equal(s.over, 1);
 });
 
-test("Ash Hide prevents the first 2 damage each turn", () => {
-  const { s, agent } = game("R/G", "vorthrax");
-  setNemLife(s, 14);
-  damageNemesis(s, 1, agent);
-  damageNemesis(s, 3, agent);
-  assert.equal(s.faceDown.length, 12);
-  beginPlayerTurn(s, agent);
-  damageNemesis(s, 3, agent);
-  assert.equal(s.faceDown.length, 11);
-});
-
 test("Kael ultimate after charging", () => {
   const { s, uid, agent } = game("R/G", "vaskara");
   const bear = mine(s, uid("thicket-bear"), agent);
   s.kael = 3;
   applyAction(s, { t: "kael", ab: CHARGE, target: bear.uid }, agent);
-  assert.equal(pw(s, bear), 3);
+  assert.equal(pw(bear), 3);
   assert.equal(s.kael, 4);
   s.kaelUsed = false;
   const before = s.faceDown.length;
   applyAction(s, { t: "kael", ab: ULTIMATE, target: -1 }, agent);
   assert.equal(s.kael, 1);
   assert.equal(s.faceDown.length, before - 3);
-  assert.equal(pw(s, bear), 4);
+  assert.equal(pw(bear), 4);
 });
 
 test("Overflow hits for power and goes face-down to the bottom", () => {
-  const { s, uid, agent } = game("R/G", "vorthrax", true);
+  const { s, uid, agent } = game("R/G", "vorthrax");
   for (const id of ["ash-imp", "cinderclaw-brute", "magma-sentinel", "ember-wyrmling"]) nem(s, uid(id));
   setOmen(s, uid("lava-behemoth"));
   const lifeBefore = s.library.length;
@@ -168,7 +155,7 @@ test("Overflow hits for power and goes face-down to the bottom", () => {
   beginNemesisTurn(s);
   s.q = s.q.filter((t) => t.k <= 3);
   drain(s, agent);
-  assert.equal(s.library.length, lifeBefore - 6, "5 power + Heroic");
+  assert.equal(s.library.length, lifeBefore - 5, "Lava Behemoth's 5 power");
   assert.equal(s.faceDown[s.faceDown.length - 1], uid("lava-behemoth"));
   assert.equal(s.faceDown.length, nemBefore + 1);
 });
@@ -181,75 +168,30 @@ test("Executed spells go face-down to the bottom and come back", () => {
   beginNemesisTurn(s);
   drain(s, agent);
   assert.equal(s.faceDown.length, n, "+1 spell to the bottom, −1 reveal");
-  assert.equal(s.library.length, life - 2 - 1, "Searing Breath with no creature + Smolder");
+  assert.equal(s.library.length, life - 2, "Searing Breath with no creature");
 });
 
-test("Vaskara Brood executes the new Omen when she has 2 or fewer creatures", () => {
-  const { s, uid, agent } = game("R/G", "vaskara");
-  setOmen(s, uid("ravenous-larva"));
-  s.faceDown.unshift(uid("armored-drone"));
-  s.faceDown.splice(2, 0, uid("ravenous-larva", 1));
-  beginNemesisTurn(s);
-  drain(s, agent);
-  assert.equal(s.nem.length, 2);
-  assert.equal(defOf(s, s.nem[1].uid).id, "armored-drone");
-});
-
-test("Morwen Grave Tithe returns the strongest Ruin creature, Withering kills X/1", () => {
-  const { s, uid, agent } = game("W/U", "morwen");
-  for (const id of ["wandering-skeleton", "rotting-zombie", "deathless-knight"]) put(s, s.ruin, uid(id));
-  setOmen(s, uid("withering-touch"));
-  beginNemesisTurn(s);
-  s.q = s.q.filter((t) => t.k !== 2 && t.k !== 3);
-  drain(s, agent);
-  assert.ok(s.nem.some((p) => p.def.id === "deathless-knight"));
-  const squire = mine(s, uid("dawn-squire"), agent);
-  mine(s, uid("tide-apprentice"), agent);
-  s.phase = 1;
-  setNemLife(s, 8);
-  damageNemesis(s, 1, agent);
-  assert.equal(s.phase, 2);
-  assert.deepEqual(s.mine.map((p) => p.def.id), ["dawn-squire"]);
-  assert.equal(pw(s, squire), 0);
-  assert.equal(tg(s, squire), 1);
-});
-
-test("Counterspell, Refraction and Mirror Ward", () => {
+test("Counterspell counters the next spell, then goes to the bottom", () => {
   const { s, uid, agent } = game("R/G", "mirror-archmage");
-  s.lands = [uid("ember-bolt"), uid("ember-bolt", 1), uid("reckless-goblin"), uid("reckless-goblin", 1)];
+  s.lands = [uid("ember-bolt"), uid("reckless-goblin")];
   for (const u of s.lands) take(s, u);
   put(s, s.hand, uid("kindle"));
   put(s, s.hand, uid("battle-fury"));
   take(s, uid("counterspell"));
   s.counters.push(uid("counterspell"));
   const n = s.faceDown.length;
-  applyAction(s, { t: "cast", uid: uid("kindle"), target: FACE, pay: false }, agent);
+  applyAction(s, { t: "cast", uid: uid("kindle"), target: FACE }, agent);
   assert.equal(s.counters.length, 0);
   assert.equal(s.faceDown.length, n + 1, "the Counterspell goes face-down to the bottom");
-  assert.equal(s.tapped, 0b11, "Refraction: the first spell costs {1} more");
+  assert.equal(s.tapped, 0b1, "the countered spell is still paid");
   assert.ok(s.grave.includes(uid("kindle")));
-  s.phase = 2;
-  s.spells = 0;
-  s.tapped = 0;
-  applyAction(s, { t: "cast", uid: uid("battle-fury"), target: -1, pay: false }, agent);
-  assert.ok(s.grave.includes(uid("battle-fury")), "Mirror Ward counters an unpaid first spell");
-  assert.equal(s.tapped, 0b1);
-});
-
-test("Mind Tide discards the leftmost card", () => {
-  const { s, uid, agent } = game("R/G", "mirror-archmage");
-  put(s, s.hand, uid("kindle"));
-  put(s, s.hand, uid("thicket-bear"));
-  put(s, s.hand, uid("ember-bolt"));
-  setOmen(s, uid("water-elemental"));
-  beginNemesisTurn(s);
-  drain(s, agent);
-  assert.deepEqual(s.hand, [uid("thicket-bear"), uid("ember-bolt")]);
+  const bear = mine(s, uid("thicket-bear"), agent);
+  applyAction(s, { t: "cast", uid: uid("battle-fury"), target: bear.uid }, agent);
+  assert.equal(pw(bear), 5, "the next spell resolves");
 });
 
 test("Lifelink, trample and deathtouch in combat", () => {
   const { s, uid, agent } = game("W/B", "vaskara");
-  s.phase = 2;
   const cleric = mine(s, uid("dawn-cleric"), agent);
   const rat = mine(s, uid("crypt-rat"), agent);
   const beetle = nem(s, uid("shieldbreaker-beetle"));
@@ -257,7 +199,7 @@ test("Lifelink, trample and deathtouch in combat", () => {
   const life = s.library.length;
   declareAttack(s, [rat.uid]);
   nemBlocks(s);
-  assert.deepEqual(s.blk, [beetle.uid], "3/3 trample +1 Frenzy safe-blocks... trades with deathtouch");
+  assert.deepEqual(s.blk, [beetle.uid], "the 3/3 Beetle can kill the Rat, so it trades with its deathtouch");
   playerCombatDamage(s, agent);
   assert.equal(s.nem.length, 0);
   assert.equal(s.mine.length, 1);
@@ -279,7 +221,7 @@ test("Freeze keeps a creature down through its next untap", () => {
   land(s, "deep-freeze", uid);
   land(s, "mist-hawk", uid);
   put(s, s.hand, uid("deep-freeze"));
-  applyAction(s, { t: "cast", uid: uid("deep-freeze"), target: brute.uid, pay: false }, agent);
+  applyAction(s, { t: "cast", uid: uid("deep-freeze"), target: brute.uid }, agent);
   beginNemesisTurn(s);
   assert.ok(brute.tapped);
   assert.ok(!brute.frozen);
@@ -295,19 +237,18 @@ test("Return to the Tide, Bend Fate and Rising Tide reorder the Threat deck", ()
   const omen = s.omen;
   const n = s.faceDown.length;
   put(s, s.hand, uid("return-to-the-tide"));
-  applyAction(s, { t: "cast", uid: uid("return-to-the-tide"), target: brute.uid, pay: false }, agent);
+  applyAction(s, { t: "cast", uid: uid("return-to-the-tide"), target: brute.uid }, agent);
   assert.equal(s.omen, brute.uid);
   assert.equal(s.faceDown[0], omen);
   assert.equal(s.faceDown.length, n + 1);
   s.tapped = 0;
-  s.spells = 0;
   put(s, s.hand, uid("bend-fate"));
-  applyAction(s, { t: "cast", uid: uid("bend-fate"), target: 1, pay: false }, agent);
+  applyAction(s, { t: "cast", uid: uid("bend-fate"), target: 1 }, agent);
   assert.equal(s.faceDown[s.faceDown.length - 1], brute.uid);
   assert.equal(s.omen, omen);
   s.tapped = 0;
   put(s, s.hand, uid("rising-tide"));
-  applyAction(s, { t: "cast", uid: uid("rising-tide"), target: -1, pay: false }, agent);
+  applyAction(s, { t: "cast", uid: uid("rising-tide"), target: -1 }, agent);
   assert.equal(s.omen, imp.uid);
   assert.equal(s.faceDown[0], omen);
   assert.equal(s.nem.length, 0);
@@ -321,11 +262,11 @@ test("Reanimate, Crypt Lord and Hungry Ghoul", () => {
   put(s, s.grave, uid("ancient-crashhorn"));
   put(s, s.grave, uid("thicket-bear"));
   put(s, s.hand, uid("reanimate"));
-  applyAction(s, { t: "cast", uid: uid("reanimate"), target: uid("ancient-crashhorn"), pay: false }, agent);
+  applyAction(s, { t: "cast", uid: uid("reanimate"), target: uid("ancient-crashhorn") }, agent);
   assert.ok(s.mine.some((p) => p.def.id === "ancient-crashhorn"));
   s.tapped = 0;
   put(s, s.hand, uid("crypt-lord"));
-  applyAction(s, { t: "cast", uid: uid("crypt-lord"), target: uid("thicket-bear"), pay: false }, agent);
+  applyAction(s, { t: "cast", uid: uid("crypt-lord"), target: uid("thicket-bear") }, agent);
   assert.equal(s.mine.length, 3);
   const ghoul = mine(s, uid("hungry-ghoul"), agent);
   put(s, s.grave, uid("assassinate"));
@@ -356,7 +297,7 @@ test("Wandering Skeleton returns face-down when it dies; Egg Laying executes cre
 
 test("Mulligan and decking out", () => {
   const pair = PAIRS[0];
-  const s = setup(buildCtx(pair, NEMESIS_LIST[0], false), rng(3), rng(4));
+  const s = setup(buildCtx(pair, NEMESIS_LIST[0]), rng(3), rng(4));
   const agent = new Heuristic();
   mulligan(s, agent, rng(5));
   assert.equal(s.hand.length, 3);
@@ -366,23 +307,6 @@ test("Mulligan and decking out", () => {
   s.first = false;
   beginPlayerTurn(s, agent);
   assert.equal(s.over, 2);
-});
-
-test("Hatching executes the Omen in the middle of your turn, Reflection bounces", () => {
-  const { s, uid, agent } = game("R/G", "vaskara");
-  setOmen(s, uid("armored-drone"));
-  setNemLife(s, 8);
-  damageNemesis(s, 1, agent);
-  assert.equal(s.phase, 2);
-  assert.equal(s.nem[0]?.def.id, "armored-drone");
-  assert.equal(s.faceDown.length, 6);
-  const m = game("R/G", "mirror-archmage");
-  const boar = mine(m.s, m.uid("mossback-boar"), m.agent);
-  mine(m.s, m.uid("thicket-bear"), m.agent);
-  setNemLife(m.s, 8);
-  damageNemesis(m.s, 1, m.agent);
-  assert.ok(m.s.hand.includes(boar.uid));
-  assert.equal(m.s.faceDown.length, 9);
 });
 
 let failed = 0;

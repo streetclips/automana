@@ -35,18 +35,11 @@ export interface HalfGrimoire {
   cards: Card[];
 }
 
-export interface NemesisText {
-  name: string;
-  phase1: string[];
-  flip: string;
-  phase2: string[];
-}
-
 export interface Nemesis {
   id: string;
   color: Exclude<Color, "T">;
-  en: NemesisText;
-  es: NemesisText;
+  en: { name: string };
+  es: { name: string };
   threats: Card[];
 }
 

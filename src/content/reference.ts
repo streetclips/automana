@@ -20,8 +20,7 @@ export const REFERENCE: Reference = {
         "Execute the Omen.",
         "Reveal a new Omen (−1 life).",
         "Attack: you block, instants allowed.",
-        "End-of-turn abilities. Damage wears off.",
-        "7 or fewer face-down cards → Phase 2.",
+        "End: damage wears off.",
       ],
     },
     {
@@ -63,8 +62,7 @@ export const REFERENCE: Reference = {
         "Ejecuta el Presagio.",
         "Revela un nuevo Presagio (−1 vida).",
         "Ataque: tú bloqueas y puedes lanzar instantáneos.",
-        "Habilidades de final de turno. El daño desaparece.",
-        "7 cartas boca abajo o menos → Fase 2.",
+        "Final: el daño desaparece.",
       ],
     },
     {

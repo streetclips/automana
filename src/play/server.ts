@@ -33,7 +33,7 @@ function readBody(req: IncomingMessage): Promise<string> {
 
 function parseSpec(json: string): GameSpec {
   const spec = JSON.parse(json) as Partial<GameSpec>;
-  if (typeof spec.pair !== "string" || typeof spec.nemesis !== "string" || typeof spec.heroic !== "boolean" || !Number.isInteger(spec.seed) || !Array.isArray(spec.decisions)) {
+  if (typeof spec.pair !== "string" || typeof spec.nemesis !== "string" || !Number.isInteger(spec.seed) || !Array.isArray(spec.decisions)) {
     throw new Error("Malformed game");
   }
   return spec as GameSpec;

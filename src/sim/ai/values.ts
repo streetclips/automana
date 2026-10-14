@@ -1,5 +1,5 @@
-import { type CardDef, DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, type Mana, REACH, TRAMPLE, VIGILANCE } from "../engine/defs";
-import { ARCHIVIST, GROVEKEEPER, bestRuinCreature, kwOf, nemTarget, overflowPower, pw, tg } from "../engine/engine";
+import { type CardDef, DEATHTOUCH, DEFENDER, FLYING, LIFELINK, type Mana, REACH, TRAMPLE, VIGILANCE } from "../engine/defs";
+import { ARCHIVIST, GROVEKEEPER, bestRuinCreature, kwOf, nemTarget, pw, tg } from "../engine/engine";
 import { MAX_CREATURES, MAX_LANDS, type Perm, type State, defOf } from "../engine/state";
 
 export const W = {
@@ -12,7 +12,7 @@ export const W = {
   land1: 2.6, land2: 2.2, land3: 1.8, land4: 1.1, land5: 0.6,
   k2: 0.9, k3: 1.9, k4: 2.8,
   counter: 1.8, danger: 2.0, dangerMargin: 2, lethal: 5.0, clock: 0.35, selfMill: 0.6,
-  omenScale: 0.8, omenCreature: 0.75, eggLaying: 1.5, tithe: 0.5,
+  omenScale: 0.8, omenCreature: 0.75, eggLaying: 1.5,
   bolt: 3.0, kindle: 2.2, whisper: 1.9, assassinate: 3.4, roar: 2.2, judgment: 2.6, freeze: 1.8, tide: 1.8, risingTide: 2.6,
   banish: 2.2, aegis: 1.4, shield: 1.6, bend: 1.6, fury: 1.4, surge: 1.9, blade: 1.8, strength: 2.4, scryCard: 0.25,
   hold: 0.85, noBoard: 0.6,
@@ -70,12 +70,12 @@ export function kaelValue(state: number): number {
   return state === 2 ? W.k2 : state === 3 ? W.k3 : state === 4 ? W.k4 : 0;
 }
 
-export function staticPow(s: State, p: Perm): number {
-  return pw(s, p) - p.tp;
+export function staticPow(p: Perm): number {
+  return pw(p) - p.tp;
 }
 
-export function staticTough(s: State, p: Perm): number {
-  return tg(s, p) - p.tt;
+export function staticTough(p: Perm): number {
+  return tg(p) - p.tt;
 }
 
 export function creatureValue(s: State, power: number, toughness: number, kw: number, id: string): number {
@@ -96,7 +96,7 @@ export function creatureValue(s: State, power: number, toughness: number, kw: nu
 }
 
 export function mineValue(s: State, p: Perm): number {
-  return creatureValue(s, staticPow(s, p), staticTough(s, p), kwOf(s, p), p.def.id);
+  return creatureValue(s, staticPow(p), staticTough(p), kwOf(p), p.def.id);
 }
 
 function nemStats(power: number, toughness: number, kw: number): number {
@@ -110,23 +110,19 @@ function nemStats(power: number, toughness: number, kw: number): number {
   return v;
 }
 
-export function nemValue(s: State, p: Perm): number {
+export function nemValue(p: Perm): number {
   if (p.pacified) return W.nPacified;
-  const v = nemStats(staticPow(s, p), staticTough(s, p), kwOf(s, p));
+  const v = nemStats(staticPow(p), staticTough(p), kwOf(p));
   return p.frozen && p.tapped ? v * W.nFrozen : v;
 }
 
-export function nemDefValue(s: State, d: CardDef): number {
-  let power = d.power + (s.ctx.heroic ? 1 : 0);
-  let kw = d.kw;
-  if (s.phase === 2 && s.ctx.nemesis === "vaskara") { power += 1; kw |= TRAMPLE; }
-  if (s.phase === 2 && s.ctx.nemesis === "vorthrax") kw |= HASTE;
-  return nemStats(power, d.toughness, kw);
+export function nemDefValue(d: CardDef): number {
+  return nemStats(d.power, d.toughness, d.kw);
 }
 
 function bestNem(s: State, ok: (p: Perm) => boolean): number {
   let best = 0;
-  for (const p of s.nem) if (!p.pacified && ok(p)) best = Math.max(best, nemValue(s, p));
+  for (const p of s.nem) if (!p.pacified && ok(p)) best = Math.max(best, nemValue(p));
   return best;
 }
 
@@ -135,7 +131,7 @@ function bestGraveCreature(s: State, maxMv: number): number {
   for (const uid of s.grave) {
     const d = defOf(s, uid);
     if (d.kind !== "creature" || d.mv > maxMv) continue;
-    best = Math.max(best, creatureValue(s, d.power - withering(s), d.toughness - withering(s), d.kw, d.id));
+    best = Math.max(best, creatureValue(s, d.power, d.toughness, d.kw, d.id));
   }
   return best;
 }
@@ -144,19 +140,14 @@ function board(s: State): number {
   return s.mine.length ? 1 : W.noBoard;
 }
 
-function withering(s: State): number {
-  return s.phase === 2 && s.ctx.nemesis === "morwen" ? 1 : 0;
-}
-
 export function cardValue(s: State, d: CardDef, eff: number, avgCard: number): number {
   const n = s.faceDown.length;
   if (d.kind === "creature") {
-    const w = withering(s);
-    let v = creatureValue(s, d.power - w, d.toughness - w, d.kw, d.id) * W.creatureInHand;
+    let v = creatureValue(s, d.power, d.toughness, d.kw, d.id) * W.creatureInHand;
     switch (d.id) {
       case "tide-apprentice": v += 2 * W.scryCard; break;
       case "blood-acolyte": v += nemDamage(n, 1) - lifeCost(eff, 1); break;
-      case "cinder-hound": v += Math.max(0.5, 0.8 * bestNem(s, (p) => staticTough(s, p) <= 1)); break;
+      case "cinder-hound": v += Math.max(0.5, 0.8 * bestNem(s, (p) => staticTough(p) <= 1)); break;
       case "pyre-titan": v += nemDamage(n, 2); break;
       case "grovesinger-druid": v += lifeGain(eff, Math.min(2, s.grave.length)); break;
       case "crypt-lord": v += 0.8 * bestGraveCreature(s, 2); break;
@@ -164,21 +155,21 @@ export function cardValue(s: State, d: CardDef, eff: number, avgCard: number): n
     return v;
   }
   switch (d.id) {
-    case "ember-bolt": return Math.max(W.bolt, 0.9 * bestNem(s, (p) => staticTough(s, p) <= 3));
-    case "kindle": return Math.max(W.kindle, 0.9 * bestNem(s, (p) => staticTough(s, p) <= 2));
-    case "lethal-whisper": return Math.max(W.whisper, 0.9 * bestNem(s, (p) => staticTough(s, p) <= 2));
+    case "ember-bolt": return Math.max(W.bolt, 0.9 * bestNem(s, (p) => staticTough(p) <= 3));
+    case "kindle": return Math.max(W.kindle, 0.9 * bestNem(s, (p) => staticTough(p) <= 2));
+    case "lethal-whisper": return Math.max(W.whisper, 0.9 * bestNem(s, (p) => staticTough(p) <= 2));
     case "assassinate": return Math.max(W.assassinate, 0.9 * bestNem(s, () => true));
     case "volcanic-roar": {
       let v = 0;
-      for (const p of s.nem) if (!p.pacified && staticTough(s, p) <= 2) v += 0.8 * nemValue(s, p);
+      for (const p of s.nem) if (!p.pacified && staticTough(p) <= 2) v += 0.8 * nemValue(p);
       return Math.max(W.roar, v);
     }
-    case "serene-judgment": return Math.max(W.judgment, 0.85 * bestNem(s, (p) => !(kwOf(s, p) & DEFENDER)));
+    case "serene-judgment": return Math.max(W.judgment, 0.85 * bestNem(s, (p) => !(kwOf(p) & DEFENDER)));
     case "deep-freeze": return Math.max(W.freeze, 0.4 * bestNem(s, () => true));
     case "return-to-the-tide": return Math.max(W.tide, 0.5 * bestNem(s, () => true));
     case "rising-tide": {
       let v = 0;
-      for (const p of s.nem) v += 0.5 * nemValue(s, p);
+      for (const p of s.nem) v += 0.5 * nemValue(p);
       return Math.max(W.risingTide, v);
     }
     case "banish-into-light": return W.banish;
@@ -207,7 +198,6 @@ export function cardValue(s: State, d: CardDef, eff: number, avgCard: number): n
 export interface ManaCtx {
   mana: number;
   max: number;
-  tax: number;
   colors: number;
   counts: number[];
 }
@@ -221,12 +211,11 @@ export function manaCtx(s: State): ManaCtx {
   for (const p of s.mine) if (p.def.id === GROVEKEEPER) { elves++; colors |= COLOR_BIT.G; }
   const counts = [0, 0, 0, 0, 0];
   for (const uid of s.hand) counts[COLOR_INDEX[defOf(s, uid).color as Mana]]++;
-  const tax = s.ctx.nemesis === "mirror-archmage" ? (s.phase === 1 ? 1 : 2) : 0;
-  return { mana: s.lands.length + elves + (s.lands.length < MAX_LANDS ? 1 : 0), max: MAX_LANDS + elves, tax, colors, counts };
+  return { mana: s.lands.length + elves + (s.lands.length < MAX_LANDS ? 1 : 0), max: MAX_LANDS + elves, colors, counts };
 }
 
 export function castFactor(d: CardDef, m: ManaCtx): number {
-  const cost = d.mv + m.tax;
+  const cost = d.mv;
   if (cost > m.max) return 0.08;
   let f = cost > m.mana ? Math.pow(W.missing, cost - m.mana) : 1;
   for (const c of d.pips) {
@@ -255,8 +244,8 @@ export function omenThreat(s: State, uid: number): number {
   const d = defOf(s, uid);
   const eff = s.library.length - 1;
   if (d.kind === "creature") {
-    if (s.nem.length >= MAX_CREATURES) return lifeCost(eff, overflowPower(s, uid)) * W.omenScale;
-    let v = nemDefValue(s, d) * W.omenCreature;
+    if (s.nem.length >= MAX_CREATURES) return lifeCost(eff, d.power) * W.omenScale;
+    let v = nemDefValue(d) * W.omenCreature;
     if (d.id === "vorthraxs-herald" || d.id === "crypt-horror") v += lifeCost(eff, 1);
     if (d.id === "mantis-queen") v += 0.4 * s.nem.length;
     return v * W.omenScale;
@@ -265,21 +254,21 @@ export function omenThreat(s: State, uid: number): number {
   let v = 0;
   switch (d.id) {
     case "searing-breath":
-      v = !target ? lifeCost(eff, 2) : staticTough(s, target) <= 2 ? mineValue(s, target) * 0.8 : 0.25;
+      v = !target ? lifeCost(eff, 2) : staticTough(target) <= 2 ? mineValue(s, target) * 0.8 : 0.25;
       break;
     case "withering-touch":
-      v = !target ? lifeCost(eff, 2) : staticTough(s, target) <= 2 ? mineValue(s, target) * 0.8 : 0.3;
+      v = !target ? lifeCost(eff, 2) : staticTough(target) <= 2 ? mineValue(s, target) * 0.8 : 0.3;
       break;
     case "rain-of-cinders":
-      for (const p of s.mine) if (staticTough(s, p) <= 1) v += mineValue(s, p);
+      for (const p of s.mine) if (staticTough(p) <= 1) v += mineValue(s, p);
       v += lifeCost(eff, 1);
       break;
     case "insect-plague":
-      for (const p of s.mine) if (staticTough(s, p) <= 1) v += mineValue(s, p);
+      for (const p of s.mine) if (staticTough(p) <= 1) v += mineValue(s, p);
       break;
     case "plague":
-      for (const p of s.mine) if (staticTough(s, p) <= 1) v += mineValue(s, p);
-      for (const p of s.nem) if (staticTough(s, p) <= 1) v -= 0.8 * nemValue(s, p);
+      for (const p of s.mine) if (staticTough(p) <= 1) v += mineValue(s, p);
+      for (const p of s.nem) if (staticTough(p) <= 1) v -= 0.8 * nemValue(p);
       break;
     case "tyrants-roar":
     case "pheromones":
@@ -288,7 +277,7 @@ export function omenThreat(s: State, uid: number): number {
     case "cinder-rebirth":
     case "exhume": {
       const i = bestRuinCreature(s);
-      v = i < 0 ? lifeCost(eff, 2) : s.nem.length < MAX_CREATURES ? nemDefValue(s, defOf(s, s.ruin[i])) * 0.75 : 0;
+      v = i < 0 ? lifeCost(eff, 2) : s.nem.length < MAX_CREATURES ? nemDefValue(defOf(s, s.ruin[i])) * 0.75 : 0;
       break;
     }
     case "egg-laying":
@@ -307,7 +296,7 @@ export function omenThreat(s: State, uid: number): number {
       v = s.hand.length ? 0.9 * cardValue(s, defOf(s, s.hand[0]), eff, 1.5) : lifeCost(eff, 2);
       break;
     case "mass-illusion":
-      for (const p of s.nem) if (!p.pacified && !(kwOf(s, p) & DEFENDER)) v += 0.4 * Math.max(0, staticPow(s, p));
+      for (const p of s.nem) if (!p.pacified && !(kwOf(p) & DEFENDER)) v += 0.4 * Math.max(0, staticPow(p));
       break;
   }
   return v * W.omenScale;

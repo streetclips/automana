@@ -1,6 +1,6 @@
 import { type Action, type Agent, PASS } from "../engine/agent";
 import {
-  applyAction, canBlock, castable, drain, findNem, sources, targets, wardActive, windowTask,
+  applyAction, canBlock, castable, drain, findNem, sources, targets, windowTask,
 } from "../engine/engine";
 import { type Rng, rng, shuffle } from "../engine/rng";
 import { type Perm, type State, type Window, clone, defOf } from "../engine/state";
@@ -16,7 +16,7 @@ const ANYTIME = new Set(["ember-bolt", "lethal-whisper", "assassinate", "deep-fr
 function describe(s: State, a: Action): string {
   switch (a.t) {
     case "land": return `land(${defOf(s, a.uid).name})`;
-    case "cast": return `${defOf(s, a.uid).name}${a.target === -2 ? "→face" : a.target >= 0 && defOf(s, a.uid).id !== "bend-fate" ? `→${defOf(s, a.target).name}` : ""}${a.pay ? "+ward" : ""}`;
+    case "cast": return `${defOf(s, a.uid).name}${a.target === -2 ? "→face" : a.target >= 0 && defOf(s, a.uid).id !== "bend-fate" ? `→${defOf(s, a.target).name}` : ""}`;
     case "kael": return `kael${a.ab === 1 ? "+" : a.ab === 2 ? "−" : "!"}${a.target >= 0 ? `(${defOf(s, a.target).name})` : ""}`;
     default: return a.t;
   }
@@ -111,14 +111,13 @@ export class SearchAgent implements Agent {
   private responseOptions(s: State, w: Window): Action[] {
     const out: Action[] = [];
     if (w === "end" && s.mine.some((p) => p.def.id === "learned-archivist" && !p.tapped && !p.sick)) out.push({ t: "archivist" });
-    const pay = wardActive(s) && !s.counters.length;
     const have = sources(s);
     const seen = new Set<string>();
     for (const uid of s.hand) {
       const d = defOf(s, uid);
       if (d.kind !== "instant" || seen.has(d.id)) continue;
       seen.add(d.id);
-      if (!castable(s, uid, false, pay, have)) continue;
+      if (!castable(s, uid, false, have)) continue;
       let list = targets(s, uid);
       if (PUMPS.has(d.id)) list = list.filter((t) => s.mine.some((p) => p.uid === t));
       else if (d.id === "bend-fate") list = w === "start" ? list.filter((t) => t === 1) : w === "end" ? list : [];
@@ -131,7 +130,7 @@ export class SearchAgent implements Agent {
         const k = p ? `${p.def.id}|${p.damage}|${p.tapped}|${p.tp}|${p.tt}|${p.auras.length}|${s.atk.includes(t)}` : String(t);
         if (uniq.has(k)) continue;
         uniq.add(k);
-        out.push({ t: "cast", uid, target: t, pay });
+        out.push({ t: "cast", uid, target: t });
       }
     }
     return out;
@@ -202,7 +201,7 @@ export class SearchAgent implements Agent {
       if (!a) return;
       const tried = new Set<string>();
       for (const b of free) {
-        if (used.has(b) || !canBlock(s, b, a)) continue;
+        if (used.has(b) || !canBlock(b, a)) continue;
         const k = `${b.def.id}|${b.damage}|${b.tp}|${b.tt}|${b.ap}|${b.at}|${b.shield}`;
         if (tried.has(k)) continue;
         tried.add(k);
