@@ -4,7 +4,6 @@ import { type CardDef, type NemesisId, type Pair, expand } from "./defs";
 export const OPENING_HAND = 4;
 export const MAX_CREATURES = 4;
 export const ROUND_MANA = 3;
-export const HAND_LIMIT = 5;
 export const MAX_ROUNDS = 60;
 export const FACE = -2;
 
@@ -32,9 +31,9 @@ export interface Perm {
   def: CardDef;
   tapped: boolean;
   sick: boolean;
-  frozen: boolean;
   pacified: boolean;
   shield: boolean;
+  harmless: boolean;
   dt: boolean;
   damage: number;
   tp: number;
@@ -54,6 +53,7 @@ export interface State {
   hand: number[];
   grave: number[];
   mana: number;
+  spells: number;
   mine: Perm[];
   omen: number;
   faceDown: number[];
@@ -67,7 +67,6 @@ export interface State {
   q: Task[];
   known: Uint8Array;
   over: 0 | 1 | 2;
-  mulligan: boolean;
   log: string[] | null;
   tally: Map<string, number> | null;
 }
@@ -84,12 +83,12 @@ export function buildCtx(pair: Pair, nemesis: Nemesis): Ctx {
 }
 
 export function newPerm(uid: number, def: CardDef): Perm {
-  return { uid, def, tapped: false, sick: true, frozen: false, pacified: false, shield: false, dt: false, damage: 0, tp: 0, tt: 0, ap: 0, at: 0, akw: 0, auras: [] };
+  return { uid, def, tapped: false, sick: true, pacified: false, shield: false, harmless: false, dt: false, damage: 0, tp: 0, tt: 0, ap: 0, at: 0, akw: 0, auras: [] };
 }
 
 function clonePerm(p: Perm): Perm {
   return {
-    uid: p.uid, def: p.def, tapped: p.tapped, sick: p.sick, frozen: p.frozen, pacified: p.pacified, shield: p.shield, dt: p.dt,
+    uid: p.uid, def: p.def, tapped: p.tapped, sick: p.sick, pacified: p.pacified, shield: p.shield, harmless: p.harmless, dt: p.dt,
     damage: p.damage, tp: p.tp, tt: p.tt, ap: p.ap, at: p.at, akw: p.akw, auras: p.auras.length ? p.auras.slice() : [],
   };
 }
@@ -97,10 +96,10 @@ function clonePerm(p: Perm): Perm {
 export function clone(s: State): State {
   return {
     ctx: s.ctx, round: s.round, active: s.active, first: s.first,
-    library: s.library.slice(), hand: s.hand.slice(), grave: s.grave.slice(), mana: s.mana, mine: s.mine.map(clonePerm),
+    library: s.library.slice(), hand: s.hand.slice(), grave: s.grave.slice(), mana: s.mana, spells: s.spells, mine: s.mine.map(clonePerm),
     omen: s.omen, faceDown: s.faceDown.slice(), ruin: s.ruin.slice(), nem: s.nem.map(clonePerm), counters: s.counters.slice(),
     atk: s.atk.slice(), blk: s.blk.slice(), pend: s.pend, pendTarget: s.pendTarget,
-    q: s.q.slice(), known: s.known.slice(), over: s.over, mulligan: s.mulligan, log: null, tally: null,
+    q: s.q.slice(), known: s.known.slice(), over: s.over, log: null, tally: null,
   };
 }
 

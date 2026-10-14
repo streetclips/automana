@@ -1,20 +1,20 @@
-import { type CardDef, DEATHTOUCH, DEFENDER, FLYING, LIFELINK, REACH, TRAMPLE, VIGILANCE } from "../engine/defs";
-import { ARCHIVIST, GROVEKEEPER, bestRuinCreature, kwOf, nemTarget, pw, tg } from "../engine/engine";
+import { type CardDef, DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, REACH, TRAMPLE, VIGILANCE } from "../engine/defs";
+import { ARCHIVIST, GROVEKEEPER, REFRACTION, bestRuinCreature, kwOf, nemTarget, pw, tg } from "../engine/engine";
 import { MAX_CREATURES, type Perm, type State, defOf } from "../engine/state";
 
 export const W = {
   cBase: 0.6, cPow: 1.0, cTough: 0.55, flyPow: 0.5, flyBase: 0.3, tramplePow: 0.2, lifelinkPow: 0.6, deathtouch: 1.6,
   vigilancePow: 0.3, reach: 0.4, defenderTough: 0.3, elfMana: 1.4, archivist: 0.8, ghoul: 0.9,
   nBase: 0.6, nPow: 1.25, nTough: 0.55, nFlyPow: 0.6, nFlyBase: 0.2, nTramplePow: 0.3, nDeathtouch: 1.6, nLifelinkPow: 0.8,
-  nDefenderOff: 0.75, nPacified: 0.3, nFrozen: 0.7,
+  nDefenderOff: 0.75, nPacified: 0.3, nTax: 1.0,
   creatureInHand: 0.72,
   lifeA: 0.75, lifeB: 2.2, lifeC: 3.5, nemA: 0.74, nemB: 1.6, nemC: 2.5,
   counter: 1.8, danger: 2.0, dangerMargin: 2, lethal: 5.0, clock: 0.35, selfMill: 0.6,
-  omenScale: 0.8, omenCreature: 0.75, eggLaying: 1.5,
+  omenScale: 0.8, omenCreature: 0.75, omenHaste: 0.5, eggLaying: 1.5,
   bolt: 3.0, kindle: 2.2, whisper: 1.9, assassinate: 3.4, roar: 2.2, judgment: 2.6, freeze: 1.8, tide: 1.8, risingTide: 2.6,
   banish: 2.2, aegis: 1.4, shield: 1.6, bend: 1.6, fury: 1.4, surge: 1.9, blade: 1.8, strength: 2.4, scryCard: 0.25,
   hold: 0.85, noBoard: 0.6,
-  bendMargin: 1.5, tradeRatio: 1.05, chumpMargin: 2, freezeMin: 4.0, mullMargin: 5,
+  bendMargin: 1.5, tradeRatio: 1.05, chumpMargin: 2,
 };
 
 export type Weights = typeof W;
@@ -84,7 +84,7 @@ export function mineValue(p: Perm): number {
   return creatureValue(staticPow(p), staticTough(p), kwOf(p), p.def.id);
 }
 
-function nemStats(power: number, toughness: number, kw: number): number {
+function nemStats(power: number, toughness: number, kw: number, id: string): number {
   const p = Math.max(0, power);
   let v = W.nBase + W.nPow * p + W.nTough * toughness;
   if (kw & FLYING) v += W.nFlyPow * p + W.nFlyBase;
@@ -92,17 +92,17 @@ function nemStats(power: number, toughness: number, kw: number): number {
   if (kw & DEATHTOUCH) v += W.nDeathtouch;
   if (kw & LIFELINK) v += W.nLifelinkPow * p;
   if (kw & DEFENDER) v -= W.nPow * p * W.nDefenderOff;
+  if (id === REFRACTION) v += W.nTax;
   return v;
 }
 
 export function nemValue(p: Perm): number {
   if (p.pacified) return W.nPacified;
-  const v = nemStats(staticPow(p), staticTough(p), kwOf(p));
-  return p.frozen && p.tapped ? v * W.nFrozen : v;
+  return nemStats(staticPow(p), staticTough(p), kwOf(p), p.def.id);
 }
 
 export function nemDefValue(d: CardDef): number {
-  return nemStats(d.power, d.toughness, d.kw);
+  return nemStats(d.power, d.toughness, d.kw, d.id);
 }
 
 function bestNem(s: State, ok: (p: Perm) => boolean): number {
@@ -193,6 +193,7 @@ export function omenThreat(s: State, uid: number): number {
     let v = nemDefValue(d) * W.omenCreature;
     if (d.id === "vorthraxs-herald" || d.id === "crypt-horror") v += lifeCost(eff, 1);
     if (d.id === "mantis-queen") v += 0.4 * s.nem.length;
+    if (d.kw & HASTE) v += W.omenHaste * lifeCost(eff, Math.max(0, d.power));
     return v * W.omenScale;
   }
   const target = nemTarget(s);
@@ -225,8 +226,17 @@ export function omenThreat(s: State, uid: number): number {
       v = i < 0 ? lifeCost(eff, 2) : s.nem.length < MAX_CREATURES ? nemDefValue(defOf(s, s.ruin[i])) * 0.75 : 0;
       break;
     }
+    case "uprising": {
+      const dead = s.ruin.map((u) => defOf(s, u)).filter((x) => x.kind === "creature").sort((a, b) => b.power - a.power || b.toughness - a.toughness);
+      const room = Math.max(0, Math.min(2, MAX_CREATURES - s.nem.length));
+      v = dead.length ? dead.slice(0, room).reduce((n, x) => n + nemDefValue(x) * 0.75, 0) : lifeCost(eff, 2);
+      break;
+    }
     case "egg-laying":
       v = W.eggLaying;
+      break;
+    case "brood":
+      v = 2 * W.eggLaying;
       break;
     case "soul-drain":
       v = lifeCost(eff, 2) + nemScore(s.faceDown.length + 2) - nemScore(s.faceDown.length);

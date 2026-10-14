@@ -1,8 +1,8 @@
 import { type Action, type Agent, PASS } from "../engine/agent";
 import { TRAMPLE } from "../engine/defs";
 import {
-  ARCHIVIST, applyAction, canBlock, castable, findMine, findNem, kills, kwOf, lethalFor, manaLeft, nemAttackers,
-  pw, stepTask, targets,
+  ARCHIVIST, applyAction, canBlock, castable, findMine, findNem, kills, kwOf, lethalFor, manaLeft, pw, stepTask,
+  targets, tax,
 } from "../engine/engine";
 import { FACE, type Perm, type State, T, type Window, clone, defOf } from "../engine/state";
 import { WIN } from "./eval";
@@ -31,14 +31,6 @@ function hasCard(s: State, id: string): number {
 export class Heuristic implements Agent {
   private quiet = 0;
 
-  mulligan(): boolean {
-    return false;
-  }
-
-  mulliganDiscard(s: State): number {
-    return this.discard(s, 1)[0];
-  }
-
   main(): Action {
     return PASS;
   }
@@ -61,7 +53,7 @@ export class Heuristic implements Agent {
   private lethal(s: State): Action | null {
     const bolts = s.hand.filter((u) => defOf(s, u).id === "ember-bolt");
     if (!bolts.length || s.counters.length) return null;
-    const usable = Math.min(bolts.length, Math.floor(manaLeft(s) / defOf(s, bolts[0]).mv));
+    const usable = Math.min(bolts.length, Math.max(0, Math.floor((manaLeft(s) - tax(s)) / defOf(s, bolts[0]).mv)));
     if (usable && usable * 3 >= s.faceDown.length) return this.instant(s, bolts[0], FACE);
     return null;
   }
@@ -75,8 +67,6 @@ export class Heuristic implements Agent {
         return this.bendFate(s) ?? PASS;
       case "spell":
         return this.best(s, this.spellOptions(s), T.RESOLVE) ?? PASS;
-      case "pre":
-        return this.freeze(s) ?? PASS;
       case "blocks":
         return this.best(s, this.combatOptions(s), T.DAMAGE) ?? PASS;
       case "end": {
@@ -96,18 +86,6 @@ export class Heuristic implements Agent {
     for (const u of s.faceDown) if (!s.known[u]) { total += omenThreat(s, u); n++; }
     if (!n || omenThreat(s, s.omen) - total / n < W.bendMargin) return null;
     return this.instant(s, uid, 1);
-  }
-
-  private freeze(s: State): Action | null {
-    const uid = hasCard(s, "deep-freeze");
-    if (uid < 0) return null;
-    const attackers = nemAttackers(s).map((u) => findNem(s, u)!);
-    if (!attackers.length) return null;
-    attackers.sort((a, b) => nemValue(b) - nemValue(a));
-    const top = attackers[0];
-    const incoming = attackers.reduce((n, p) => n + Math.max(0, pw(p)), 0);
-    if (nemValue(top) < W.freezeMin && s.library.length - 1 - incoming > 3) return null;
-    return this.instant(s, uid, top.uid);
   }
 
   private spellOptions(s: State): Action[] {
@@ -143,7 +121,7 @@ export class Heuristic implements Agent {
       if (seen.has(id)) continue;
       seen.add(id);
       let list: number[] = [];
-      if (id === "banish-into-light" || id === "ember-bolt" || id === "lethal-whisper" || id === "assassinate" || id === "return-to-the-tide") list = attackers;
+      if (id === "banish-into-light" || id === "ember-bolt" || id === "lethal-whisper" || id === "assassinate" || id === "return-to-the-tide" || id === "deep-freeze") list = attackers;
       else if (id === "surge-of-vigor" || id === "battle-fury" || id === "luminous-aegis") list = blockers;
       else if (id === "shield-formation" && blockers.length) list = [-1];
       for (const t of list) {
@@ -252,15 +230,6 @@ export class Heuristic implements Agent {
       if (v > bestV) { bestV = v; best = u; }
     }
     return best;
-  }
-
-  discard(s: State, n: number): number[] {
-    const eff = s.library.length - 1;
-    return s.hand
-      .map((u) => ({ u, v: handValue(s, u, eff, AVG) }))
-      .sort((a, b) => a.v - b.v)
-      .slice(0, n)
-      .map((x) => x.u);
   }
 
   cryptLord(s: State, options: number[]): number {

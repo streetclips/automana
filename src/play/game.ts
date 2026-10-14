@@ -1,5 +1,5 @@
 import { NEMESIS_LIST, PAIRS } from "../sim/engine/defs";
-import { beginNemesisTurn, drain, mulligan, playerTurn, setup } from "../sim/engine/engine";
+import { beginNemesisTurn, drain, playerTurn, setup } from "../sim/engine/engine";
 import { hash32, rng } from "../sim/engine/rng";
 import { MAX_ROUNDS, type State, buildCtx, clone } from "../sim/engine/state";
 import { type Answer, type Ask, Pending, ReplayAgent } from "./agent";
@@ -46,7 +46,6 @@ export function replay(spec: GameSpec): Snapshot {
   s.log = lines;
   let ask: Ask | null = null;
   try {
-    if (agent.mulligan(s)) mulligan(s, agent, rp);
     while (!s.over && s.round < MAX_ROUNDS) {
       playerTurn(s, agent);
       if (s.over) break;

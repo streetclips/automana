@@ -26,8 +26,8 @@ export const ARCANE_TIDE: HalfGrimoire = {
     {
       id: "deep-freeze", color: "U", cost: 2, type: "instant", qty: 1,
       art: "a raging beast frozen mid-leap inside a block of blue ice in a snowy cave",
-      en: { name: "Deep Freeze", text: "<b>Freeze</b> a Nemesis creature.", flavor: "Even rage forgets how to move." },
-      es: { name: "Congelar", text: "<b>Congela</b> una criatura de la Némesis.", flavor: "Hasta la furia olvida cómo moverse." },
+      en: { name: "Deep Freeze", text: "Prevent all damage that would be dealt by a Nemesis creature this turn.", flavor: "Even rage forgets how to move." },
+      es: { name: "Congelar", text: "Previene todo el daño que haría una criatura de la Némesis este turno.", flavor: "Hasta la furia olvida cómo moverse." },
     },
     {
       id: "return-to-the-tide", color: "U", cost: 2, type: "instant", qty: 1,

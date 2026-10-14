@@ -1,17 +1,17 @@
 import { type Action, type Agent, PASS } from "../engine/agent";
 import {
-  applyAction, canBlock, castable, drain, findNem, manaLeft, targets, windowTask,
+  applyAction, canBlock, castable, drain, findNem, manaLeft, nemAttackers, targets, windowTask,
 } from "../engine/engine";
-import { type Rng, rng, shuffle } from "../engine/rng";
+import { type Rng, rng } from "../engine/rng";
 import { type Perm, type State, type Window, clone, defOf } from "../engine/state";
 import { evaluate } from "./eval";
 import { Heuristic } from "./heuristic";
 import { type DecisionCtx, determinize, publicKey, unknownSet } from "./know";
 import { type Phase, Planner, type Step } from "./planner";
-import { W, avgThreat, cardValue } from "./values";
+import { avgThreat, cardValue } from "./values";
 
 const PUMPS = new Set(["battle-fury", "surge-of-vigor", "luminous-aegis"]);
-const ANYTIME = new Set(["ember-bolt", "lethal-whisper", "assassinate", "deep-freeze", "return-to-the-tide"]);
+const ANYTIME = new Set(["ember-bolt", "lethal-whisper", "assassinate", "return-to-the-tide"]);
 
 function describe(s: State, a: Action): string {
   switch (a.t) {
@@ -36,7 +36,6 @@ export class SearchAgent implements Agent {
   samples = 3;
   private steps: Step[] = [];
   private pos = 0;
-  private mullBaseline = new Map<string, number>();
 
   constructor(seed: number) {
     this.next = rng(seed);
@@ -119,6 +118,7 @@ export class SearchAgent implements Agent {
       else if (d.id === "bend-fate") list = w === "start" ? list.filter((t) => t === 1) : w === "end" ? list : [];
       else if (d.id === "shield-formation") list = s.mine.length && (w === "spell" || w === "blocks" || w === "pre") ? [-1] : [];
       else if (d.id === "banish-into-light") list = w === "blocks" ? list : [];
+      else if (d.id === "deep-freeze") list = w === "blocks" ? list.filter((t) => s.atk.includes(t)) : w === "pre" ? list.filter((t) => nemAttackers(s).includes(t)) : [];
       else if (!ANYTIME.has(d.id)) list = [];
       const uniq = new Set<string>();
       for (const t of list) {
@@ -212,38 +212,6 @@ export class SearchAgent implements Agent {
     return best;
   }
 
-  private openingScore(s: State, hand: number[]): number {
-    let v = 0;
-    for (const uid of hand) {
-      const d = defOf(s, uid);
-      const f = d.mv <= 2 ? 1 : d.mv === 3 ? 0.9 : d.mv === 4 ? 0.7 : 0.55;
-      v += cardValue(s, d, 19, 2) * f;
-    }
-    return v;
-  }
-
-  mulligan(s: State): boolean {
-    let base = this.mullBaseline.get(s.ctx.pair + s.ctx.nemesis);
-    if (base === undefined) {
-      const deck = Array.from({ length: s.ctx.players }, (_, i) => i);
-      const sample = rng(0x5eed);
-      let total = 0;
-      const k = 300;
-      for (let i = 0; i < k; i++) {
-        const hand = shuffle(deck.slice(), sample).slice(0, 4);
-        const scores = hand.map((u) => this.openingScore(s, [u])).sort((a, b) => b - a);
-        total += scores[0] + scores[1] + scores[2];
-      }
-      base = total / k;
-      this.mullBaseline.set(s.ctx.pair + s.ctx.nemesis, base);
-    }
-    return this.openingScore(s, s.hand) < base - W.mullMargin;
-  }
-
-  mulliganDiscard(s: State): number {
-    return this.h.mulliganDiscard(s);
-  }
-
   scry(s: State, cards: number[]): number[] {
     return this.h.scry(s, cards);
   }
@@ -254,10 +222,6 @@ export class SearchAgent implements Agent {
 
   prayer(s: State, cards: number[]): number {
     return this.h.prayer(s, cards);
-  }
-
-  discard(s: State, n: number): number[] {
-    return this.h.discard(s, n);
   }
 
   cryptLord(s: State, options: number[]): number {

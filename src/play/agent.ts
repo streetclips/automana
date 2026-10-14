@@ -166,16 +166,6 @@ export class ReplayAgent implements Agent {
     return this.take(s, { kind: "pick", quick: [], ...ask }) as number[];
   }
 
-  mulligan(s: State): boolean {
-    const t = ui();
-    return this.menu(s, t.openingTitle, t.openingNote, [{ label: t.keep, answer: false, primary: true }, { label: t.mulligan, answer: true }]) === true;
-  }
-
-  mulliganDiscard(s: State): number {
-    const t = ui();
-    return this.pick(s, { title: t.mulligan, note: t.mulliganNote, from: s.hand.slice(), min: 1, max: 1, ordered: false, tray: false, confirm: t.toGrave })[0];
-  }
-
   main(s: State, step: 1 | 2): Action {
     const t = ui();
     const items = [...castItems(s, true), ...archivistItems(s)];
@@ -238,11 +228,6 @@ export class ReplayAgent implements Agent {
     return this.pick(s, {
       title: cardName("prayer-of-restoration"), note: t.prayerNote, from: cards, min: 0, max: 1, ordered: false, tray: true, confirm: t.takeIt, none: t.allToLibrary,
     })[0] ?? -1;
-  }
-
-  discard(s: State, n: number): number[] {
-    const t = ui();
-    return this.pick(s, { title: t.discardTitle, note: t.discardNote(s.hand.length, n), from: s.hand.slice(), min: n, max: n, ordered: false, tray: false, confirm: t.discard });
   }
 
   cryptLord(s: State, options: number[]): number {

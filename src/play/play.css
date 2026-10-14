@@ -39,7 +39,6 @@ main { --f: clamp(5.5px, calc((100vh - 305px) / 79.5), 10px); }
 .fan > .item.lowered { top: var(--lower); }
 .fan > .item.open, .fan > .item[open] { z-index: 40; }
 .item > .pw-card { position: absolute; left: 0; top: 0; }
-.item.frozen > .pw-card { transform: rotate(180deg); }
 .fan > .item.sideways { width: 35em; height: 25em; margin-top: 5em; }
 .item.sideways > .pw-card { left: 5em; top: -5em; transform: rotate(-90deg); }
 .tucks { position: absolute; inset: 0; z-index: -1; }

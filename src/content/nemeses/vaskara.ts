@@ -6,31 +6,31 @@ export const VASKARA: Nemesis = {
   es: { name: "Vaskara, la Madre Enjambre" },
   threats: [
     {
-      id: "ravenous-larva", color: "T", type: "creature", qty: 4, pt: "1/1", threat: true,
+      id: "ravenous-larva", color: "T", type: "creature", qty: 3, pt: "1/1", threat: true,
       art: "a giant pale larva with snapping jaws crawling out of an egg sac in a dark hive",
       en: { name: "Ravenous Larva", sub: "Insect", text: "" },
       es: { name: "Larva Voraz", sub: "Insecto", text: "" },
     },
     {
-      id: "armored-drone", color: "T", type: "creature", qty: 2, pt: "2/2", threat: true,
+      id: "armored-drone", color: "T", type: "creature", qty: 4, pt: "2/2", threat: true,
       art: "a giant armored ant soldier with a dark green carapace marching out of a hive tunnel",
       en: { name: "Armored Drone", sub: "Insect", text: "" },
       es: { name: "Zángano Acorazado", sub: "Insecto", text: "" },
     },
     {
-      id: "darting-wasp", color: "T", type: "creature", qty: 2, pt: "2/1", threat: true,
+      id: "darting-wasp", color: "T", type: "creature", qty: 3, pt: "2/1", threat: true,
       art: "a giant wasp with a long stinger darting through a sickly green jungle",
       en: { name: "Darting Wasp", sub: "Insect", text: "<b>Flying</b>" },
       es: { name: "Avispa Lanzadera", sub: "Insecto", text: "<b>Volar</b>" },
     },
     {
-      id: "shieldbreaker-beetle", color: "T", type: "creature", qty: 1, pt: "3/3", threat: true,
+      id: "shieldbreaker-beetle", color: "T", type: "creature", qty: 2, pt: "3/3", threat: true,
       art: "a huge horned beetle smashing through a wall of wooden shields",
       en: { name: "Shieldbreaker Beetle", sub: "Insect", text: "<b>Trample</b>" },
       es: { name: "Escarabajo Rompeescudos", sub: "Insecto", text: "<b>Arrollar</b>" },
     },
     {
-      id: "mantis-queen", color: "T", type: "creature", qty: 1, pt: "4/4", threat: true,
+      id: "mantis-queen", color: "T", type: "creature", qty: 2, pt: "4/4", threat: true,
       art: "a towering green mantis queen raising her scythe claws over a swarm of insects",
       en: { name: "Mantis Queen", sub: "Insect", text: "When it enters, other Nemesis creatures get +1/+0 until end of turn." },
       es: { name: "Mantis Reina", sub: "Insecto", text: "Cuando entra, las demás criaturas de la Némesis obtienen +1/+0 hasta el final del turno." },
@@ -52,6 +52,12 @@ export const VASKARA: Nemesis = {
       art: "a dark swarm of stinging insects descending on a group of terrified soldiers",
       en: { name: "Insect Plague", text: "Deal 1 damage to each of your creatures." },
       es: { name: "Plaga de Insectos", text: "Hace 1 de daño a cada una de tus criaturas." },
+    },
+    {
+      id: "brood", color: "T", type: "spell", qty: 1, threat: true,
+      art: "a swarm of insect hatchlings bursting out of a cluster of glowing eggs in a dark hive chamber",
+      en: { name: "Brood", text: "Reveal the next 2 face-down cards. Execute the creatures and put the rest face-down at the bottom." },
+      es: { name: "Nidada", text: "Revela las 2 siguientes cartas boca abajo. Ejecuta las criaturas y pon las demás boca abajo en el fondo." },
     },
   ],
 };

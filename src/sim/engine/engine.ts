@@ -2,12 +2,13 @@ import type { Action, Agent } from "./agent";
 import { DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, REACH, TRAMPLE, VIGILANCE } from "./defs";
 import { type Rng, shuffle } from "./rng";
 import {
-  FACE, HAND_LIMIT, MAX_CREATURES, OPENING_HAND, ROUND_MANA, T,
+  FACE, MAX_CREATURES, OPENING_HAND, ROUND_MANA, T,
   type Ctx, type Perm, type State, type Task, type Window, defOf, newPerm,
 } from "./state";
 
 export const GROVEKEEPER = "elvish-grovekeeper";
 export const ARCHIVIST = "learned-archivist";
+export const REFRACTION = "refraction-golem";
 
 const WINDOW_TASK: Record<Window, number> = { upkeep: 0, start: T.START, spell: T.SPELL, pre: T.PRE, blocks: T.AFTER_BLOCKS, end: T.END };
 
@@ -57,7 +58,7 @@ export function canBlock(blocker: Perm, attacker: Perm): boolean {
 
 export function kills(a: Perm, b: Perm): boolean {
   const pa = pw(a);
-  if (pa <= 0 || b.shield) return false;
+  if (pa <= 0 || b.shield || a.harmless) return false;
   return (kwOf(a) & DEATHTOUCH) !== 0 || pa >= hp(b);
 }
 
@@ -320,11 +321,26 @@ export function manaLeft(s: State): number {
   return n;
 }
 
+export function refraction(s: State): number {
+  let n = 0;
+  for (const p of s.nem) if (p.def.id === REFRACTION) n++;
+  return n;
+}
+
+export function tax(s: State): number {
+  return s.spells ? 0 : refraction(s);
+}
+
+export function costOf(s: State, uid: number): number {
+  return defOf(s, uid).mv + tax(s);
+}
+
 function payMana(s: State, uid: number): void {
   const d = defOf(s, uid);
-  const pool = Math.min(d.mv, s.mana);
+  const cost = costOf(s, uid);
+  const pool = Math.min(cost, s.mana);
   s.mana -= pool;
-  let rest = d.mv - pool;
+  let rest = cost - pool;
   for (const p of s.mine) {
     if (!rest) break;
     if (p.def.id === GROVEKEEPER && !p.tapped && !p.sick) { p.tapped = true; rest--; }
@@ -380,7 +396,7 @@ export function castable(s: State, uid: number, main: boolean, have = manaLeft(s
   const d = defOf(s, uid);
   if (sorcerySpeed(d) && !main) return false;
   if (d.kind === "creature" && s.mine.length >= MAX_CREATURES) return false;
-  return d.mv <= have;
+  return costOf(s, uid) <= have;
 }
 
 function castSpell(s: State, a: Extract<Action, { t: "cast" }>, agent: Agent): void {
@@ -389,6 +405,7 @@ function castSpell(s: State, a: Extract<Action, { t: "cast" }>, agent: Agent): v
   if (i < 0) throw new Error(`${d.name} is not in hand`);
   s.hand.splice(i, 1);
   payMana(s, a.uid);
+  s.spells++;
   if (s.counters.length) {
     toBottom(s, s.counters.shift()!);
     s.grave.push(a.uid);
@@ -451,7 +468,7 @@ function resolveSpell(s: State, uid: number, target: number, agent: Agent): void
       if (!s.over) scry(s, 1, agent);
       break;
     case "deep-freeze":
-      if (nemT) { nemT.tapped = true; nemT.frozen = true; }
+      if (nemT) nemT.harmless = true;
       break;
     case "return-to-the-tide":
       if (nemT) {
@@ -629,7 +646,7 @@ function fight(s: State, attackers: (Perm | undefined)[], defendersMine: boolean
     perAttacker.push(0);
     const a = attackers[i];
     if (!a) continue;
-    const pa = Math.max(0, pw(a));
+    const pa = a.harmless ? 0 : Math.max(0, pw(a));
     const ka = kwOf(a);
     const bu = s.blk[i];
     const b = bu >= 0 ? (defendersMine ? findMine(s, bu) : findNem(s, bu)) : undefined;
@@ -642,7 +659,7 @@ function fight(s: State, attackers: (Perm | undefined)[], defendersMine: boolean
         hits.push({ to: b, n: toB, dt: (ka & DEATHTOUCH) !== 0 });
         toPlayer += excess;
         perAttacker[i] = excess;
-        const pb = Math.max(0, pw(b));
+        const pb = b.harmless ? 0 : Math.max(0, pw(b));
         hits.push({ to: a, n: pb, dt: (kwOf(b) & DEATHTOUCH) !== 0 });
         if (kwOf(b) & LIFELINK && !a.shield) {
           if (defendersMine) gainMine += pb;
@@ -725,6 +742,10 @@ function resolveThreat(s: State, uid: number, agent: Agent): void {
       if (bestRuinCreature(s) < 0) loseLife(s, 2);
       else returnFromRuin(s);
       break;
+    case "uprising":
+      if (bestRuinCreature(s) < 0) loseLife(s, 2);
+      else { returnFromRuin(s); returnFromRuin(s); }
+      break;
     case "pheromones":
       for (const p of s.nem) { p.tp += 1; p.tt += 1; }
       break;
@@ -736,6 +757,16 @@ function resolveThreat(s: State, uid: number, agent: Agent): void {
       if (s.faceDown.length === 0) { s.over = 1; break; }
       if (defOf(s, next).kind === "creature") enterNem(s, next, true);
       else toBottom(s, next);
+      break;
+    }
+    case "brood": {
+      const next = s.faceDown.splice(0, 2);
+      if (!next.length) { s.over = 1; break; }
+      for (const u of next) s.known[u] = 0;
+      log(s, `Brood reveals ${next.map((u) => nm(s, u)).join(", ")}`);
+      if (s.faceDown.length === 0) { s.over = 1; break; }
+      for (const u of next) if (defOf(s, u).kind === "creature") enterNem(s, u, true);
+      for (const u of next) if (defOf(s, u).kind !== "creature") toBottom(s, u);
       break;
     }
     case "insect-plague":
@@ -785,7 +816,7 @@ function discardLeftmost(s: State): void {
 
 export function cleanup(s: State): void {
   for (const p of s.mine) { p.damage = 0; p.dt = false; p.tp = 0; p.tt = 0; p.shield = false; }
-  for (const p of s.nem) { p.damage = 0; p.dt = false; p.tp = 0; p.tt = 0; p.shield = false; }
+  for (const p of s.nem) { p.damage = 0; p.dt = false; p.tp = 0; p.tt = 0; p.shield = false; p.harmless = false; }
   s.atk = [];
   s.blk = [];
 }
@@ -862,11 +893,8 @@ export function drain(s: State, agent: Agent): void {
 
 export function beginNemesisTurn(s: State): void {
   s.active = 1;
-  for (const p of s.nem) {
-    p.sick = false;
-    if (p.frozen) p.frozen = false;
-    else p.tapped = false;
-  }
+  s.spells = 0;
+  for (const p of s.nem) { p.sick = false; p.tapped = false; }
   for (const p of s.mine) p.sick = false;
   s.q.push(
     { k: T.START, u: -1 }, { k: T.EXEC_OMEN, u: -1 }, { k: T.REVEAL, u: -1 }, { k: T.PRE, u: -1 },
@@ -883,6 +911,7 @@ export function beginPlayerTurn(s: State, agent: Agent): void {
   s.round++;
   s.active = 0;
   s.mana = ROUND_MANA;
+  s.spells = 0;
   for (const p of s.mine) { p.tapped = false; p.sick = false; }
   if (!s.first) {
     if (s.library.length <= 1) while (!s.over && window(s, agent, "upkeep"));
@@ -895,17 +924,7 @@ export function beginPlayerTurn(s: State, agent: Agent): void {
   }
 }
 
-export function endPlayerTurn(s: State, agent: Agent): void {
-  if (s.hand.length > HAND_LIMIT) {
-    for (const uid of agent.discard(s, s.hand.length - HAND_LIMIT)) {
-      const i = s.hand.indexOf(uid);
-      if (i < 0) continue;
-      s.hand.splice(i, 1);
-      s.grave.push(uid);
-      log(s, `discards ${nm(s, uid)}`);
-      count(s, `discard:${defOf(s, uid).id}`);
-    }
-  }
+export function endPlayerTurn(s: State): void {
   cleanup(s);
   s.first = false;
 }
@@ -924,7 +943,7 @@ export function playerTurn(s: State, agent: Agent): void {
     }
     step = 2;
   }
-  if (!s.over) endPlayerTurn(s, agent);
+  if (!s.over) endPlayerTurn(s);
 }
 
 export function setup(ctx: Ctx, rp: Rng, rn: Rng): State {
@@ -933,22 +952,10 @@ export function setup(ctx: Ctx, rp: Rng, rn: Rng): State {
   const faceDown = shuffle(Array.from({ length: ctx.defs.length - ctx.players }, (_, i) => ctx.players + i), rn);
   const omen = faceDown.shift()!;
   return {
-    ctx, round: 0, active: 0, first: true, library, hand, grave: [], mana: 0, mine: [],
+    ctx, round: 0, active: 0, first: true, library, hand, grave: [], mana: 0, spells: 0, mine: [],
     omen, faceDown, ruin: [], nem: [], counters: [], atk: [], blk: [],
-    pend: -1, pendTarget: -1, q: [], known: new Uint8Array(ctx.defs.length), over: 0, mulligan: false, log: null, tally: null,
+    pend: -1, pendTarget: -1, q: [], known: new Uint8Array(ctx.defs.length), over: 0, log: null, tally: null,
   };
-}
-
-export function mulligan(s: State, agent: Agent, rp: Rng): void {
-  s.library.push(...s.hand);
-  shuffle(s.library, rp);
-  s.hand = s.library.splice(0, OPENING_HAND);
-  const uid = agent.mulliganDiscard(s);
-  s.hand.splice(s.hand.indexOf(uid), 1);
-  s.grave.push(uid);
-  s.known.fill(0);
-  s.mulligan = true;
-  log(s, `mulligan, discards ${nm(s, uid)}`);
 }
 
 export function stepTask(s: State, agent: Agent): void {

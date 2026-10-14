@@ -3,11 +3,11 @@ import { Heuristic } from "./ai/heuristic";
 import type { Action, Agent } from "./engine/agent";
 import { NEMESIS_LIST, PAIRS } from "./engine/defs";
 import {
-  applyAction, beginNemesisTurn, beginPlayerTurn, castable, declareAttack, drain, enterMine, enterNem, manaLeft,
-  mulligan, nemAttackers, nemBlocks, playerCombatDamage, pw, sba, setup,
+  applyAction, beginNemesisTurn, beginPlayerTurn, castable, cleanup, declareAttack, drain, endPlayerTurn, enterMine, enterNem,
+  manaLeft, nemAttackers, nemBlocks, playerCombatDamage, pw, sba, setup,
 } from "./engine/engine";
 import { rng } from "./engine/rng";
-import { FACE, type Perm, ROUND_MANA, type State, type Window, buildCtx, defOf } from "./engine/state";
+import { FACE, type Perm, ROUND_MANA, type State, T, type Window, buildCtx, defOf } from "./engine/state";
 
 class Scripted extends Heuristic {
   blocks: number[] | null = null;
@@ -219,15 +219,26 @@ test("Lifelink, trample and deathtouch in combat", () => {
   assert.equal(s.nem.length, 0);
 });
 
-test("Freeze keeps a creature down through its next untap", () => {
+test("Deep Freeze prevents the damage a Nemesis creature would deal this turn", () => {
   const { s, uid, agent } = game("W/U", "vorthrax");
   const brute = nem(s, uid("cinderclaw-brute"));
+  const fiend = nem(s, uid("scorch-fiend"));
+  const squire = mine(s, uid("dawn-squire"), agent);
   put(s, s.hand, uid("deep-freeze"));
-  applyAction(s, { t: "cast", uid: uid("deep-freeze"), target: brute.uid }, agent);
-  beginNemesisTurn(s);
-  assert.ok(brute.tapped);
-  assert.ok(!brute.frozen);
-  assert.deepEqual(nemAttackers(s), []);
+  applyAction(s, { t: "cast", uid: uid("deep-freeze"), target: fiend.uid }, agent);
+  assert.ok(fiend.harmless);
+  const life = s.library.length;
+  s.active = 1;
+  s.atk = [brute.uid, fiend.uid];
+  brute.tapped = true;
+  fiend.tapped = true;
+  agent.blocks = [-1, squire.uid];
+  s.q = [{ k: T.BLOCKS, u: -1 }, { k: T.AFTER_BLOCKS, u: -1 }, { k: T.DAMAGE, u: -1 }];
+  drain(s, agent);
+  assert.equal(s.library.length, life - 3, "only the Brute's 3 get through, the Fiend tramples nothing");
+  assert.ok(s.mine.includes(squire), "the Squire blocks the Fiend and survives");
+  cleanup(s);
+  assert.ok(!fiend.harmless, "the effect ends with the turn");
 });
 
 test("Return to the Tide, Bend Fate and Rising Tide reorder the Threat deck", () => {
@@ -293,14 +304,73 @@ test("Wandering Skeleton returns face-down when it dies; Egg Laying executes cre
   assert.equal(defOf(v.s, v.s.omen).id, "pheromones");
 });
 
-test("Mulligan and decking out", () => {
+test("Inferno Charger attacks the turn it enters", () => {
+  const { s, uid, agent } = game("R/G", "vorthrax");
+  setOmen(s, uid("inferno-charger"));
+  const life = s.library.length;
+  beginNemesisTurn(s);
+  drain(s, agent);
+  assert.ok(s.nem.some((p) => p.def.id === "inferno-charger" && p.tapped), "it entered and attacked");
+  assert.equal(s.library.length, life - 3);
+});
+
+test("Brood executes the creatures among the next 2 cards and bottoms the rest", () => {
+  const { s, uid, agent } = game("R/G", "vaskara");
+  setOmen(s, uid("brood"));
+  for (const id of ["ravenous-larva", "pheromones", "mantis-queen"]) take(s, uid(id));
+  s.faceDown.unshift(uid("mantis-queen"), uid("pheromones"), uid("ravenous-larva"));
+  const n = s.faceDown.length;
+  beginNemesisTurn(s);
+  s.q = s.q.filter((t) => t.k <= T.REVEAL);
+  drain(s, agent);
+  assert.deepEqual(s.nem.map((p) => p.def.id), ["mantis-queen"]);
+  assert.deepEqual(s.faceDown.slice(-2), [uid("pheromones"), uid("brood")]);
+  assert.equal(s.omen, uid("ravenous-larva"));
+  assert.equal(s.faceDown.length, n - 1, "the Queen enters and a new Omen is revealed; Pheromones and Brood go back");
+});
+
+test("Uprising returns the 2 strongest Ruin creatures, or costs 2 life", () => {
+  const { s, uid, agent } = game("R/G", "morwen");
+  for (const id of ["rotting-zombie", "deathless-knight", "morwens-ghoul"]) put(s, s.ruin, uid(id));
+  setOmen(s, uid("uprising"));
+  beginNemesisTurn(s);
+  s.q = s.q.filter((t) => t.k <= T.REVEAL);
+  drain(s, agent);
+  assert.deepEqual(s.nem.map((p) => p.def.id), ["deathless-knight", "morwens-ghoul"]);
+  assert.ok(s.ruin.includes(uid("rotting-zombie")));
+  const v = game("R/G", "morwen");
+  setOmen(v.s, v.uid("uprising"));
+  const life = v.s.library.length;
+  beginNemesisTurn(v.s);
+  v.s.q = v.s.q.filter((t) => t.k <= T.REVEAL);
+  drain(v.s, v.agent);
+  assert.equal(v.s.nem.length, 0);
+  assert.equal(v.s.library.length, life - 2);
+});
+
+test("Refraction Golem taxes the first spell of each turn", () => {
+  const { s, uid, agent } = game("R/G", "mirror-archmage");
+  nem(s, uid("refraction-golem"));
+  for (const id of ["kindle", "ember-bolt", "battle-fury", "mossback-boar"]) put(s, s.hand, uid(id));
+  assert.ok(!castable(s, uid("mossback-boar"), true), "3 + 1 does not fit in 3 mana");
+  applyAction(s, { t: "cast", uid: uid("kindle"), target: FACE }, agent);
+  assert.equal(s.mana, ROUND_MANA - 2, "the first spell costs 1 more");
+  applyAction(s, { t: "cast", uid: uid("ember-bolt"), target: FACE }, agent);
+  assert.equal(s.mana, 0, "the second costs 1");
+  beginNemesisTurn(s);
+  s.mana = 1;
+  assert.ok(!castable(s, uid("battle-fury"), false), "the Nemesis turn has its own first spell");
+  s.mana = 2;
+  assert.ok(castable(s, uid("battle-fury"), false));
+});
+
+test("No hand limit, and decking out", () => {
   const pair = PAIRS[0];
   const s = setup(buildCtx(pair, NEMESIS_LIST[0]), rng(3), rng(4));
   const agent = new Heuristic();
-  mulligan(s, agent, rng(5));
-  assert.equal(s.hand.length, 3);
-  assert.equal(s.grave.length, 1);
-  assert.equal(s.library.length, 20);
+  s.hand.push(...s.library.splice(0, 4));
+  endPlayerTurn(s);
+  assert.equal(s.hand.length, 8, "the hand keeps all its cards at the end of the turn");
   s.library = s.library.slice(0, 1);
   s.first = false;
   beginPlayerTurn(s, agent);

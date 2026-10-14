@@ -1,5 +1,5 @@
-import { DEATHTOUCH, DEFENDER, FLYING, REACH, TRAMPLE } from "../engine/defs";
-import { GROVEKEEPER, kwOf } from "../engine/engine";
+import { DEATHTOUCH, DEFENDER, FLYING, HASTE, REACH, TRAMPLE } from "../engine/defs";
+import { GROVEKEEPER, kwOf, refraction } from "../engine/engine";
 import { MAX_CREATURES, type Perm, ROUND_MANA, type State, defOf } from "../engine/state";
 import type { DecisionCtx } from "./know";
 import {
@@ -71,7 +71,7 @@ export function allOutDamage(s: State): number {
 function nextMana(s: State): number {
   let mana = ROUND_MANA;
   for (const p of s.mine) if (p.def.id === GROVEKEEPER) mana++;
-  return mana;
+  return mana - refraction(s);
 }
 
 function burnNextTurn(s: State): number {
@@ -101,9 +101,12 @@ function danger(s: State, eff: number): number {
   let d = 0;
   const mine = s.mine.map((p) => body(p)).filter((b) => b.t > 0);
   const attackers: Body[] = [];
-  for (const p of s.nem) {
-    if (p.pacified || (p.frozen && p.tapped)) continue;
-    const a = body(p);
+  const nem = s.nem.filter((p) => !p.pacified && !p.harmless).map((p) => body(p));
+  if (s.omen >= 0 && s.nem.length < MAX_CREATURES) {
+    const od = defOf(s, s.omen);
+    if (od.kind === "creature" && od.kw & HASTE) nem.push({ p: od.power, t: od.toughness, kw: od.kw });
+  }
+  for (const a of nem) {
     if (a.kw & DEFENDER || a.p <= 0) continue;
     if (mine.some((b) => canBlock(b, a) && kills(b, a) && !kills(a, b))) continue;
     attackers.push(a);

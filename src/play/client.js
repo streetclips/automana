@@ -146,10 +146,6 @@ function react(el, old, duration) {
     const dir = is("nem") ? 1 : -1;
     animateCard([{ transform: "translate(0px)" }, { transform: `translate(${dir * 34}px, -10px) scale(1.06)`, offset: 0.45 }, { transform: "translate(0px)" }], { duration: duration * 1.4, easing: "ease-in-out" });
   }
-  if (is("frozen") !== was("frozen")) {
-    const [from, to] = is("frozen") ? [0, 180] : [180, 0];
-    quiet(card.animate([{ transform: `rotate(${from}deg)` }, { transform: `rotate(${to}deg)` }], { duration: duration * 1.6, easing: "ease-in-out" }));
-  }
   if (Number(el.dataset.damage) > Number(old.data.damage ?? 0)) {
     const hit = [
       { transform: "translate(0px)", filter: "none" },

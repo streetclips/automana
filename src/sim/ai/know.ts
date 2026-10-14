@@ -45,7 +45,7 @@ function mix(x: number): void {
 
 function mixPerm(p: Perm): void {
   mix(p.uid);
-  mix((p.tapped ? 1 : 0) | (p.sick ? 2 : 0) | (p.frozen ? 4 : 0) | (p.pacified ? 8 : 0) | (p.shield ? 16 : 0) | (p.dt ? 32 : 0));
+  mix((p.tapped ? 1 : 0) | (p.sick ? 2 : 0) | (p.harmless ? 4 : 0) | (p.pacified ? 8 : 0) | (p.shield ? 16 : 0) | (p.dt ? 32 : 0));
   mix(p.damage * 4096 + (p.tp + 64) * 64 + (p.tt + 32));
   mix(p.ap * 256 + p.at * 16 + p.akw);
   for (const a of p.auras) mix(a + 500);
@@ -61,6 +61,7 @@ export function publicKey(s: State): number {
   mix(s.grave.length + 200);
   for (const u of s.grave) mix(u);
   mix(s.mana + 300);
+  mix(s.spells + 1200);
   mix(s.mine.length + 400);
   for (const p of s.mine) mixPerm(p);
   mix(s.nem.length + 500);

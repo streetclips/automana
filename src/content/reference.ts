@@ -10,7 +10,7 @@ export const REFERENCE: Reference = {
         "Main: spells (3 mana per round).",
         "Combat.",
         "Second main.",
-        "End: hand ≤ 5. Damage wears off.",
+        "End: damage wears off.",
       ],
     },
     {
@@ -35,7 +35,7 @@ export const REFERENCE: Reference = {
     {
       title: "IN YOUR HANDS",
       items: [
-        "<b>Lowered</b> = tapped. <b>Upside-down</b> = frozen.",
+        "<b>Lowered</b> = tapped.",
         "<b>Damage N:</b> N library cards → graveyard.",
         "<b>Gain N:</b> N graveyard cards → library bottom.",
         "<b>Hit the Nemesis N:</b> N cards behind the Omen → Ruin.",
@@ -52,7 +52,7 @@ export const REFERENCE: Reference = {
         "Principal: hechizos (3 de maná por ronda).",
         "Combate.",
         "Segunda principal.",
-        "Final: mano ≤ 5. El daño desaparece.",
+        "Final: el daño desaparece.",
       ],
     },
     {
@@ -77,7 +77,7 @@ export const REFERENCE: Reference = {
     {
       title: "EN TUS MANOS",
       items: [
-        "<b>Bajada</b> = girada. <b>Del revés</b> = congelada.",
+        "<b>Bajada</b> = girada.",
         "<b>Daño N:</b> N cartas de la biblioteca → cementerio.",
         "<b>Ganar N:</b> N cartas del cementerio → fondo de la biblioteca.",
         "<b>Daño N a la Némesis:</b> N cartas tras el Presagio → Ruina.",

@@ -29,11 +29,11 @@ export interface Plan {
 
 const PRE_TARGETS_BLOCKERS = new Set(["ember-bolt", "kindle", "lethal-whisper", "assassinate", "deep-freeze", "return-to-the-tide", "serene-judgment"]);
 const PRE_TARGETS_ATTACKERS = new Set(["battle-fury", "surge-of-vigor", "molten-blade", "wild-strength", "luminous-aegis"]);
-const HELD = new Set(["battle-fury", "surge-of-vigor", "luminous-aegis", "shield-formation", "banish-into-light"]);
-const NEM_TARGETS = new Set(["lethal-whisper", "assassinate", "deep-freeze", "return-to-the-tide"]);
+const HELD = new Set(["battle-fury", "surge-of-vigor", "luminous-aegis", "shield-formation", "banish-into-light", "deep-freeze"]);
+const NEM_TARGETS = new Set(["lethal-whisper", "assassinate", "return-to-the-tide"]);
 
 function sig(p: Perm): string {
-  return `${p.def.id}|${+p.tapped}${+p.sick}${+p.pacified}${+p.frozen}${+p.shield}|${p.damage}|${p.tp}|${p.tt}|${p.ap}|${p.at}|${p.akw}|${p.auras.length}`;
+  return `${p.def.id}|${+p.tapped}${+p.sick}${+p.pacified}${+p.harmless}${+p.shield}|${p.damage}|${p.tp}|${p.tt}|${p.ap}|${p.at}|${p.akw}|${p.auras.length}`;
 }
 
 function distinct(perms: Perm[]): number[] {
@@ -203,7 +203,7 @@ export class Planner {
   private leaf(s: State): void {
     this.leaves++;
     const c = clone(s);
-    endPlayerTurn(c, this.h);
+    endPlayerTurn(c);
     if (c.over) { this.record(evaluate(c, this.dc)); return; }
     const key = publicKey(c);
     let score = this.cache.get(key);
@@ -323,6 +323,7 @@ export class Planner {
         case "lethal-whisper":
         case "assassinate":
         case "return-to-the-tide":
+        case "deep-freeze":
           return blk;
         default:
           return [];

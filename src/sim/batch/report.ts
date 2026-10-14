@@ -61,7 +61,7 @@ function halves(rows: Row[]): string[][] {
 }
 
 function metrics(rows: Row[]): string[][] {
-  const out: string[][] = [["Nemesis", "Win rate", "Rounds", "Rounds (wins)", "Life left (wins)", "Nemesis life (losses)", "Mulligans"]];
+  const out: string[][] = [["Nemesis", "Win rate", "Rounds", "Rounds (wins)", "Life left (wins)", "Nemesis life (losses)"]];
   for (const n of NEMESIS_LIST) {
     const list = rows.filter((r) => r.cfg.nemesis === n);
     if (!list.length) continue;
@@ -73,7 +73,7 @@ function metrics(rows: Row[]): string[][] {
     out.push([
       SHORT[n.id], pct(t.wins, t.games), (t.rounds / t.games).toFixed(1),
       t.wins ? (t.winRounds / t.wins).toFixed(1) : "—", t.wins ? (t.lifeOnWin / t.wins).toFixed(1) : "—",
-      losses ? (t.nemLifeOnLoss / losses).toFixed(1) : "—", pct(t.mulligans, t.games),
+      losses ? (t.nemLifeOnLoss / losses).toFixed(1) : "—",
     ]);
   }
   return out;
@@ -99,12 +99,12 @@ export function render(rows: Row[], meta: Meta): { console: string; markdown: st
   tables.push(["Game metrics by Nemesis", metrics(rows)]);
   const consoleOut = [`Palmwalker balance simulation`, header, ...tables.map(([t, tb]) => `\n${t}\n${text(tb)}`)].join("\n");
   const markdown = [`# Palmwalker balance simulation`, "", header, ...tables.map(([t, tb]) => `\n## ${t}\n\n${md(tb)}`), ""].join("\n");
-  const csvHead = "pair,nemesis,games,wins,win_rate,avg_rounds,avg_rounds_win,avg_life_on_win,avg_nemesis_life_on_loss,mulligan_rate,timeouts,avg_ms";
+  const csvHead = "pair,nemesis,games,wins,win_rate,avg_rounds,avg_rounds_win,avg_life_on_win,avg_nemesis_life_on_loss,timeouts,avg_ms";
   const csv = [csvHead, ...rows.map(({ cfg, tally: t }) => [
     cfg.pair.key, cfg.nemesis.id, t.games, t.wins, (t.wins / t.games).toFixed(4),
     (t.rounds / t.games).toFixed(2), t.wins ? (t.winRounds / t.wins).toFixed(2) : "", t.wins ? (t.lifeOnWin / t.wins).toFixed(2) : "",
     t.games - t.wins ? (t.nemLifeOnLoss / (t.games - t.wins)).toFixed(2) : "",
-    (t.mulligans / t.games).toFixed(4), t.timeouts, (t.ms / t.games).toFixed(2),
+    t.timeouts, (t.ms / t.games).toFixed(2),
   ].join(","))].join("\n");
   const json = JSON.stringify({
     ...meta, configurations: rows.map(({ cfg, tally }) => ({ pair: cfg.pair.key, nemesis: cfg.nemesis.id, ...tally, winRate: tally.wins / tally.games })),

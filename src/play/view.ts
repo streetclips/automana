@@ -7,12 +7,12 @@ import { artCss } from "../render/art";
 import { renderCard, renderGrimoireBack, renderThreatBack } from "../render/card";
 import { pips } from "../render/pips";
 import { DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, NEMESIS_LIST, PAIRS, REACH, TRAMPLE, VIGILANCE } from "../sim/engine/defs";
-import { findMine, findNem, kills, kwOf, manaLeft, pw, tg } from "../sim/engine/engine";
-import { HAND_LIMIT, type Perm, ROUND_MANA, type State, defOf, isPlayerCard } from "../sim/engine/state";
+import { REFRACTION, findMine, findNem, kills, kwOf, manaLeft, pw, tax, tg } from "../sim/engine/engine";
+import { type Perm, ROUND_MANA, type State, defOf, isPlayerCard } from "../sim/engine/state";
 import { type Ask, type Item, nameOf, stats } from "./agent";
 import type { GameSpec, Snapshot } from "./game";
 import { type Move, moves, zoneOf } from "./motion";
-import { say, ui } from "./strings";
+import { cardName, say, ui } from "./strings";
 
 export const LOCALES: Locale[] = ["en", "es"];
 
@@ -126,10 +126,7 @@ function creature(s: State, p: Perm, ask: Ask | null, split: boolean): string {
     cls.push("lowered");
     tags.push(t.lowered);
   }
-  if (p.frozen) {
-    cls.push("frozen");
-    tags.push(t.frozen);
-  }
+  if (p.harmless) tags.push(t.harmless);
   if (p.pacified) tags.push(t.pacified);
   if (p.shield) tags.push(t.shielded);
   for (const a of p.auras) tags.push(`+ ${nameOf(s, a)}`);
@@ -163,6 +160,7 @@ function effects(s: State): string[] {
   const out: string[] = [];
   if (s.round === 0) return out;
   if (s.counters.length) out.push(t.counterNow(s.counters.length));
+  if (tax(s)) out.push(t.taxNow(cardName(REFRACTION), tax(s)));
   return out;
 }
 
@@ -224,7 +222,7 @@ function grimoireHold(s: State, ask: Ask | null): string {
   const cards = s.hand.map((uid) => slot(card(s, uid), { cls: ["item"], uid, key: uid, pick: pickable(ask, uid), menu: menuFor(ask, uid) })).join("");
   const order = s.ctx.nemesis === "mirror-archmage" ? t.leftmost : "";
   const hand = `<div class="zone hand-zone"><div class="fan hand-fan" style="--n:${Math.max(s.hand.length, 2)}">${cards || `<span class="none">${t.emptyHand}</span>`}</div>`
-    + `<p class="label">${t.hand(s.hand.length)}${s.hand.length > HAND_LIMIT ? t.limit(HAND_LIMIT) : ""}${order}</p></div>`;
+    + `<p class="label">${t.hand(s.hand.length)}${order}</p></div>`;
   const top = s.library[0];
   const known = top !== undefined && s.known[top] ? ` · ${t.top(nameOf(s, top))}` : "";
   const library = slot(`${depth(s.library.length)}${top === undefined ? EMPTY : renderGrimoireBack()}<span class="num">${s.library.length}</span>`, {
