@@ -17,14 +17,17 @@ interface CreatureSpec {
   triggers?: TriggeredAbility[];
 }
 
+const POWER_DELTA = Number(process.env.BOX_THREAT_POWER ?? 0);
+const TOUGHNESS_DELTA = Number(process.env.BOX_THREAT_TOUGHNESS ?? 0);
+
 function creature(spec: CreatureSpec): CardDef {
   return {
     id: spec.id,
     name: spec.name,
     types: ['creature'],
     subtypes: [spec.subtype],
-    power: spec.power,
-    toughness: spec.toughness,
+    power: Math.max(0, spec.power + POWER_DELTA),
+    toughness: Math.max(1, spec.toughness + TOUGHNESS_DELTA),
     keywords: spec.keywords,
     triggers: spec.triggers,
     threat: spec.threat,
