@@ -3,17 +3,17 @@ import { ARCHIVIST, GROVEKEEPER, REFRACTION, bestRuinCreature, kwOf, nemTarget, 
 import { MAX_CREATURES, type Perm, type State, defOf } from "../engine/state";
 
 export const W = {
-  cBase: 0.6, cPow: 1.0, cTough: 0.55, flyPow: 0.5, flyBase: 0.3, tramplePow: 0.2, lifelinkPow: 0.6, deathtouch: 1.6,
+  cBase: 0.6, cPow: 1.823, cTough: 0.743, flyPow: 0.5, flyBase: 0.3, tramplePow: 0.2, lifelinkPow: 0.6, deathtouch: 1.6,
   vigilancePow: 0.3, reach: 0.4, defenderTough: 0.3, elfMana: 1.4, archivist: 0.8, ghoul: 0.9,
-  nBase: 0.6, nPow: 1.25, nTough: 0.55, nFlyPow: 0.6, nFlyBase: 0.2, nTramplePow: 0.3, nDeathtouch: 1.6, nLifelinkPow: 0.8,
+  nBase: 0.6, nPow: 0.686, nTough: 0.55, nFlyPow: 0.6, nFlyBase: 0.2, nTramplePow: 0.3, nDeathtouch: 1.6, nLifelinkPow: 0.8,
   nDefenderOff: 0.75, nPacified: 0.3, nTax: 1.0,
-  creatureInHand: 0.72,
-  lifeA: 0.75, lifeB: 2.2, lifeC: 3.5, nemA: 0.74, nemB: 1.6, nemC: 2.5,
-  counter: 1.8, danger: 2.0, dangerMargin: 2, lethal: 5.0, clock: 0.35, selfMill: 0.6,
+  creatureInHand: 0.44,
+  lifeA: 0.556, lifeB: 2.2, lifeC: 2.593, nemA: 0.999, nemB: 1.6, nemC: 2.5,
+  counter: 1.8, danger: 0.907, dangerMargin: 2, lethal: 5.0, clock: 0.472, selfMill: 0.6,
   omenScale: 0.8, omenCreature: 0.75, omenHaste: 0.5, eggLaying: 1.5,
   bolt: 3.0, kindle: 2.2, whisper: 1.9, assassinate: 3.4, roar: 2.2, judgment: 2.6, freeze: 1.8, tide: 1.8, risingTide: 2.6,
   banish: 2.2, aegis: 1.4, shield: 1.6, bend: 1.6, fury: 1.4, surge: 1.9, blade: 1.8, strength: 2.4, scryCard: 0.25,
-  hold: 0.85, noBoard: 0.6,
+  hold: 0.63, noBoard: 0.6,
   bendMargin: 1.5, tradeRatio: 1.05, chumpMargin: 2,
 };
 

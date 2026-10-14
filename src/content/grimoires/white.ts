@@ -60,7 +60,7 @@ export const DAWNWARD: HalfGrimoire = {
       es: { name: "Exiliar en Luz", text: "Pon una criatura atacante de la Némesis boca abajo en el fondo del mazo de Amenaza. (La Némesis gana 1 vida y esa criatura volverá más tarde.)" },
     },
     {
-      id: "vigil-angel", color: "W", cost: 3, type: "creature", qty: 1, pt: "4/4",
+      id: "vigil-angel", color: "W", cost: 3, type: "creature", qty: 1, pt: "2/3",
       art: "a radiant female angel with white wings and a sword landing on a hill as the night sky breaks into dawn",
       en: { name: "Vigil Angel", sub: "Angel", text: "<b>Flying</b>, <b>Lifelink</b>", flavor: "Where she lands, the night retreats." },
       es: { name: "Ángel de la Vigilia", sub: "Ángel", text: "<b>Volar</b>, <b>Vínculo vital</b>", flavor: "Donde se posa, la noche retrocede." },

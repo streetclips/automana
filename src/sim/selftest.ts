@@ -4,7 +4,7 @@ import type { Action, Agent } from "./engine/agent";
 import { NEMESIS_LIST, PAIRS } from "./engine/defs";
 import {
   applyAction, beginNemesisTurn, beginPlayerTurn, castable, cleanup, declareAttack, drain, endPlayerTurn, enterMine, enterNem,
-  manaLeft, nemAttackers, nemBlocks, playerCombatDamage, pw, sba, setup,
+  manaLeft, nemAttackers, nemBlocks, playerCombatDamage, pw, sba, setup, tg,
 } from "./engine/engine";
 import { rng } from "./engine/rng";
 import { FACE, type Perm, ROUND_MANA, type State, T, type Window, buildCtx, defOf } from "./engine/state";
@@ -83,33 +83,34 @@ const test = (name: string, fn: () => void): void => {
 };
 
 test("Nemesis attacks unless a blocker can kill it and survive", () => {
-  const { s, uid, agent } = game("R/G", "vorthrax");
-  const brute = nem(s, uid("cinderclaw-brute"));
-  mine(s, uid("thicket-bear"), agent);
-  assert.deepEqual(nemAttackers(s), [brute.uid]);
-  mine(s, uid("mossback-boar"), agent);
-  assert.deepEqual(nemAttackers(s), [brute.uid], "a 3/3 kills the Brute but dies too");
-  mine(s, uid("ancient-crashhorn"), agent);
-  assert.deepEqual(nemAttackers(s), []);
-  const imp = nem(s, uid("ash-imp"));
-  assert.deepEqual(nemAttackers(s), [imp.uid]);
+  const { s, uid, agent } = game("R/G", "vaskara");
+  const larva = nem(s, uid("ravenous-larva"));
+  const bear = mine(s, uid("thicket-bear"), agent);
+  assert.deepEqual(nemAttackers(s), [larva.uid]);
+  bear.tp = 4;
+  assert.deepEqual(nemAttackers(s), [larva.uid], "a 6/2 kills the 3/6 Larva but dies too");
+  const horn = mine(s, uid("ancient-crashhorn"), agent);
+  horn.tp = 3;
+  assert.deepEqual(nemAttackers(s), [], "a 6/5 kills it and survives");
+  const wasp = nem(s, uid("darting-wasp"));
+  assert.deepEqual(nemAttackers(s), [wasp.uid]);
 });
 
 test("Nemesis blocks: safe block first, then the trick wins it (rulebook example)", () => {
   const { s, uid, agent } = game("R/G", "vorthrax");
   const hound = mine(s, uid("cinder-hound"), agent);
   const raider = mine(s, uid("firebrand-raider"), agent);
-  const fiend = nem(s, uid("scorch-fiend"));
+  const imp = nem(s, uid("ash-imp"));
   declareAttack(s, [hound.uid, raider.uid]);
   nemBlocks(s);
-  assert.deepEqual(s.blk, [fiend.uid, -1]);
+  assert.deepEqual(s.blk, [-1, imp.uid], "the 3/6 Imp kills either attacker and survives, so it takes the stronger");
   put(s, s.hand, uid("battle-fury"));
-  applyAction(s, { t: "cast", uid: uid("battle-fury"), target: hound.uid }, agent);
+  applyAction(s, { t: "cast", uid: uid("battle-fury"), target: raider.uid }, agent);
   setNemLife(s, 8);
   playerCombatDamage(s, agent);
   assert.equal(s.nem.length, 0);
   assert.equal(s.mine.length, 1);
-  assert.equal(s.faceDown.length, 5, "the unblocked Raider deals 3");
+  assert.equal(s.faceDown.length, 6, "the unblocked Hound deals 2");
 });
 
 test("Desperation block only when unblocked damage is lethal", () => {
@@ -161,7 +162,7 @@ test("Overflow hits for power and goes face-down to the bottom", () => {
   beginNemesisTurn(s);
   s.q = s.q.filter((t) => t.k <= 3);
   drain(s, agent);
-  assert.equal(s.library.length, lifeBefore - 5, "Lava Behemoth's 5 power");
+  assert.equal(s.library.length, lifeBefore - 7, "Lava Behemoth's 7 power");
   assert.equal(s.faceDown[s.faceDown.length - 1], uid("lava-behemoth"));
   assert.equal(s.faceDown.length, nemBefore + 1);
 });
@@ -200,14 +201,16 @@ test("Lifelink, trample and deathtouch in combat", () => {
   const rat = mine(s, uid("crypt-rat"), agent);
   const beetle = nem(s, uid("shieldbreaker-beetle"));
   for (let i = 0; i < 5; i++) s.grave.push(s.library.shift()!);
+  setNemLife(s, s.faceDown.length - 5);
   const life = s.library.length;
   declareAttack(s, [rat.uid]);
   nemBlocks(s);
-  assert.deepEqual(s.blk, [beetle.uid], "the 3/3 Beetle can kill the Rat, so it trades with its deathtouch");
+  assert.deepEqual(s.blk, [beetle.uid], "the 4/8 Beetle can kill the Rat, so it trades with its deathtouch");
   playerCombatDamage(s, agent);
   assert.equal(s.nem.length, 0);
   assert.equal(s.mine.length, 1);
   const larva = nem(s, uid("ravenous-larva"));
+  const nemLife = s.faceDown.length;
   s.atk = [larva.uid];
   s.blk = [cleric.uid];
   larva.tapped = true;
@@ -216,7 +219,9 @@ test("Lifelink, trample and deathtouch in combat", () => {
   s.q = [{ k: 10, u: -1 }, { k: 11, u: -1 }];
   drain(s, agent);
   assert.equal(s.library.length, life + 1, "Dawn Cleric lifelink");
-  assert.equal(s.nem.length, 0);
+  assert.equal(s.faceDown.length, nemLife + 3, "the Larva's lifelink returns 3 Ruin cards");
+  assert.equal(s.mine.length, 0, "the 3/6 Larva kills the 1/3 Cleric");
+  assert.equal(s.nem.length, 1);
 });
 
 test("Deep Freeze prevents the damage a Nemesis creature would deal this turn", () => {
@@ -235,7 +240,7 @@ test("Deep Freeze prevents the damage a Nemesis creature would deal this turn", 
   agent.blocks = [-1, squire.uid];
   s.q = [{ k: T.BLOCKS, u: -1 }, { k: T.AFTER_BLOCKS, u: -1 }, { k: T.DAMAGE, u: -1 }];
   drain(s, agent);
-  assert.equal(s.library.length, life - 3, "only the Brute's 3 get through, the Fiend tramples nothing");
+  assert.equal(s.library.length, life - 6, "only the Brute's 6 get through, the Fiend tramples nothing");
   assert.ok(s.mine.includes(squire), "the Squire blocks the Fiend and survives");
   cleanup(s);
   assert.ok(!fiend.harmless, "the effect ends with the turn");
@@ -289,7 +294,7 @@ test("Wandering Skeleton returns face-down when it dies; Egg Laying executes cre
   const { s, uid, agent } = game("R/G", "morwen");
   const sk = nem(s, uid("wandering-skeleton"));
   const n = s.faceDown.length;
-  sk.damage = 1;
+  sk.damage = tg(sk);
   sba(s, agent);
   assert.equal(s.faceDown.length, n + 1);
   assert.equal(s.faceDown[s.faceDown.length - 1], sk.uid);
@@ -311,7 +316,7 @@ test("Inferno Charger attacks the turn it enters", () => {
   beginNemesisTurn(s);
   drain(s, agent);
   assert.ok(s.nem.some((p) => p.def.id === "inferno-charger" && p.tapped), "it entered and attacked");
-  assert.equal(s.library.length, life - 3);
+  assert.equal(s.library.length, life - 6);
 });
 
 test("Brood executes the creatures among the next 2 cards and bottoms the rest", () => {

@@ -54,13 +54,13 @@ export const GRIM_PACT: HalfGrimoire = {
       es: { name: "Drenar Esencia", text: "Drenar Esencia hace 2 de daño a la Némesis y ganas 2 vidas." },
     },
     {
-      id: "night-specter", color: "B", cost: 3, type: "creature", qty: 1, pt: "3/3",
+      id: "night-specter", color: "B", cost: 3, type: "creature", qty: 1, pt: "2/2",
       art: "a hooded specter with tattered black wings drifting over a sleeping village under a purple moon",
       en: { name: "Night Specter", sub: "Specter", text: "<b>Flying</b>", flavor: "It feeds on the dreams you forget." },
       es: { name: "Espectro Nocturno", sub: "Espectro", text: "<b>Volar</b>", flavor: "Se alimenta de los sueños que olvidas." },
     },
     {
-      id: "crypt-lord", color: "B", cost: 3, type: "creature", qty: 1, pt: "4/5",
+      id: "crypt-lord", color: "B", cost: 3, type: "creature", qty: 1, pt: "3/3",
       art: "a regal vampire lord in a black and crimson cloak rising from a stone coffin in a vast crypt",
       en: { name: "Crypt Lord", sub: "Vampire", text: "When Crypt Lord enters, put a creature card with cost 2 or less from your graveyard onto the Table." },
       es: { name: "Señor de la Cripta", sub: "Vampiro", text: "Cuando el Señor de la Cripta entra, pon en la Mesa una carta de criatura de coste 2 o menos de tu cementerio." },

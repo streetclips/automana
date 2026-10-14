@@ -60,7 +60,7 @@ export const WILDWOOD: HalfGrimoire = {
       es: { name: "Druida Cantoarboleda", sub: "Druida elfo", text: "Cuando el Druida Cantoarboleda entra, ganas 2 vidas." },
     },
     {
-      id: "ancient-crashhorn", color: "G", cost: 3, type: "creature", qty: 1, pt: "6/6",
+      id: "ancient-crashhorn", color: "G", cost: 3, type: "creature", qty: 1, pt: "3/5",
       art: "a colossal ancient horned beast covered in moss, trampling through a forest and smashing trees",
       en: { name: "Ancient Crashhorn", sub: "Beast", text: "<b>Trample</b>", flavor: "Older than the trees it tramples." },
       es: { name: "Cuernochoque Ancestral", sub: "Bestia", text: "<b>Arrollar</b>", flavor: "Más viejo que los árboles que pisotea." },

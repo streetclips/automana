@@ -54,13 +54,13 @@ export const EMBERKIN: HalfGrimoire = {
       es: { name: "Rugido Volcánico", text: "Rugido Volcánico hace 2 de daño a cada criatura de la Némesis." },
     },
     {
-      id: "ashwing-drake", color: "R", cost: 3, type: "creature", qty: 1, pt: "3/3",
+      id: "ashwing-drake", color: "R", cost: 3, type: "creature", qty: 1, pt: "2/3",
       art: "a red drake with ash-grey wings flying over smoking mountains",
       en: { name: "Ashwing Drake", sub: "Drake", text: "<b>Flying</b>", flavor: "Its shadow is warm." },
       es: { name: "Draco Alaceniza", sub: "Draco", text: "<b>Volar</b>", flavor: "Su sombra quema." },
     },
     {
-      id: "pyre-titan", color: "R", cost: 3, type: "creature", qty: 1, pt: "5/4",
+      id: "pyre-titan", color: "R", cost: 3, type: "creature", qty: 1, pt: "3/3",
       art: "a colossal giant of cracked stone and fire striding through a burning valley",
       en: { name: "Pyre Titan", sub: "Giant", text: "<b>Trample</b>. When Pyre Titan enters, it deals 2 damage to the Nemesis." },
       es: { name: "Titán de la Pira", sub: "Gigante", text: "<b>Arrollar</b>. Cuando el Titán de la Pira entra, hace 2 de daño a la Némesis." },
