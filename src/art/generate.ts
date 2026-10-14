@@ -1,35 +1,55 @@
-import { existsSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { relative } from "node:path";
-import { ALL_CARDS, getCard } from "../content";
+import { ALL_CARDS, GRIMOIRES, NEMESES, getCard } from "../content";
 import type { Card } from "../content/types";
 import { ART, ROOT, artPath, ensureDir } from "../lib/paths";
 
 const API = "https://openrouter.ai/api/v1/images";
-const MODEL = "inclusionai/ming-image-0.1-design";
-const SIZE = "1088x960";
+const MODEL = "google/gemini-3.1-flash-lite-image";
+const ASPECT_RATIO = "5:4";
+const REFERENCES = 3;
 const PARALLEL = 4;
 const TIMEOUT_MS = 180_000;
 
 interface ImageResponse {
   data?: { b64_json: string }[];
+  usage?: { cost?: number };
   error?: { message: string };
 }
 
-function prompt(card: Card): string {
-  return `Art illustration in the old Magic: The Gathering style of ${card.art}, like a classic ${card.type} card. No border, frame or text.`;
+const COLLECTIONS: Card[][] = [...GRIMOIRES.map((g) => g.cards), ...NEMESES.map((n) => n.threats)];
+
+function references(card: Card): string[] {
+  const siblings = COLLECTIONS.find((cards) => cards.includes(card)) ?? [];
+  return siblings
+    .filter((c) => c !== card && existsSync(artPath(c.id)))
+    .slice(0, REFERENCES)
+    .map((c) => `data:image/jpeg;base64,${readFileSync(artPath(c.id)).toString("base64")}`);
 }
 
-async function generate(card: Card, apiKey: string): Promise<Buffer> {
+function prompt(card: Card, referenced: boolean): string {
+  const style = referenced ? " Match the painting style, palette and level of detail of the reference images, which are other cards of the same set." : "";
+  return `Art illustration in the old Magic: The Gathering style of ${card.art}, like a classic ${card.type} card.${style} No border, frame or text.`;
+}
+
+async function generate(card: Card, apiKey: string): Promise<{ image: Buffer; cost: number }> {
+  const refs = references(card);
   const res = await fetch(API, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "X-Title": "Palmwalker" },
-    body: JSON.stringify({ model: MODEL, prompt: prompt(card), size: SIZE, output_format: "jpeg" }),
+    body: JSON.stringify({
+      model: MODEL,
+      prompt: prompt(card, refs.length > 0),
+      aspect_ratio: ASPECT_RATIO,
+      resolution: "1K",
+      input_references: refs.map((url) => ({ type: "image_url", image_url: { url } })),
+    }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   const json = (await res.json().catch(() => ({}))) as ImageResponse;
   const image = json.data?.[0]?.b64_json;
   if (!res.ok || !image) throw new Error(`HTTP ${res.status}: ${json.error?.message ?? "no image in the response"}`);
-  return Buffer.from(image, "base64");
+  return { image: Buffer.from(image, "base64"), cost: json.usage?.cost ?? 0 };
 }
 
 async function pool<T>(items: T[], size: number, task: (item: T) => Promise<void>): Promise<void> {
@@ -50,15 +70,18 @@ if (!apiKey) {
 
 ensureDir(ART);
 let failed = 0;
+let spent = 0;
 await pool(cards, PARALLEL, async (card) => {
   const t0 = performance.now();
   try {
-    writeFileSync(artPath(card.id), await generate(card, apiKey));
-    console.log(`${relative(ROOT, artPath(card.id))} (${((performance.now() - t0) / 1000).toFixed(0)} s)`);
+    const { image, cost } = await generate(card, apiKey);
+    writeFileSync(artPath(card.id), image);
+    spent += cost;
+    console.log(`${relative(ROOT, artPath(card.id))} (${((performance.now() - t0) / 1000).toFixed(0)} s, $${cost.toFixed(3)})`);
   } catch (err) {
     failed++;
     console.error(`${card.id}: ${(err as Error).message}`);
   }
 });
-console.log(`${cards.length - failed} of ${cards.length} images generated`);
+console.log(`${cards.length - failed} of ${cards.length} images generated, $${spent.toFixed(3)}`);
 if (failed) process.exitCode = 1;

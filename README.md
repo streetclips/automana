@@ -80,13 +80,15 @@ Upload the PDF to [Baraja de Cartas](https://imprentasoriano.com/producto/baraja
 
 ## Card art
 
-`npm run art` illustrates cards with [Ming Image 0.1 Design](https://openrouter.ai/inclusionai/ming-image-0.1-design) through OpenRouter, 4 at a time, about 15 to 30 s per image:
+`npm run art` illustrates cards with [Gemini 3.1 Flash Lite Image](https://openrouter.ai/google/gemini-3.1-flash-lite-image) through OpenRouter, 4 at a time, about 10 s per image:
 
 1. Every card describes its scene in its `art` field, for example `art: "a swarm of insect hatchlings bursting out of a cluster of glowing eggs in a dark hive chamber"`.
-2. `src/art/generate.ts` wraps it in the shared style: `Art illustration in the old Magic: The Gathering style of {art}, like a classic {type} card. No border, frame or text.`
-3. Images are 1088 × 960 JPEGs in `art/`, named by card id. Commit them: the model takes no seed, so a new run gives a different image.
-4. The preview and the PDFs show `art/{id}.jpg` when it exists and a plain glow in the card's colour otherwise.
-5. About 1 image in 20 comes back with a painted parchment border: regenerate it with `npm run art -- {id}`.
+2. `src/art/generate.ts` wraps it in the shared style: `Art illustration in the old Magic: The Gathering style of {art}, like a classic {type} card. Match the painting style, palette and level of detail of the reference images, which are other cards of the same set. No border, frame or text.`
+3. The illustrations of the first 3 other cards of its half-grimoire or Threat deck go with the prompt as style references.
+4. Images are 1152 × 928 JPEGs in `art/`, named by card id. Commit them: the model takes no seed, so a new run gives a different image. The older ones are 1088 × 960, from Ming Image 0.1 Design, which OpenRouter no longer serves; the card frame crops both sizes to fit.
+5. Each image cost $0.034 on 14 October 2026: $0.0336 for the image and less than $0.001 for the prompt and its 3 references. The script prints the cost of every image and the total.
+6. The preview and the PDFs show `art/{id}.jpg` when it exists and a plain glow in the card's colour otherwise.
+7. Look at every new image and regenerate any with a border, text or the wrong scene: `npm run art -- {id}`.
 
 ## Balance simulator
 
