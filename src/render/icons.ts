@@ -1,6 +1,4 @@
-import type { CardType } from "../content/types";
-
-export type IconName = "T" | "X" | CardType;
+export type IconName = "T" | "X";
 
 function polar(r: number, turn: number): string {
   const a = turn * 2 * Math.PI;
@@ -17,8 +15,6 @@ function star(points: number, outer: number, inner: number): string {
 
 const path = (d: string, rotate = 0) => `<path${rotate ? ` transform="rotate(${rotate} 12 12)"` : ""} d="${d}"/>`;
 
-const SWORD = "M12-1.8 13.5 1.2v16h1.9V19h-2.5v4h.7v2.4h-3.2V23h.7v-4H8.6v-1.8h1.9v-16Z";
-
 const BURST = path(star(12, 11.2, 7));
 
 const MARK = path(circle(12, 12, 11.4) + circle(12, 12, 10.3) + star(4, 9.2, 2.1) + circle(12, 12, 1.3)) + path(star(4, 6.2, 2.1) + circle(12, 12, 1.3), 45);
@@ -26,11 +22,6 @@ const MARK = path(circle(12, 12, 11.4) + circle(12, 12, 10.3) + star(4, 9.2, 2.1
 const ICONS: Record<IconName, string> = {
   T: path("M10.3 2.6h3.4v9.8h4.9L12 21l-6.6-8.6h4.9Z"),
   X: BURST,
-  creature: path(SWORD, -45) + path(SWORD, 45),
-  instant: path("M14.6 1.5 5.6 13.4h5.6l-2 9.1 9.2-12.5h-5.6Z"),
-  sorcery: path(star(6, 11.2, 4.4)),
-  aura: path("M12 1 23 12 12 23 1 12ZM12 4.4 4.4 12l7.6 7.6 7.6-7.6ZM12 7.6l4.4 4.4-4.4 4.4L7.6 12Z"),
-  spell: BURST,
 };
 
 const COLLECTIONS: Record<string, string> = {

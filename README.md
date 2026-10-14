@@ -129,12 +129,14 @@ src/
 │   ├── grimoires/      the 5 half-grimoires: white, blue, black, red, green
 │   ├── nemeses/        the 4 Nemeses and their 20-card Threat decks
 │   ├── reference.ts    the quick reference card
+│   ├── box-reference.ts the quick reference card of the Beginner Box mode
 │   └── index.ts        catalog: GRIMOIRES, NEMESES, ALL_CARDS, getCard(id)
 ├── i18n/               UI strings per locale + current locale
-├── render/             HTML components: card.ts (Grimoire and Threat cards and their backs), faces.ts (the 4-state reference card), art.ts (card illustrations), icons.ts (SVG tap and Threat symbols, type glyphs, collection symbols and the Grimoire back's compass rose)
+├── render/             HTML components: card.ts (Grimoire and Threat cards and their backs), faces.ts (the two-face reference card), art.ts (card illustrations), icons.ts (SVG tap and Threat symbols, collection symbols and the Grimoire back's compass rose)
 ├── preview/            serves the live card preview: pages and web server
-├── pnp/                builds the print-and-play PDFs for the print shop
+├── pnp/                builds the print-and-play PDFs for the print shop, Palmwalker's and the Beginner Box mode's (box.ts)
 ├── art/                generates the card illustrations with OpenRouter
+├── box/                Beginner Box mode: mana-duel's Magic engine and AI, the 10 box decks, the Nemesis seat and its simulator (docs/box-nemesis.md)
 ├── sim/                balance simulator
 │   ├── engine/         rules engine: card rules and text checks, state, turn flow, combat, the Nemesis mind
 │   ├── ai/             player AI: turn planner, response and block search, evaluation, card values
