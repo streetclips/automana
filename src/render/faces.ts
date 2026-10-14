@@ -1,4 +1,4 @@
-import { KAEL, REFERENCE } from "../content";
+import { REFERENCE } from "../content";
 import { getLocale, t } from "../i18n/locale";
 import { pips } from "./pips";
 
@@ -17,14 +17,6 @@ function fourStateCard(cls: string, upright: Half, flipped: Half, face: Face): s
   <div class="hbody">${h.body.map((p) => `<p>${pips(p)}</p>`).join("")}</div>
 </div>`;
   return `<div class="pw-card pw-face ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${t().face} ${face}</div></div>`;
-}
-
-export function walkerFace(face: Face): string {
-  const k = KAEL[getLocale()];
-  const half = (state: string, body: string[]): Half => ({ state, name: k.name, body });
-  return face === "A"
-    ? fourStateCard("walker", half("I", [k.charge]), half("II", [k.charge]), face)
-    : fourStateCard("walker", half("III", [k.charge, k.discharge]), half("IV", [k.discharge, k.ultimate]), face);
 }
 
 export function referenceFace(face: Face): string {

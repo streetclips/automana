@@ -1,7 +1,6 @@
-import { GRIMOIRES, KAEL, NEMESES } from "../../content";
+import { GRIMOIRES, NEMESES } from "../../content";
 import type { Card, HalfGrimoire, Nemesis } from "../../content/types";
 
-export type Mana = "W" | "U" | "B" | "R" | "G";
 export type Kind = "creature" | "instant" | "sorcery" | "aura" | "spell";
 export type NemesisId = "vorthrax" | "vaskara" | "morwen" | "mirror-archmage";
 
@@ -22,10 +21,7 @@ const KEYWORDS: Record<string, number> = {
 export interface CardDef {
   id: string;
   name: string;
-  color: Mana | "T";
   kind: Kind;
-  generic: number;
-  pips: Mana[];
   mv: number;
   power: number;
   toughness: number;
@@ -62,7 +58,7 @@ const RULES_TEXT: Record<string, string[]> = {
   "volcanic-roar": ["Volcanic Roar deals 2 damage to each Nemesis creature."],
   "pyre-titan": ["When Pyre Titan enters, it deals 2 damage to the Nemesis."],
   "surge-of-vigor": ["A creature gets +3/+3 until end of turn."],
-  "elvish-grovekeeper": ["{T}: Add {G}."],
+  "elvish-grovekeeper": ["{T}: Add one mana."],
   "wild-strength": ["Tuck behind a creature you control. It gets +2/+2 and has Trample."],
   "bloom-of-life": ["Gain 4 life."],
   "grovesinger-druid": ["When Grovesinger Druid enters, gain 2 life."],
@@ -87,12 +83,6 @@ const RULES_TEXT: Record<string, string[]> = {
   "mass-illusion": ["Lower all your creatures."],
 };
 
-const KAEL_TEXT = [
-  "(+1 state): a creature you control gets +1/+0 until end of turn.",
-  "(−2 states): Kael deals 2 damage to a creature.",
-  "(go to I): Kael deals 3 damage to the Nemesis. Your creatures get +1/+0 until end of turn.",
-];
-
 function plain(html: string): string {
   return html.replace(/<[^>]+>/g, "");
 }
@@ -111,8 +101,6 @@ function keywords(card: Card): number {
 }
 
 function toDef(card: Card): CardDef {
-  const generic = card.cost.filter((c) => /^\d+$/.test(c)).reduce((n, c) => n + Number(c), 0);
-  const pips = card.cost.filter((c): c is Mana => !/^\d+$/.test(c));
   const [power, toughness] = card.pt ? card.pt.split("/").map(Number) : [0, 0];
   const text = plain(card.en.text);
   const kw = keywords(card);
@@ -121,15 +109,12 @@ function toDef(card: Card): CardDef {
   if (rules) expect(card.id, text, rules);
   else if (leftover) throw new Error(`Simulator has no rules for ${card.id}: "${text}"`);
   return {
-    id: card.id, name: card.en.name, color: card.color as Mana | "T", kind: card.type === "land" ? "spell" : card.type,
-    generic, pips, mv: generic + pips.length, power, toughness, kw, threat: !!card.threat,
+    id: card.id, name: card.en.name, kind: card.type, mv: card.cost ?? 0, power, toughness, kw, threat: !!card.threat,
   };
 }
 
 const DEFS = new Map<string, CardDef>();
 for (const card of [...GRIMOIRES.flatMap((g) => g.cards), ...NEMESES.flatMap((n) => n.threats)]) DEFS.set(card.id, toDef(card));
-
-expect("Kael", plain([KAEL.en.charge, KAEL.en.discharge, KAEL.en.ultimate].join(" ")), KAEL_TEXT);
 
 for (const id of Object.keys(RULES_TEXT)) if (!DEFS.has(id)) throw new Error(`Simulator rules for unknown card ${id}`);
 

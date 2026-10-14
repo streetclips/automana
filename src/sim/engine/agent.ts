@@ -1,13 +1,7 @@
 import type { State, Window } from "./state";
 
-export const CHARGE = 1;
-export const DISCHARGE = 2;
-export const ULTIMATE = 3;
-
 export type Action =
-  | { t: "land"; uid: number }
   | { t: "cast"; uid: number; target: number }
-  | { t: "kael"; ab: number; target: number }
   | { t: "archivist" }
   | { t: "pass" };
 

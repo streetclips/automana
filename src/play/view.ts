@@ -4,16 +4,15 @@ import type { Locale } from "../content/types";
 import { getLocale } from "../i18n/locale";
 import { SRC, artPath, readCss } from "../lib/paths";
 import { artCss } from "../render/art";
-import { renderCard, renderThreatBack } from "../render/card";
-import { walkerFace } from "../render/faces";
+import { renderCard, renderGrimoireBack, renderThreatBack } from "../render/card";
 import { pips } from "../render/pips";
 import { DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, NEMESIS_LIST, PAIRS, REACH, TRAMPLE, VIGILANCE } from "../sim/engine/defs";
-import { findMine, findNem, kills, kwOf, pw, sources, tg } from "../sim/engine/engine";
-import { HAND_LIMIT, MAX_LANDS, type Perm, type State, defOf, isPlayerCard } from "../sim/engine/state";
+import { findMine, findNem, kills, kwOf, manaLeft, pw, tg } from "../sim/engine/engine";
+import { HAND_LIMIT, type Perm, ROUND_MANA, type State, defOf, isPlayerCard } from "../sim/engine/state";
 import { type Ask, type Item, nameOf, stats } from "./agent";
 import type { GameSpec, Snapshot } from "./game";
-import { type Move, landFace, moves, zoneOf } from "./motion";
-import { ROMAN, landName, say, ui } from "./strings";
+import { type Move, moves, zoneOf } from "./motion";
+import { say, ui } from "./strings";
 
 export const LOCALES: Locale[] = ["en", "es"];
 
@@ -86,11 +85,11 @@ function slot(inner: string, o: SlotOptions = {}): string {
   return `<div class="${cls}"${data}>${tucks}${inner}${o.badges ?? ""}${tags}${label}${menu}</div>`;
 }
 
-function tuck(uid: number, i: number, face: string, title: string, lowered = false): string {
-  return `<div class="tuck${lowered ? " lowered" : ""}" data-key="${uid}" data-title="${esc(plain(title))}" style="--i:${i}">${face}</div>`;
+function tuck(uid: number, i: number, face: string, title: string): string {
+  return `<div class="tuck" data-key="${uid}" data-title="${esc(plain(title))}" style="--i:${i}">${face}</div>`;
 }
 
-function menuFor(ask: Ask | null, src: number | "kael"): Item[] {
+function menuFor(ask: Ask | null, src: number): Item[] {
   return ask?.kind === "menu" ? ask.items.filter((i) => i.src === src) : [];
 }
 
@@ -181,18 +180,6 @@ function threatDeck(s: State): string {
   return ruin + deck + omen;
 }
 
-function kael(s: State, ask: Ask | null, split: boolean): string {
-  const t = ui();
-  const lands = s.lands.map((uid, i) => {
-    const lowered = (s.tapped & (1 << i)) !== 0;
-    return tuck(uid, i, landFace(s, uid), `${landName(defOf(s, uid).color)} · ${lowered ? t.lowered : t.raised}`, lowered);
-  });
-  return slot(walkerFace(s.kael <= 2 ? "A" : "B"), {
-    cls: ["item", "kael", s.kael % 2 === 0 ? "turned" : "", split ? "split" : ""], key: "kael", data: { state: s.kael, anchor: "lands" },
-    menu: menuFor(ask, "kael"), title: t.kael(ROMAN[s.kael], s.kaelUsed), tucks: lands,
-  });
-}
-
 function held(s: State): string {
   const t = ui();
   const out: string[] = [];
@@ -215,8 +202,7 @@ function status(s: State): string {
     `${t.ruin} · <b>${s.ruin.length}</b>${ruinCreatures ? ` · ${t.creatures(ruinCreatures)}` : ""}`,
     ...effects(s).map((e) => `<span class="chip">${pips(esc(e))}</span>`),
   ];
-  const drop = s.active === 0 && s.round > 0 ? (s.landPlayed ? t.landPlayed : t.landOpen) : "";
-  const you = [`<b>${t.you}</b> · ${t.life(s.library.length)}`, t.kael(ROMAN[s.kael], s.kaelUsed), t.lands(s.lands.length, MAX_LANDS, sources(s)[5]), drop];
+  const you = [`<b>${t.you}</b> · ${t.life(s.library.length)}`, t.mana(manaLeft(s), ROUND_MANA)];
   const side = (cls: string, lines: string[]) => `<div class="${cls}">${lines.filter(Boolean).map((l) => `<p>${l}</p>`).join("")}</div>`;
   return `<div class="status">${side("nem-side", nem)}${side("you-side", you)}</div>`;
 }
@@ -228,7 +214,6 @@ function tableHold(s: State, ask: Ask | null): string {
     ...s.nem.map((p) => creature(s, p, ask, false)),
     ...s.counters.map((uid) => slot(card(s, uid), { cls: ["item", "nem", "sideways"], key: uid, title: t.counterNow(1) })),
     ...s.mine.map((p, i) => creature(s, p, ask, i === 0)),
-    kael(s, ask, s.mine.length === 0),
   ];
   return `<section class="hold table-hold"><h3>${t.leftHand} <span>${t.leftHow}</span></h3>`
     + `<div class="hold-row"><div class="fan table-fan">${fan.join("")}</div>${held(s)}${status(s)}</div></section>`;
@@ -242,7 +227,7 @@ function grimoireHold(s: State, ask: Ask | null): string {
     + `<p class="label">${t.hand(s.hand.length)}${s.hand.length > HAND_LIMIT ? t.limit(HAND_LIMIT) : ""}${order}</p></div>`;
   const top = s.library[0];
   const known = top !== undefined && s.known[top] ? ` · ${t.top(nameOf(s, top))}` : "";
-  const library = slot(`${depth(s.library.length)}${top === undefined ? EMPTY : landFace(s, top)}<span class="num">${s.library.length}</span>`, {
+  const library = slot(`${depth(s.library.length)}${top === undefined ? EMPTY : renderGrimoireBack()}<span class="num">${s.library.length}</span>`, {
     cls: ["pack"], key: top, data: { anchor: "library", counter: "life", count: s.library.length }, title: t.library(s.library.length),
   });
   const last = s.grave[s.grave.length - 1];

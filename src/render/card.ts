@@ -2,7 +2,7 @@ import { collectorNumber, getCard } from "../content";
 import type { Card } from "../content/types";
 import { getLocale, t } from "../i18n/locale";
 import { hasArt } from "./art";
-import { collectionIcon, icon } from "./icons";
+import { collectionIcon, grimoireMark, icon } from "./icons";
 import { pip, pips } from "./pips";
 
 export function renderCard(idOrCard: string | Card, copy = 0): string {
@@ -11,7 +11,7 @@ export function renderCard(idOrCard: string | Card, copy = 0): string {
   const set = num ? `<div class="c-set">${collectionIcon(num.collection)}<span>${num.first + copy}/${num.total}</span></div>` : "";
   const tx = card[getLocale()];
   const strings = t();
-  const cost = card.threat ? pip("X") : [...card.cost].sort((a, b) => Number(/^\d$/.test(a)) - Number(/^\d$/.test(b))).map(pip).join("");
+  const cost = pip(card.threat ? "X" : String(card.cost ?? 0));
   const glyph = icon(card.threat ? "X" : card.type);
   const type = (card.threat ? strings.threatPrefix : "") + strings.typeLabel[card.type] + (tx.sub ? ` — ${tx.sub}` : "");
   const fit = tx.name.length > 20 ? "xlong" : tx.name.length > 16 ? "long" : "";
@@ -29,4 +29,8 @@ export function renderCard(idOrCard: string | Card, copy = 0): string {
 
 export function renderThreatBack(): string {
   return `<div class="pw-card pw-back col-T"><div class="c-art"><div class="c-glow">${icon("X")}</div></div></div>`;
+}
+
+export function renderGrimoireBack(): string {
+  return `<div class="pw-card pw-back grimoire-back"><div class="c-art"><div class="c-glow">${grimoireMark()}<span class="c-mark">Palmwalker</span></div></div></div>`;
 }

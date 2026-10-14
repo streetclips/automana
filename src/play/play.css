@@ -15,7 +15,6 @@ main { overflow: auto; padding: 10px 14px 10px; }
 aside { display: flex; flex-direction: column; min-height: 0; background: #1a1410; border-left: 1px solid #000; }
 #zoom { flex: none; min-height: 384px; padding: 10px 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
 #zoom .pw-card { font-size: 10.4px; }
-#zoom.turned .pw-card { transform: rotate(180deg); }
 #zoom .zt { margin: 0; font-size: 12px; font-weight: 600; color: #e0a43a; text-align: center; }
 #zoom .tags { max-width: 270px; display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; }
 #zoom .tags span { padding: 1px 7px; border-radius: 8px; background: #3e3127; font-size: 11px; }
@@ -40,12 +39,11 @@ main { --f: clamp(5.5px, calc((100vh - 305px) / 79.5), 10px); }
 .fan > .item.lowered { top: var(--lower); }
 .fan > .item.open, .fan > .item[open] { z-index: 40; }
 .item > .pw-card { position: absolute; left: 0; top: 0; }
-.item.turned > .pw-card, .item.frozen > .pw-card { transform: rotate(180deg); }
+.item.frozen > .pw-card { transform: rotate(180deg); }
 .fan > .item.sideways { width: 35em; height: 25em; margin-top: 5em; }
 .item.sideways > .pw-card { left: 5em; top: -5em; transform: rotate(-90deg); }
 .tucks { position: absolute; inset: 0; z-index: -1; }
 .tuck { position: absolute; top: calc(-1 * var(--tab)); left: calc(var(--i) * 25em / var(--count)); right: 0; height: 35em; overflow: hidden; border-radius: 1.2em 0 0 1.2em; }
-.tuck.lowered { top: 0; }
 .item > .tags { display: none; }
 .item .badges { position: absolute; z-index: 3; left: 1.4em; width: 2.95em; top: 10.5em; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .item .badges span, .item .pt, .pack .pill { min-width: 17px; padding: 1px 4px; border-radius: 6px; font: 800 11px/1.35 "Avenir Next", "Helvetica Neue", sans-serif; text-align: center; box-shadow: 0 1px 4px rgba(0, 0, 0, .7); }

@@ -38,6 +38,10 @@
 .pw-card.pw-back .c-art { inset: .4em; }
 .pw-card.pw-back .c-glow { font-size: 7.5em; color: #ffb15c; }
 .pw-card.pw-back .c-glow .icon { position: relative; top: -5%; }
+.pw-card.grimoire-back { --c-p: #6e3f1f; --c-s: #c98a4b; --c-d: #24130a; --f-1: #7a4a2a; --f-2: #3a2012; }
+.pw-card.grimoire-back .c-glow { flex-direction: column; gap: .14em; color: #f0cf7a; }
+.pw-card.grimoire-back .c-glow .icon { top: 0; width: 1.25em; height: 1.25em; }
+.pw-card.grimoire-back .c-mark { font: bold .2em/1 Copperplate, serif; letter-spacing: .12em; text-transform: uppercase; }
 
 .col-R { --c-p: #d8452b; --c-s: #f2a541; --c-d: #3d0f05; --f-1: #e8714a; --f-2: #8e2010; --f-bar: #f7d9c8; --f-box: #f6e6db; }
 .col-G { --c-p: #3c8d3f; --c-s: #a6d36b; --c-d: #10301a; --f-1: #63a65e; --f-2: #1c4d25; --f-bar: #d9e9cf; --f-box: #e5efdc; }
@@ -52,11 +56,6 @@
   font-size: .82em; font-weight: bold; font-family: Palatino, "Book Antiqua", Georgia, serif; color: #222; vertical-align: -0.18em; margin: 0 .05em;
   box-shadow: 0 0 0 .08em rgba(0,0,0,.55); }
 .pip .icon { width: 76%; height: 76%; margin: 12%; }
-.pip-R { background: #e0492b; }
-.pip-G { background: #3c9a48; }
-.pip-W { background: #f0dc9a; }
-.pip-U { background: #3f86d1; }
-.pip-B { background: #6d4c8f; color: #f1eaf6; }
 .pip-N { background: #cfc6b5; }
 .pip-T { background: #d9c296; color: #3a2a10; }
 .pip-X { background: #2a1612; color: #ffb15c; }

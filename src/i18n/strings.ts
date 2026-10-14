@@ -8,31 +8,28 @@ export interface Strings {
   sheetTitle: string;
   halfGrimoire: string;
   threatDeck: string;
-  walker: string;
-  lands: string;
+  backs: string;
 }
 
 export const STRINGS: Record<Locale, Strings> = {
   en: {
-    typeLabel: { creature: "Creature", instant: "Instant", sorcery: "Sorcery", aura: "Aura", land: "Land", spell: "Spell" },
+    typeLabel: { creature: "Creature", instant: "Instant", sorcery: "Sorcery", aura: "Aura", spell: "Spell" },
     threatPrefix: "Threat · ",
     face: "Face",
     reference: "Quick reference",
     sheetTitle: "Palmwalker — All cards",
     halfGrimoire: "Half-grimoire",
     threatDeck: "Threat deck",
-    walker: "Walker",
-    lands: "Lands (backs of the Grimoire cards)",
+    backs: "Card backs",
   },
   es: {
-    typeLabel: { creature: "Criatura", instant: "Instantáneo", sorcery: "Conjuro", aura: "Aura", land: "Tierra", spell: "Hechizo" },
+    typeLabel: { creature: "Criatura", instant: "Instantáneo", sorcery: "Conjuro", aura: "Aura", spell: "Hechizo" },
     threatPrefix: "Amenaza · ",
     face: "Cara",
     reference: "Referencia rápida",
     sheetTitle: "Palmwalker — Todas las cartas",
     halfGrimoire: "Medio grimorio",
     threatDeck: "Mazo de Amenaza",
-    walker: "Caminante",
-    lands: "Tierras (dorsos de las cartas del Grimorio)",
+    backs: "Dorsos",
   },
 };

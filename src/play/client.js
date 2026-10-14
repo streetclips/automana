@@ -164,13 +164,6 @@ function react(el, old, duration) {
   if (is("targeted") && !was("targeted")) quiet(el.animate([{ filter: "none" }, { filter: "drop-shadow(0 0 18px #ff3d6e)" }, { filter: "none" }], { duration: duration * 1.6, iterations: 2 }));
   const pt = el.querySelector(".pt");
   if (pt && el.dataset.pt !== old.data.pt) quiet(pt.animate([{ transform: "none" }, { transform: "scale(1.7)" }, { transform: "none" }], { duration: duration * 1.2 }));
-  if (el.dataset.state !== old.data.state) {
-    const state = Number(el.dataset.state);
-    const options = { duration: duration * 1.6, easing: "ease-in-out" };
-    if ((state <= 2) !== (Number(old.data.state) <= 2)) {
-      animateCard([{ transform: "scaleX(1)" }, { transform: "scaleX(0)", offset: 0.5 }, { transform: "scaleX(1)" }], options);
-    } else quiet(card.animate([{ transform: `rotate(${state % 2 ? 180 : 0}deg)` }, { transform: `rotate(${state % 2 ? 0 : 180}deg)` }], options));
-  }
 }
 
 function animate(before, after, moves, duration) {
@@ -383,7 +376,6 @@ function showZoom(card) {
   zoom.insertAdjacentHTML("beforeend", card.outerHTML);
   const tags = holder?.querySelector(":scope > .tags");
   if (tags) zoom.append(tags.cloneNode(true));
-  zoom.classList.toggle("turned", card.parentElement.classList.contains("turned"));
 }
 
 document.addEventListener("mouseover", (e) => {

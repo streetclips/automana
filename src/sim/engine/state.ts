@@ -1,9 +1,9 @@
 import type { Nemesis } from "../../content/types";
-import { type CardDef, type Mana, type NemesisId, type Pair, expand } from "./defs";
+import { type CardDef, type NemesisId, type Pair, expand } from "./defs";
 
 export const OPENING_HAND = 4;
 export const MAX_CREATURES = 4;
-export const MAX_LANDS = 5;
+export const ROUND_MANA = 3;
 export const HAND_LIMIT = 5;
 export const MAX_ROUNDS = 60;
 export const FACE = -2;
@@ -23,7 +23,6 @@ export interface Task {
 export interface Ctx {
   defs: CardDef[];
   nemesis: NemesisId;
-  colors: [Mana, Mana];
   pair: string;
   players: number;
 }
@@ -54,12 +53,8 @@ export interface State {
   library: number[];
   hand: number[];
   grave: number[];
-  lands: number[];
-  tapped: number;
+  mana: number;
   mine: Perm[];
-  kael: number;
-  kaelUsed: boolean;
-  landPlayed: boolean;
   omen: number;
   faceDown: number[];
   ruin: number[];
@@ -83,7 +78,6 @@ export function buildCtx(pair: Pair, nemesis: Nemesis): Ctx {
   return {
     defs: [...grimoire, ...threats],
     nemesis: nemesis.id as NemesisId,
-    colors: [pair.halves[0].color as Mana, pair.halves[1].color as Mana],
     pair: pair.key,
     players: grimoire.length,
   };
@@ -103,8 +97,7 @@ function clonePerm(p: Perm): Perm {
 export function clone(s: State): State {
   return {
     ctx: s.ctx, round: s.round, active: s.active, first: s.first,
-    library: s.library.slice(), hand: s.hand.slice(), grave: s.grave.slice(), lands: s.lands.slice(), tapped: s.tapped,
-    mine: s.mine.map(clonePerm), kael: s.kael, kaelUsed: s.kaelUsed, landPlayed: s.landPlayed,
+    library: s.library.slice(), hand: s.hand.slice(), grave: s.grave.slice(), mana: s.mana, mine: s.mine.map(clonePerm),
     omen: s.omen, faceDown: s.faceDown.slice(), ruin: s.ruin.slice(), nem: s.nem.map(clonePerm), counters: s.counters.slice(),
     atk: s.atk.slice(), blk: s.blk.slice(), pend: s.pend, pendTarget: s.pendTarget,
     q: s.q.slice(), known: s.known.slice(), over: s.over, mulligan: s.mulligan, log: null, tally: null,

@@ -1,5 +1,5 @@
 import { type Rng, shuffle } from "../engine/rng";
-import { type Perm, type State, clone, defOf } from "../engine/state";
+import { type Perm, type State, clone } from "../engine/state";
 
 export interface DecisionCtx {
   unknown: Uint8Array;
@@ -14,23 +14,18 @@ export function unknownSet(s: State): Uint8Array {
   return u;
 }
 
-function reshuffle(zone: number[], known: Uint8Array, next: Rng, fixFront: ((uid: number) => boolean) | null): void {
+function reshuffle(zone: number[], known: Uint8Array, next: Rng): void {
   const pos: number[] = [];
   const ids: number[] = [];
   for (let i = 0; i < zone.length; i++) if (!known[zone[i]]) { pos.push(i); ids.push(zone[i]); }
   if (ids.length < 2) return;
   shuffle(ids, next);
-  if (fixFront && pos[0] === 0) {
-    const j = ids.findIndex(fixFront);
-    if (j > 0) [ids[0], ids[j]] = [ids[j], ids[0]];
-  }
   for (let i = 0; i < pos.length; i++) zone[pos[i]] = ids[i];
 }
 
 export function resample(c: State, next: Rng): State {
-  const front = c.library.length && !c.known[c.library[0]] ? defOf(c, c.library[0]).color : null;
-  reshuffle(c.library, c.known, next, front ? (uid) => defOf(c, uid).color === front : null);
-  reshuffle(c.faceDown, c.known, next, null);
+  reshuffle(c.library, c.known, next);
+  reshuffle(c.faceDown, c.known, next);
   return c;
 }
 
@@ -65,14 +60,11 @@ export function publicKey(s: State): number {
   for (const u of s.hand) mix(u);
   mix(s.grave.length + 200);
   for (const u of s.grave) mix(u);
-  mix(s.lands.length + 300);
-  for (const u of s.lands) mix(u);
-  mix(s.tapped);
+  mix(s.mana + 300);
   mix(s.mine.length + 400);
   for (const p of s.mine) mixPerm(p);
   mix(s.nem.length + 500);
   for (const p of s.nem) mixPerm(p);
-  mix(s.kael * 8 + (s.kaelUsed ? 1 : 0) + (s.landPlayed ? 2 : 0));
   mix(s.omen + 600);
   mix(s.faceDown.length + 700);
   for (let i = 0; i < s.faceDown.length; i++) if (s.known[s.faceDown[i]]) mix(i * 64 + s.faceDown[i] + 9000);

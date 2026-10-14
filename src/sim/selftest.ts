@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
 import { Heuristic } from "./ai/heuristic";
-import { type Action, type Agent, CHARGE, ULTIMATE } from "./engine/agent";
+import type { Action, Agent } from "./engine/agent";
 import { NEMESIS_LIST, PAIRS } from "./engine/defs";
 import {
-  applyAction, beginNemesisTurn, beginPlayerTurn, declareAttack, drain, enterMine, enterNem, mulligan,
-  nemAttackers, nemBlocks, playerCombatDamage, pw, sba, setup,
+  applyAction, beginNemesisTurn, beginPlayerTurn, castable, declareAttack, drain, enterMine, enterNem, manaLeft,
+  mulligan, nemAttackers, nemBlocks, playerCombatDamage, pw, sba, setup,
 } from "./engine/engine";
 import { rng } from "./engine/rng";
-import { FACE, type Perm, type State, type Window, buildCtx, defOf } from "./engine/state";
+import { FACE, type Perm, ROUND_MANA, type State, type Window, buildCtx, defOf } from "./engine/state";
 
 class Scripted extends Heuristic {
   blocks: number[] | null = null;
@@ -34,6 +34,7 @@ function game(pairKey: string, nemesis: string): { s: State; uid: (id: string, n
   s.faceDown = all.filter((i) => i >= s.ctx.players);
   s.omen = s.faceDown.shift()!;
   s.first = false;
+  s.mana = ROUND_MANA;
   return { s, uid, agent: new Scripted() };
 }
 
@@ -76,12 +77,6 @@ function setOmen(s: State, uid: number): void {
   s.omen = uid;
 }
 
-function land(s: State, id: string, uid: (id: string, nth?: number) => number, nth = 0): void {
-  const u = uid(id, nth);
-  take(s, u);
-  s.lands.push(u);
-}
-
 const tests: [string, () => void][] = [];
 const test = (name: string, fn: () => void): void => {
   tests.push([name, fn]);
@@ -108,7 +103,6 @@ test("Nemesis blocks: safe block first, then the trick wins it (rulebook example
   declareAttack(s, [hound.uid, raider.uid]);
   nemBlocks(s);
   assert.deepEqual(s.blk, [fiend.uid, -1]);
-  land(s, "battle-fury", uid);
   put(s, s.hand, uid("battle-fury"));
   applyAction(s, { t: "cast", uid: uid("battle-fury"), target: hound.uid }, agent);
   setNemLife(s, 8);
@@ -131,19 +125,31 @@ test("Desperation block only when unblocked damage is lethal", () => {
   assert.equal(s.over, 1);
 });
 
-test("Kael ultimate after charging", () => {
-  const { s, uid, agent } = game("R/G", "vaskara");
-  const bear = mine(s, uid("thicket-bear"), agent);
-  s.kael = 3;
-  applyAction(s, { t: "kael", ab: CHARGE, target: bear.uid }, agent);
-  assert.equal(pw(bear), 3);
-  assert.equal(s.kael, 4);
-  s.kaelUsed = false;
-  const before = s.faceDown.length;
-  applyAction(s, { t: "kael", ab: ULTIMATE, target: -1 }, agent);
-  assert.equal(s.kael, 1);
-  assert.equal(s.faceDown.length, before - 3);
-  assert.equal(pw(bear), 4);
+test("Mana: 3 at your untap, kept for the Nemesis turn; Grovekeeper adds 1", () => {
+  const { s, uid, agent } = game("R/G", "vorthrax");
+  s.mana = 0;
+  beginPlayerTurn(s, agent);
+  assert.equal(s.mana, ROUND_MANA);
+  for (const id of ["thicket-bear", "mossback-boar", "ember-bolt", "kindle"]) put(s, s.hand, uid(id));
+  applyAction(s, { t: "cast", uid: uid("thicket-bear"), target: -1 }, agent);
+  assert.equal(s.mana, 1);
+  assert.ok(!castable(s, uid("mossback-boar"), true), "a 3-cost card does not fit in 1 mana");
+  beginNemesisTurn(s);
+  assert.equal(s.mana, 1, "unspent mana lasts through the Nemesis turn");
+  assert.ok(castable(s, uid("ember-bolt"), false));
+  applyAction(s, { t: "cast", uid: uid("ember-bolt"), target: FACE }, agent);
+  assert.equal(s.mana, 0);
+  beginPlayerTurn(s, agent);
+  assert.equal(s.mana, ROUND_MANA, "the pool resets, it does not add up");
+  const elf = mine(s, uid("elvish-grovekeeper"), agent);
+  assert.equal(manaLeft(s), ROUND_MANA + 1);
+  applyAction(s, { t: "cast", uid: uid("mossback-boar"), target: -1 }, agent);
+  applyAction(s, { t: "cast", uid: uid("kindle"), target: FACE }, agent);
+  assert.ok(elf.tapped, "the fourth mana taps Elvish Grovekeeper");
+  assert.equal(manaLeft(s), 0);
+  beginPlayerTurn(s, agent);
+  assert.ok(!elf.tapped);
+  assert.equal(manaLeft(s), ROUND_MANA + 1);
 });
 
 test("Overflow hits for power and goes face-down to the bottom", () => {
@@ -173,8 +179,6 @@ test("Executed spells go face-down to the bottom and come back", () => {
 
 test("Counterspell counters the next spell, then goes to the bottom", () => {
   const { s, uid, agent } = game("R/G", "mirror-archmage");
-  s.lands = [uid("ember-bolt"), uid("reckless-goblin")];
-  for (const u of s.lands) take(s, u);
   put(s, s.hand, uid("kindle"));
   put(s, s.hand, uid("battle-fury"));
   take(s, uid("counterspell"));
@@ -183,7 +187,7 @@ test("Counterspell counters the next spell, then goes to the bottom", () => {
   applyAction(s, { t: "cast", uid: uid("kindle"), target: FACE }, agent);
   assert.equal(s.counters.length, 0);
   assert.equal(s.faceDown.length, n + 1, "the Counterspell goes face-down to the bottom");
-  assert.equal(s.tapped, 0b1, "the countered spell is still paid");
+  assert.equal(s.mana, ROUND_MANA - 1, "the countered spell is still paid");
   assert.ok(s.grave.includes(uid("kindle")));
   const bear = mine(s, uid("thicket-bear"), agent);
   applyAction(s, { t: "cast", uid: uid("battle-fury"), target: bear.uid }, agent);
@@ -218,8 +222,6 @@ test("Lifelink, trample and deathtouch in combat", () => {
 test("Freeze keeps a creature down through its next untap", () => {
   const { s, uid, agent } = game("W/U", "vorthrax");
   const brute = nem(s, uid("cinderclaw-brute"));
-  land(s, "deep-freeze", uid);
-  land(s, "mist-hawk", uid);
   put(s, s.hand, uid("deep-freeze"));
   applyAction(s, { t: "cast", uid: uid("deep-freeze"), target: brute.uid }, agent);
   beginNemesisTurn(s);
@@ -232,7 +234,6 @@ test("Return to the Tide, Bend Fate and Rising Tide reorder the Threat deck", ()
   const { s, uid, agent } = game("W/U", "vorthrax");
   const brute = nem(s, uid("cinderclaw-brute"));
   const imp = nem(s, uid("ash-imp"));
-  for (const id of ["return-to-the-tide", "bend-fate", "rising-tide", "mist-hawk", "cloud-djinn"]) land(s, id, uid);
   setOmen(s, uid("searing-breath"));
   const omen = s.omen;
   const n = s.faceDown.length;
@@ -241,12 +242,12 @@ test("Return to the Tide, Bend Fate and Rising Tide reorder the Threat deck", ()
   assert.equal(s.omen, brute.uid);
   assert.equal(s.faceDown[0], omen);
   assert.equal(s.faceDown.length, n + 1);
-  s.tapped = 0;
+  s.mana = ROUND_MANA;
   put(s, s.hand, uid("bend-fate"));
   applyAction(s, { t: "cast", uid: uid("bend-fate"), target: 1 }, agent);
   assert.equal(s.faceDown[s.faceDown.length - 1], brute.uid);
   assert.equal(s.omen, omen);
-  s.tapped = 0;
+  s.mana = ROUND_MANA;
   put(s, s.hand, uid("rising-tide"));
   applyAction(s, { t: "cast", uid: uid("rising-tide"), target: -1 }, agent);
   assert.equal(s.omen, imp.uid);
@@ -256,15 +257,12 @@ test("Return to the Tide, Bend Fate and Rising Tide reorder the Threat deck", ()
 
 test("Reanimate, Crypt Lord and Hungry Ghoul", () => {
   const { s, uid, agent } = game("B/G", "vaskara");
-  for (let i = 0; i < 5; i++) land(s, i < 3 ? "crypt-rat" : "thicket-bear", uid, i % 2);
-  s.lands = [uid("assassinate"), uid("forbidden-pact"), uid("night-specter"), uid("bloom-of-life"), uid("ironbark-wall")];
-  for (const u of s.lands) take(s, u);
   put(s, s.grave, uid("ancient-crashhorn"));
   put(s, s.grave, uid("thicket-bear"));
   put(s, s.hand, uid("reanimate"));
   applyAction(s, { t: "cast", uid: uid("reanimate"), target: uid("ancient-crashhorn") }, agent);
   assert.ok(s.mine.some((p) => p.def.id === "ancient-crashhorn"));
-  s.tapped = 0;
+  s.mana = ROUND_MANA;
   put(s, s.hand, uid("crypt-lord"));
   applyAction(s, { t: "cast", uid: uid("crypt-lord"), target: uid("thicket-bear") }, agent);
   assert.equal(s.mine.length, 3);

@@ -1,12 +1,11 @@
-import { type Action, type Agent, CHARGE, DISCHARGE, ULTIMATE } from "./agent";
-import { DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, type Mana, REACH, TRAMPLE, VIGILANCE } from "./defs";
+import type { Action, Agent } from "./agent";
+import { DEATHTOUCH, DEFENDER, FLYING, HASTE, LIFELINK, REACH, TRAMPLE, VIGILANCE } from "./defs";
 import { type Rng, shuffle } from "./rng";
 import {
-  FACE, HAND_LIMIT, MAX_CREATURES, MAX_LANDS, OPENING_HAND, T,
+  FACE, HAND_LIMIT, MAX_CREATURES, OPENING_HAND, ROUND_MANA, T,
   type Ctx, type Perm, type State, type Task, type Window, defOf, newPerm,
 } from "./state";
 
-const COLOR_INDEX: Record<Mana, number> = { W: 0, U: 1, B: 2, R: 3, G: 4 };
 export const GROVEKEEPER = "elvish-grovekeeper";
 export const ARCHIVIST = "learned-archivist";
 
@@ -315,63 +314,22 @@ export function findAny(s: State, uid: number): Perm | undefined {
   return findMine(s, uid) ?? findNem(s, uid);
 }
 
-export function sources(s: State): number[] {
-  const have = [0, 0, 0, 0, 0, 0];
-  for (let i = 0; i < s.lands.length; i++) {
-    if (s.tapped & (1 << i)) continue;
-    have[COLOR_INDEX[defOf(s, s.lands[i]).color as Mana]]++;
-    have[5]++;
-  }
-  for (const p of s.mine) {
-    if (p.def.id === GROVEKEEPER && !p.tapped && !p.sick) { have[4]++; have[5]++; }
-  }
-  return have;
-}
-
-export function canAfford(s: State, uid: number, have = sources(s)): boolean {
-  const d = defOf(s, uid);
-  if (have[5] < d.mv) return false;
-  if (d.pips.length === 1) return have[COLOR_INDEX[d.pips[0]]] > 0;
-  const need = [0, 0, 0, 0, 0];
-  for (const c of d.pips) if (++need[COLOR_INDEX[c]] > have[COLOR_INDEX[c]]) return false;
-  return true;
+export function manaLeft(s: State): number {
+  let n = s.mana;
+  for (const p of s.mine) if (p.def.id === GROVEKEEPER && !p.tapped && !p.sick) n++;
+  return n;
 }
 
 function payMana(s: State, uid: number): void {
   const d = defOf(s, uid);
-  const tapLand = (c: number): boolean => {
-    for (let i = 0; i < s.lands.length; i++) {
-      if (s.tapped & (1 << i)) continue;
-      if (COLOR_INDEX[defOf(s, s.lands[i]).color as Mana] === c) { s.tapped |= 1 << i; return true; }
-    }
-    return false;
-  };
-  const tapElf = (): boolean => {
-    for (const p of s.mine) if (p.def.id === GROVEKEEPER && !p.tapped && !p.sick) { p.tapped = true; return true; }
-    return false;
-  };
-  for (const c of d.pips) {
-    const ci = COLOR_INDEX[c];
-    if (!tapLand(ci) && !(ci === 4 && tapElf())) throw new Error(`Cannot pay ${d.name}`);
+  const pool = Math.min(d.mv, s.mana);
+  s.mana -= pool;
+  let rest = d.mv - pool;
+  for (const p of s.mine) {
+    if (!rest) break;
+    if (p.def.id === GROVEKEEPER && !p.tapped && !p.sick) { p.tapped = true; rest--; }
   }
-  const need = [0, 0, 0, 0, 0];
-  for (const h of s.hand) {
-    const hd = defOf(s, h);
-    if (hd.kind === "instant") for (const c of hd.pips) need[COLOR_INDEX[c]]++;
-  }
-  for (let n = d.generic; n > 0; n--) {
-    const left = sources(s);
-    let best = -1;
-    let bestScore = Infinity;
-    for (let i = 0; i < s.lands.length; i++) {
-      if (s.tapped & (1 << i)) continue;
-      const ci = COLOR_INDEX[defOf(s, s.lands[i]).color as Mana];
-      const score = need[ci] * 10 - left[ci];
-      if (score < bestScore) { bestScore = score; best = i; }
-    }
-    if (best >= 0) s.tapped |= 1 << best;
-    else if (!tapElf()) throw new Error(`Cannot pay ${d.name}`);
-  }
+  if (rest) throw new Error(`Cannot pay ${d.name}`);
 }
 
 export function targets(s: State, uid: number): number[] {
@@ -418,11 +376,11 @@ export function sorcerySpeed(d: { kind: string }): boolean {
   return d.kind !== "instant";
 }
 
-export function castable(s: State, uid: number, main: boolean, have = sources(s)): boolean {
+export function castable(s: State, uid: number, main: boolean, have = manaLeft(s)): boolean {
   const d = defOf(s, uid);
   if (sorcerySpeed(d) && !main) return false;
   if (d.kind === "creature" && s.mine.length >= MAX_CREATURES) return false;
-  return canAfford(s, uid, have);
+  return d.mv <= have;
 }
 
 function castSpell(s: State, a: Extract<Action, { t: "cast" }>, agent: Agent): void {
@@ -564,51 +522,10 @@ function resolveSpell(s: State, uid: number, target: number, agent: Agent): void
   }
 }
 
-function kael(s: State, a: Extract<Action, { t: "kael" }>, agent: Agent): void {
-  if (s.kaelUsed) throw new Error("Kael already used");
-  s.kaelUsed = true;
-  if (a.ab === CHARGE) {
-    if (s.kael >= 4) throw new Error("Kael cannot charge at IV");
-    s.kael++;
-    count(s, "kael:charge");
-    const p = findMine(s, a.target);
-    if (p) p.tp += 1;
-    log(s, `Kael charges to ${s.kael}${p ? ` (+1/+0 ${p.def.name})` : ""}`);
-  } else if (a.ab === DISCHARGE) {
-    if (s.kael < 3) throw new Error("Kael cannot discharge");
-    s.kael -= 2;
-    count(s, "kael:discharge");
-    const p = findMine(s, a.target) ?? findNem(s, a.target);
-    log(s, `Kael discharges at ${p ? p.def.name : "nothing"}`);
-    if (p) { damageCreature(p, 2, false); sba(s, agent); }
-  } else if (a.ab === ULTIMATE) {
-    if (s.kael !== 4) throw new Error("Kael cannot ultimate");
-    s.kael = 1;
-    log(s, "Kael ultimate");
-    count(s, "kael:ultimate");
-    for (const p of s.mine) p.tp += 1;
-    damageNemesis(s, 3);
-  }
-}
-
 export function applyAction(s: State, a: Action, agent: Agent): void {
   switch (a.t) {
-    case "land": {
-      if (s.landPlayed || s.lands.length >= MAX_LANDS) throw new Error("Illegal land drop");
-      const i = s.hand.indexOf(a.uid);
-      if (i < 0) throw new Error("Land card not in hand");
-      s.hand.splice(i, 1);
-      s.lands.push(a.uid);
-      s.landPlayed = true;
-      log(s, `plays ${defOf(s, a.uid).color} land (${nm(s, a.uid)})`);
-      count(s, `land:${defOf(s, a.uid).id}`);
-      break;
-    }
     case "cast":
       castSpell(s, a, agent);
-      break;
-    case "kael":
-      kael(s, a, agent);
       break;
     case "archivist": {
       const p = s.mine.find((m) => m.def.id === ARCHIVIST && !m.tapped && !m.sick);
@@ -965,9 +882,7 @@ export function nemesisTurn(s: State, agent: Agent): void {
 export function beginPlayerTurn(s: State, agent: Agent): void {
   s.round++;
   s.active = 0;
-  s.landPlayed = false;
-  s.kaelUsed = false;
-  s.tapped = 0;
+  s.mana = ROUND_MANA;
   for (const p of s.mine) { p.tapped = false; p.sick = false; }
   if (!s.first) {
     if (s.library.length <= 1) while (!s.over && window(s, agent, "upkeep"));
@@ -976,7 +891,7 @@ export function beginPlayerTurn(s: State, agent: Agent): void {
   if (s.log && !s.over) {
     const names = (uids: number[]): string => uids.map((u) => nm(s, u)).join(", ") || "—";
     const board = (ps: Perm[]): string => ps.map((p) => `${p.def.name} ${pw(p)}/${tg(p)}${p.tapped ? " (tapped)" : ""}${p.pacified ? " (pacified)" : ""}`).join(", ") || "—";
-    log(s, `hand [${names(s.hand)}] · lands ${s.lands.map((u) => defOf(s, u).color).join("") || "—"} · Kael ${s.kael} · board [${board(s.mine)}] · Nemesis [${board(s.nem)}] · Omen ${s.omen >= 0 ? nm(s, s.omen) : "—"} · life ${s.library.length} vs ${s.faceDown.length}`);
+    log(s, `hand [${names(s.hand)}] · board [${board(s.mine)}] · Nemesis [${board(s.nem)}] · Omen ${s.omen >= 0 ? nm(s, s.omen) : "—"} · life ${s.library.length} vs ${s.faceDown.length}`);
   }
 }
 
@@ -1018,8 +933,8 @@ export function setup(ctx: Ctx, rp: Rng, rn: Rng): State {
   const faceDown = shuffle(Array.from({ length: ctx.defs.length - ctx.players }, (_, i) => ctx.players + i), rn);
   const omen = faceDown.shift()!;
   return {
-    ctx, round: 0, active: 0, first: true, library, hand, grave: [], lands: [], tapped: 0, mine: [], kael: 1, kaelUsed: false,
-    landPlayed: false, omen, faceDown, ruin: [], nem: [], counters: [], atk: [], blk: [],
+    ctx, round: 0, active: 0, first: true, library, hand, grave: [], mana: 0, mine: [],
+    omen, faceDown, ruin: [], nem: [], counters: [], atk: [], blk: [],
     pend: -1, pendTarget: -1, q: [], known: new Uint8Array(ctx.defs.length), over: 0, mulligan: false, log: null, tally: null,
   };
 }

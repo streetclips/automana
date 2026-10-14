@@ -2,9 +2,7 @@ export type Locale = "en" | "es";
 
 export type Color = "R" | "G" | "W" | "U" | "B" | "T";
 
-export type ManaSymbol = "R" | "G" | "W" | "U" | "B" | `${number}`;
-
-export type CardType = "creature" | "instant" | "sorcery" | "aura" | "land" | "spell";
+export type CardType = "creature" | "instant" | "sorcery" | "aura" | "spell";
 
 export interface CardText {
   name: string;
@@ -16,7 +14,7 @@ export interface CardText {
 export interface Card {
   id: string;
   color: Color;
-  cost: ManaSymbol[];
+  cost?: number;
   type: CardType;
   qty: number;
   pt?: string;
@@ -29,7 +27,6 @@ export interface Card {
 export interface HalfGrimoire {
   id: string;
   color: Exclude<Color, "T">;
-  land: string;
   en: { name: string };
   es: { name: string };
   cards: Card[];
@@ -41,18 +38,6 @@ export interface Nemesis {
   en: { name: string };
   es: { name: string };
   threats: Card[];
-}
-
-export interface WalkerText {
-  name: string;
-  charge: string;
-  discharge: string;
-  ultimate: string;
-}
-
-export interface Walker {
-  en: WalkerText;
-  es: WalkerText;
 }
 
 export interface ReferenceSide {

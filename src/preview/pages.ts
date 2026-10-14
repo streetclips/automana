@@ -6,8 +6,8 @@ import { artPath, readCss } from "../lib/paths";
 import { buildDeck } from "../pnp/deck";
 import { impose } from "../pnp/imposition";
 import { artCss } from "../render/art";
-import { renderCard } from "../render/card";
-import { referenceFace, walkerFace, type Face } from "../render/faces";
+import { renderCard, renderGrimoireBack, renderThreatBack } from "../render/card";
+import { referenceFace, type Face } from "../render/faces";
 
 export type View = "cards" | "pnp";
 
@@ -52,8 +52,8 @@ function faceSlots(name: string, render: (face: Face) => string): string[] {
 function sections(locale: Locale): Section[] {
   const s = t();
   return [
-    { id: "walker", title: `${s.walker} · ${s.reference}`, slots: [...faceSlots("walker", walkerFace), ...faceSlots("reference", referenceFace)] },
-    { id: "lands", title: s.lands, slots: GRIMOIRES.map((g) => slot(renderCard(g.land), g.land)) },
+    { id: "reference", title: s.reference, slots: faceSlots("reference", referenceFace) },
+    { id: "backs", title: s.backs, slots: [slot(renderGrimoireBack(), "grimoire-back"), slot(renderThreatBack(), "threat-back")] },
     ...GRIMOIRES.map((g) => ({ id: g.id, title: `${s.halfGrimoire} · ${g[locale].name}`, slots: g.cards.map(cardSlot) })),
     ...NEMESES.map((n) => ({ id: n.id, title: `${n[locale].name} · ${s.threatDeck}`, slots: n.threats.map(cardSlot) })),
   ];

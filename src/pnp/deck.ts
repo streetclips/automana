@@ -1,7 +1,7 @@
 import { GRIMOIRES, NEMESES } from "../content";
 import type { Card } from "../content/types";
-import { renderCard, renderThreatBack } from "../render/card";
-import { referenceFace, walkerFace } from "../render/faces";
+import { renderCard, renderGrimoireBack, renderThreatBack } from "../render/card";
+import { referenceFace } from "../render/faces";
 
 export interface PrintCard {
   front: string;
@@ -13,11 +13,11 @@ function copies(cards: Card[], back: string): PrintCard[] {
 }
 
 export function buildDeck(): PrintCard[] {
+  const grimoireBack = renderGrimoireBack();
   const threatBack = renderThreatBack();
   return [
-    { front: walkerFace("A"), back: walkerFace("B") },
     { front: referenceFace("A"), back: referenceFace("B") },
-    ...GRIMOIRES.flatMap((g) => copies(g.cards, renderCard(g.land))),
+    ...GRIMOIRES.flatMap((g) => copies(g.cards, grimoireBack)),
     ...NEMESES.flatMap((n) => copies(n.threats, threatBack)),
   ];
 }

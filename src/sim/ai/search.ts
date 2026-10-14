@@ -1,6 +1,6 @@
 import { type Action, type Agent, PASS } from "../engine/agent";
 import {
-  applyAction, canBlock, castable, drain, findNem, sources, targets, windowTask,
+  applyAction, canBlock, castable, drain, findNem, manaLeft, targets, windowTask,
 } from "../engine/engine";
 import { type Rng, rng, shuffle } from "../engine/rng";
 import { type Perm, type State, type Window, clone, defOf } from "../engine/state";
@@ -8,16 +8,14 @@ import { evaluate } from "./eval";
 import { Heuristic } from "./heuristic";
 import { type DecisionCtx, determinize, publicKey, unknownSet } from "./know";
 import { type Phase, Planner, type Step } from "./planner";
-import { W, avgThreat, cardValue, castFactor, manaCtx } from "./values";
+import { W, avgThreat, cardValue } from "./values";
 
 const PUMPS = new Set(["battle-fury", "surge-of-vigor", "luminous-aegis"]);
 const ANYTIME = new Set(["ember-bolt", "lethal-whisper", "assassinate", "deep-freeze", "return-to-the-tide"]);
 
 function describe(s: State, a: Action): string {
   switch (a.t) {
-    case "land": return `land(${defOf(s, a.uid).name})`;
     case "cast": return `${defOf(s, a.uid).name}${a.target === -2 ? "→face" : a.target >= 0 && defOf(s, a.uid).id !== "bend-fate" ? `→${defOf(s, a.target).name}` : ""}`;
-    case "kael": return `kael${a.ab === 1 ? "+" : a.ab === 2 ? "−" : "!"}${a.target >= 0 ? `(${defOf(s, a.target).name})` : ""}`;
     default: return a.t;
   }
 }
@@ -48,13 +46,11 @@ export class SearchAgent implements Agent {
   private ctx(s: State): DecisionCtx {
     const unknown = unknownSet(s);
     const eff = s.library.length - 1;
-    const m = manaCtx(s);
     let total = 0;
     let n = 0;
     for (const uid of s.library) {
       if (!unknown[uid]) continue;
-      const d = defOf(s, uid);
-      total += cardValue(s, d, eff, 1.5) * castFactor(d, m);
+      total += cardValue(s, defOf(s, uid), eff, 1.5);
       n++;
     }
     return { unknown, avgCard: n ? total / n : 1.5, avgThreat: avgThreat(s, unknown) };
@@ -111,7 +107,7 @@ export class SearchAgent implements Agent {
   private responseOptions(s: State, w: Window): Action[] {
     const out: Action[] = [];
     if (w === "end" && s.mine.some((p) => p.def.id === "learned-archivist" && !p.tapped && !p.sick)) out.push({ t: "archivist" });
-    const have = sources(s);
+    const have = manaLeft(s);
     const seen = new Set<string>();
     for (const uid of s.hand) {
       const d = defOf(s, uid);

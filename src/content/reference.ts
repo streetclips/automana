@@ -7,7 +7,7 @@ export const REFERENCE: Reference = {
       items: [
         "Untap: raise everything.",
         "Draw 1 (−1 life). Skip it on turn 1.",
-        "Main: 1 land, spells, Kael once.",
+        "Main: spells (3 mana per round).",
         "Combat.",
         "Second main.",
         "End: hand ≤ 5. Damage wears off.",
@@ -49,7 +49,7 @@ export const REFERENCE: Reference = {
       items: [
         "Enderezar: levanta todo.",
         "Roba 1 (−1 vida). En el turno 1 no robas.",
-        "Principal: 1 tierra, hechizos, Kael una vez.",
+        "Principal: hechizos (3 de maná por ronda).",
         "Combate.",
         "Segunda principal.",
         "Final: mano ≤ 5. El daño desaparece.",

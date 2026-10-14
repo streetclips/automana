@@ -1,13 +1,13 @@
 import { type Action, type Agent, PASS } from "../engine/agent";
 import { TRAMPLE } from "../engine/defs";
 import {
-  ARCHIVIST, applyAction, canBlock, castable, findMine, findNem, kills, kwOf, lethalFor, nemAttackers, pw,
-  sources, stepTask, targets,
+  ARCHIVIST, applyAction, canBlock, castable, findMine, findNem, kills, kwOf, lethalFor, manaLeft, nemAttackers,
+  pw, stepTask, targets,
 } from "../engine/engine";
 import { FACE, type Perm, type State, T, type Window, clone, defOf } from "../engine/state";
 import { WIN } from "./eval";
 import {
-  W, creatureValue, handValue, lifeGain, lifeScore, manaCtx, mineValue, nemScore, nemValue, omenThreat,
+  W, creatureValue, handValue, lifeGain, lifeScore, mineValue, nemScore, nemValue, omenThreat,
 } from "./values";
 
 const AVG = 2.0;
@@ -17,10 +17,9 @@ export function quickScore(s: State): number {
   if (s.over === 2) return -WIN;
   const eff = s.library.length - 1;
   let v = lifeScore(eff) - nemScore(s.faceDown.length);
-  for (const p of s.mine) v += mineValue(s, p);
+  for (const p of s.mine) v += mineValue(p);
   for (const p of s.nem) v -= nemValue(p);
-  const m = manaCtx(s);
-  for (const uid of s.hand) v += handValue(s, uid, eff, AVG, m);
+  for (const uid of s.hand) v += handValue(s, uid, eff, AVG);
   return v;
 }
 
@@ -62,7 +61,7 @@ export class Heuristic implements Agent {
   private lethal(s: State): Action | null {
     const bolts = s.hand.filter((u) => defOf(s, u).id === "ember-bolt");
     if (!bolts.length || s.counters.length) return null;
-    const usable = Math.min(bolts.length, sources(s)[3]);
+    const usable = Math.min(bolts.length, Math.floor(manaLeft(s) / defOf(s, bolts[0]).mv));
     if (usable && usable * 3 >= s.faceDown.length) return this.instant(s, bolts[0], FACE);
     return null;
   }
@@ -196,13 +195,13 @@ export class Heuristic implements Agent {
       let pick: Perm | null = null;
       for (const b of free) {
         if (used.has(b) || !canBlock(b, a) || !ok(b, a)) continue;
-        if (!pick || mineValue(s, b) < mineValue(s, pick)) pick = b;
+        if (!pick || mineValue(b) < mineValue(pick)) pick = b;
       }
       if (pick) { res[i] = pick.uid; used.add(pick); }
     };
     for (const i of order) assign(i, (b, a) => kills(b, a) && !kills(a, b));
     for (const i of order) if (res[i] < 0) assign(i, (b, a) => !kills(a, b));
-    for (const i of order) if (res[i] < 0) assign(i, (b, a) => kills(b, a) && mineValue(s, b) <= nemValue(a) * W.tradeRatio);
+    for (const i of order) if (res[i] < 0) assign(i, (b, a) => kills(b, a) && mineValue(b) <= nemValue(a) * W.tradeRatio);
     const incoming = (): number => {
       let d = 0;
       order.forEach((i) => {
@@ -224,12 +223,11 @@ export class Heuristic implements Agent {
 
   scry(s: State, cards: number[]): number[] {
     const eff = s.library.length - 1;
-    const m = manaCtx(s);
     const rest = s.library.filter((u) => !cards.includes(u));
     let avg = AVG;
-    if (rest.length) avg = rest.reduce((n, u) => n + handValue(s, u, eff, AVG, m), 0) / rest.length;
+    if (rest.length) avg = rest.reduce((n, u) => n + handValue(s, u, eff, AVG), 0) / rest.length;
     return cards
-      .map((u) => ({ u, v: handValue(s, u, eff, AVG, m) }))
+      .map((u) => ({ u, v: handValue(s, u, eff, AVG) }))
       .filter((x) => x.v >= avg)
       .sort((a, b) => b.v - a.v)
       .map((x) => x.u);
@@ -247,11 +245,10 @@ export class Heuristic implements Agent {
 
   private bestOf(s: State, uids: number[]): number {
     const eff = s.library.length - 1;
-    const m = manaCtx(s);
     let best = -1;
     let bestV = -Infinity;
     for (const u of uids) {
-      const v = handValue(s, u, eff, AVG, m);
+      const v = handValue(s, u, eff, AVG);
       if (v > bestV) { bestV = v; best = u; }
     }
     return best;
@@ -259,9 +256,8 @@ export class Heuristic implements Agent {
 
   discard(s: State, n: number): number[] {
     const eff = s.library.length - 1;
-    const m = manaCtx(s);
     return s.hand
-      .map((u) => ({ u, v: handValue(s, u, eff, AVG, m) }))
+      .map((u) => ({ u, v: handValue(s, u, eff, AVG) }))
       .sort((a, b) => a.v - b.v)
       .slice(0, n)
       .map((x) => x.u);
@@ -272,7 +268,7 @@ export class Heuristic implements Agent {
     let bestV = -Infinity;
     for (const u of options) {
       const d = defOf(s, u);
-      const v = creatureValue(s, d.power, d.toughness, d.kw, d.id);
+      const v = creatureValue(d.power, d.toughness, d.kw, d.id);
       if (v > bestV) { bestV = v; best = u; }
     }
     return best;
@@ -287,7 +283,7 @@ export class Heuristic implements Agent {
     }
     if (best >= 0) return best;
     for (const p of s.mine) {
-      const v = (p.def.toughness + p.at + p.tt - p.damage > 1 ? 100 : 0) - mineValue(s, p);
+      const v = (p.def.toughness + p.at + p.tt - p.damage > 1 ? 100 : 0) - mineValue(p);
       if (v > bestV) { bestV = v; best = p.uid; }
     }
     return best;

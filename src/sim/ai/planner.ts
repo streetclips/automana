@@ -1,10 +1,10 @@
-import { type Action, CHARGE, DISCHARGE, PASS, ULTIMATE } from "../engine/agent";
+import { type Action, PASS } from "../engine/agent";
 import { DEFENDER, HASTE } from "../engine/defs";
 import {
-  applyAction, castable, declareAttack, endPlayerTurn, findMine, findNem, kwOf, nemBlocks, nemesisTurn,
-  playerCombatDamage, pw, sources,
+  applyAction, castable, declareAttack, endPlayerTurn, findMine, findNem, kwOf, manaLeft, nemBlocks, nemesisTurn,
+  playerCombatDamage, pw,
 } from "../engine/engine";
-import { FACE, MAX_CREATURES, MAX_LANDS, type Perm, type State, clone, defOf } from "../engine/state";
+import { FACE, MAX_CREATURES, type Perm, type State, clone, defOf } from "../engine/state";
 import { evaluate } from "./eval";
 import type { Heuristic } from "./heuristic";
 import type { Rng } from "../engine/rng";
@@ -72,7 +72,6 @@ export class Planner {
   private bestScore = -Infinity;
   private nodes = 0;
   private leaves = 0;
-  private start: Phase = "main1";
   explain: { score: number; steps: Step[] }[] | null = null;
 
   constructor(private readonly h: Heuristic, private readonly next: Rng) {}
@@ -86,7 +85,6 @@ export class Planner {
     this.bestScore = -Infinity;
     this.nodes = 0;
     this.leaves = 0;
-    this.start = phase;
     const s = clone(root);
     if (phase === "main1") this.main(s, 1);
     else if (phase === "attack") this.attack(s);
@@ -124,12 +122,6 @@ export class Planner {
     }
   }
 
-  private landAllowed(s: State): boolean {
-    if (s.landPlayed || s.lands.length >= MAX_LANDS || !s.hand.length) return false;
-    if (this.start === "main1") return this.path.length === 0;
-    return !this.path.some((st) => st.kind === "act");
-  }
-
   private main(s: State, step: 1 | 2): void {
     if (s.over) { this.record(evaluate(s, this.dc)); return; }
     const key = publicKey(s);
@@ -157,24 +149,12 @@ export class Planner {
 
   private combat(s: State): void {
     const eligible = s.mine.filter((p) => canAttack(p));
-    const charge = !s.kaelUsed && s.kael < 4;
     const total = 1 << eligible.length;
     for (let mask = 0; mask < total; mask++) {
       if (mask > 0 && this.over()) break;
-      const chosen = eligible.filter((_, i) => mask & (1 << i));
-      for (const t of charge && chosen.length ? [-1, ...distinct(chosen)] : [-1]) {
-        let c = s;
-        if (t >= 0) {
-          c = clone(s);
-          const a: Action = { t: "kael", ab: CHARGE, target: t };
-          applyAction(c, a, this.h);
-          this.path.push({ phase: "main1", kind: "act", a, uids: [], before: 0 });
-        }
-        this.path.push({ phase: "main1", kind: "combat", a: PASS, uids: [], before: 0 });
-        this.declare(c, chosen.map((p) => p.uid));
-        this.path.pop();
-        if (t >= 0) this.path.pop();
-      }
+      this.path.push({ phase: "main1", kind: "combat", a: PASS, uids: [], before: 0 });
+      this.declare(s, eligible.filter((_, i) => mask & (1 << i)).map((p) => p.uid));
+      this.path.pop();
     }
   }
 
@@ -240,13 +220,9 @@ export class Planner {
     this.record(score);
   }
 
-  private lands(s: State): Action[] {
-    return distinctCards(s, s.hand).map((uid) => ({ t: "land", uid }));
-  }
-
   private casts(s: State, main: boolean, targetsFor: (uid: number) => number[]): Action[] {
     const out: Action[] = [];
-    const have = sources(s);
+    const have = manaLeft(s);
     for (const uid of distinctCards(s, s.hand)) {
       if (!castable(s, uid, main, have)) continue;
       for (const target of targetsFor(uid)) out.push({ t: "cast", uid, target });
@@ -257,17 +233,16 @@ export class Planner {
   private combatPossible(s: State): boolean {
     if (s.mine.some((p) => canAttack(p))) return true;
     if (s.mine.length >= MAX_CREATURES) return false;
-    const have = sources(s);
+    const have = manaLeft(s);
     return s.hand.some((u) => defOf(s, u).kind === "creature" && defOf(s, u).kw & HASTE && castable(s, u, true, have));
   }
 
   private preCombat(s: State): Action[] {
-    const out: Action[] = this.landAllowed(s) ? this.lands(s) : [];
-    if (!this.combatPossible(s)) return out;
+    if (!this.combatPossible(s)) return [];
     const blockers = distinct(s.nem.filter((p) => !p.tapped && !p.pacified));
     const attackers = distinct(s.mine.filter((p) => canAttack(p)));
     const bait = s.counters.length > 0;
-    out.push(...this.casts(s, true, (uid) => {
+    return this.casts(s, true, (uid) => {
       const d = defOf(s, uid);
       if (d.kind === "creature") {
         if (d.kw & HASTE) return [-1];
@@ -280,12 +255,7 @@ export class Planner {
       if (d.id === "shield-formation") return attackers.length ? [-1] : [];
       if (d.id === "volcanic-roar" || d.id === "rising-tide") return blockers.length ? [-1] : [];
       return bait ? this.postTargets(s, uid) : [];
-    }));
-    if (!s.kaelUsed) {
-      if (s.kael >= 3) for (const t of blockers) out.push({ t: "kael", ab: DISCHARGE, target: t });
-      if (s.kael === 4 && attackers.length) out.push({ t: "kael", ab: ULTIMATE, target: -1 });
-    }
-    return out;
+    });
   }
 
   private postTargets(s: State, uid: number): number[] {
@@ -323,14 +293,7 @@ export class Planner {
   }
 
   private postCombat(s: State): Action[] {
-    const out: Action[] = this.landAllowed(s) ? this.lands(s) : [];
-    out.push(...this.casts(s, true, (uid) => this.postTargets(s, uid)));
-    if (!s.kaelUsed) {
-      if (s.kael < 4) out.push({ t: "kael", ab: CHARGE, target: -1 });
-      if (s.kael >= 3) for (const t of distinct(s.nem)) out.push({ t: "kael", ab: DISCHARGE, target: t });
-      if (s.kael === 4) out.push({ t: "kael", ab: ULTIMATE, target: -1 });
-    }
-    return out;
+    return this.casts(s, true, (uid) => this.postTargets(s, uid));
   }
 
   private trickOptions(s: State): Action[] {

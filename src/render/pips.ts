@@ -6,5 +6,5 @@ export function pip(sym: string): string {
 }
 
 export function pips(text: string): string {
-  return text.replace(/\{([0-9RGWUBT])\}/g, (_, s: string) => pip(s));
+  return text.replace(/\{([0-9T])\}/g, (_, s: string) => pip(s));
 }

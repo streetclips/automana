@@ -1,8 +1,7 @@
-import { GRIMOIRES } from "../content";
-import { renderCard } from "../render/card";
+import { renderCard, renderGrimoireBack } from "../render/card";
 import { type State, defOf } from "../sim/engine/state";
 
-export type Zone = "hand" | "library" | "grave" | "lands" | "mine" | "nem" | "omen" | "threat" | "ruin" | "counter" | "stack" | `aura:${number}`;
+export type Zone = "hand" | "library" | "grave" | "mine" | "nem" | "omen" | "threat" | "ruin" | "counter" | "stack" | `aura:${number}`;
 
 export interface Move {
   uid: number;
@@ -15,7 +14,6 @@ export function zoneOf(s: State, uid: number): Zone {
   if (s.hand.includes(uid)) return "hand";
   if (s.library.includes(uid)) return "library";
   if (s.grave.includes(uid)) return "grave";
-  if (s.lands.includes(uid)) return "lands";
   if (s.omen === uid) return "omen";
   if (s.faceDown.includes(uid)) return "threat";
   if (s.ruin.includes(uid)) return "ruin";
@@ -26,16 +24,12 @@ export function zoneOf(s: State, uid: number): Zone {
   return "stack";
 }
 
-export function landFace(s: State, uid: number): string {
-  return renderCard(GRIMOIRES.find((g) => g.color === defOf(s, uid).color)!.land);
-}
-
 export function moves(prev: State, next: State): Move[] {
   const out: Move[] = [];
   for (let uid = 0; uid < next.ctx.defs.length; uid++) {
     const from = zoneOf(prev, uid);
     const to = zoneOf(next, uid);
-    if (from !== to) out.push({ uid, from, to, card: to === "lands" ? landFace(next, uid) : renderCard(defOf(next, uid).id) });
+    if (from !== to) out.push({ uid, from, to, card: to === "library" ? renderGrimoireBack() : renderCard(defOf(next, uid).id) });
   }
   return out;
 }

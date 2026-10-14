@@ -1,17 +1,17 @@
 import { getCard } from "../content";
 import { getLocale } from "../i18n/locale";
-import { type Action, type Agent, CHARGE, DISCHARGE, PASS, ULTIMATE } from "../sim/engine/agent";
+import { type Action, type Agent, PASS } from "../sim/engine/agent";
 import { DEFENDER, HASTE } from "../sim/engine/defs";
-import { ARCHIVIST, canBlock, castable, findMine, findNem, kwOf, nemAttackers, pw, sources, targets, tg } from "../sim/engine/engine";
-import { FACE, MAX_LANDS, type Perm, type State, type Window, clone, defOf } from "../sim/engine/state";
-import { ROMAN, cardName, landName, ui } from "./strings";
+import { ARCHIVIST, canBlock, castable, findMine, findNem, kwOf, manaLeft, nemAttackers, pw, targets, tg } from "../sim/engine/engine";
+import { FACE, type Perm, type State, type Window, clone, defOf } from "../sim/engine/state";
+import { cardName, ui } from "./strings";
 
 export type Answer = Action | boolean | number[] | "skip";
 
 export interface Item {
   label: string;
   answer: Answer;
-  src?: number | "kael";
+  src?: number;
   target?: number;
   primary?: boolean;
 }
@@ -82,7 +82,7 @@ function castLabel(s: State, uid: number, target: number): string {
 
 function castItems(s: State, main: boolean): Item[] {
   const items: Item[] = [];
-  const have = sources(s);
+  const have = manaLeft(s);
   for (const uid of s.hand) {
     if (!castable(s, uid, main, have)) continue;
     const aimed = defOf(s, uid).id !== "bend-fate";
@@ -90,29 +90,6 @@ function castItems(s: State, main: boolean): Item[] {
       items.push({ label: castLabel(s, uid, target), answer: { t: "cast", uid, target }, src: uid, target: aimed && onTable(s, target) ? target : undefined });
     }
   }
-  return items;
-}
-
-function landItems(s: State): Item[] {
-  if (s.landPlayed || s.lands.length >= MAX_LANDS) return [];
-  return s.hand.map((uid): Item => {
-    const c = defOf(s, uid).color;
-    return { label: ui().asLand(landName(c), c), answer: { t: "land", uid }, src: uid };
-  });
-}
-
-function kaelItems(s: State): Item[] {
-  if (s.kaelUsed) return [];
-  const items: Item[] = [];
-  const add = (ab: number, target: number, label: string): void => {
-    items.push({ label, answer: { t: "kael", ab, target }, src: "kael", target: target >= 0 ? target : undefined });
-  };
-  const t = ui();
-  const charge = t.charge(ROMAN[s.kael], ROMAN[s.kael + 1]);
-  if (s.kael < 4 && !s.mine.length) add(CHARGE, -1, charge);
-  if (s.kael < 4) for (const p of s.mine) add(CHARGE, p.uid, t.chargeOn(charge, who(s, p.uid)));
-  if (s.kael >= 3) for (const p of [...s.nem, ...s.mine]) add(DISCHARGE, p.uid, t.discharge(ROMAN[s.kael], ROMAN[s.kael - 2], who(s, p.uid)));
-  if (s.kael === 4) add(ULTIMATE, -1, t.ultimate);
   return items;
 }
 
@@ -201,10 +178,10 @@ export class ReplayAgent implements Agent {
 
   main(s: State, step: 1 | 2): Action {
     const t = ui();
-    const items = [...landItems(s), ...castItems(s, true), ...kaelItems(s), ...archivistItems(s)];
+    const items = [...castItems(s, true), ...archivistItems(s)];
     if (!items.length) return PASS;
     items.push({ label: step === 1 ? t.toCombat : t.endTurn, answer: PASS, primary: true });
-    return this.menu(s, t.mainTitle(step), t.mainNote(s.landPlayed, s.kaelUsed), items) as Action;
+    return this.menu(s, t.mainTitle(step), t.mainNote(manaLeft(s)), items) as Action;
   }
 
   attack(s: State): number[] {

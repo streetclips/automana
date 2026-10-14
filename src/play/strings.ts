@@ -1,8 +1,6 @@
-import { ALL_CARDS, GRIMOIRES, getCard } from "../content";
+import { ALL_CARDS, getCard } from "../content";
 import type { Locale } from "../content/types";
 import { getLocale } from "../i18n/locale";
-
-export const ROMAN = ["", "I", "II", "III", "IV"];
 
 const BY_NAME = new Map(ALL_CARDS.map((c) => [c.en.name, c]));
 
@@ -10,27 +8,14 @@ function nameIn(locale: Locale, name: string): string {
   return BY_NAME.get(name)?.[locale].name ?? name;
 }
 
-function landIn(locale: Locale, color: string): string {
-  const half = GRIMOIRES.find((g) => g.color === color);
-  return half ? getCard(half.land)[locale].name : color;
-}
-
 export function cardName(id: string): string {
   return getCard(id)[getLocale()].name;
 }
 
-export function landName(color: string): string {
-  return landIn(getLocale(), color);
-}
-
 const LOG = {
-  playsLand: /^plays (\w) land \((.+)\)$/,
   draws: /^draws (.+) \((\d+) life\)$/,
   countered: /^casts (.+): countered$/,
   casts: /^casts (.+?)(?: on (.+)| (at the Nemesis))?$/,
-  charges: /^Kael charges to (\d)(?: \(\+1\/\+0 (.+)\))?$/,
-  discharges: /^Kael discharges at (.+)$/,
-  ultimate: /^Kael ultimate$/,
   attacks: /^attacks with (.+)$/,
   executes: /^executes (.+?)(?: on (.+))?$/,
   reveals: /^reveals Omen (.+) \((\d+) left\)$/,
@@ -78,11 +63,6 @@ const EN = {
   bendBottom: "Cast: Omen to the bottom, reveal a new one, Scry 1",
   bendKeep: "Cast: keep the Omen, Scry 1",
   counterspell: "countered by Counterspell",
-  asLand: (land: string, color: string) => `Play as a land: ${land} {${color}}`,
-  charge: (from: string, to: string) => `Charge (${from} → ${to})`,
-  chargeOn: (charge: string, target: string) => `${charge}: +1/+0 to ${target}`,
-  discharge: (from: string, to: string, target: string) => `Discharge (${from} → ${to}): 2 damage to ${target}`,
-  ultimate: "Ultimate (IV → I): 3 damage to the Nemesis, your creatures get +1/+0",
   archivist: "{T}: Scry 1",
   blocked: (attacker: string, blocker: string) => `${attacker} is blocked by ${blocker}`,
   unblocked: (attacker: string) => `${attacker} is unblocked`,
@@ -104,7 +84,7 @@ const EN = {
   mulliganNote: "Click 1 of your new cards to put into your graveyard.",
   toGrave: "To the graveyard",
   mainTitle: (step: number): string => (step === 1 ? "Your turn · Main phase" : "Your turn · Second main phase"),
-  mainNote: (landDone: boolean, kaelDone: boolean) => `Play up to 1 land${landDone ? " (done)" : ""}, cast spells, use Kael once${kaelDone ? " (done)" : ""}. Click a glowing card to see what it can do.`,
+  mainNote: (mana: number) => `Cast spells with your mana: ${mana} left. Click a glowing card to see what it can do.`,
   toCombat: "To combat",
   endTurn: "End turn",
   attackTitle: "Combat · Declare attackers",
@@ -140,7 +120,6 @@ const EN = {
   sick: "Summoning sick",
   frozen: "Frozen",
   lowered: "Lowered: tapped",
-  raised: "Raised: untapped",
   pacified: "Pacified",
   shielded: "Damage prevented",
   attacking: "Attacking",
@@ -157,13 +136,10 @@ const EN = {
   threatDeck: (life: number) => `Threat deck · <b>${life}</b> life`,
   omen: "Omen · next Nemesis turn",
   omenIs: (name: string) => `Omen: ${name}`,
-  lands: (n: number, max: number, open: number) => `Lands ${n}/${max} · <b>${open}</b> mana open`,
-  landPlayed: "land played this turn",
-  landOpen: "land drop open",
+  mana: (left: number, round: number) => `Mana · <b>${left}</b> left · ${round} per round`,
   library: (life: number) => `Library · <b>${life}</b> life`,
   life: (n: number) => `<b>${n}</b> life`,
   top: (name: string) => `top: ${name}`,
-  kael: (state: string, used: boolean) => `Kael · state <b>${state}</b>${used ? " · used" : ""}`,
   hand: (n: number) => `Hand · <b>${n}</b>`,
   limit: (n: number) => ` · limit ${n}`,
   leftmost: " · the leftmost card is the oldest",
@@ -182,9 +158,9 @@ const EN = {
   noBlock: "no block",
   confirmBlocks: "Confirm blocks",
   leftHand: "Left hand · The Table",
-  leftHow: "one fan, left → right: Ruin, face-down Threats and Omen › Nemesis creatures › your creatures › Kael, your lands tucked behind",
+  leftHow: "one fan, left → right: Ruin, face-down Threats and Omen › Nemesis creatures › your creatures",
   rightHand: "Right hand · The Grimoire",
-  rightHow: "one packet, front → back: hand, spell side, fanned › library = life, land side › graveyard, spell side",
+  rightHow: "one packet, front → back: hand, spell side, fanned › library = life, back side › graveyard, spell side",
   emptyHand: "no cards",
   you: "You",
   setup: "Setup",
@@ -216,13 +192,9 @@ const EN = {
     pickedUpTo: "{n} of up to {max} picked",
   },
   log: {
-    playsLand: (m) => `You play ${en(m[2])} as a ${landIn("en", m[1])}`,
     draws: (m) => `You draw ${en(m[1])} (${m[2]} life left)`,
     countered: (m) => `You cast ${en(m[1])}, but it is countered`,
     casts: (m) => `You cast ${en(m[1])}${m[2] ? ` on ${en(m[2])}` : m[3] ? " at the Nemesis" : ""}`,
-    charges: (m) => `Kael charges to ${ROMAN[Number(m[1])]}${m[2] ? `: ${en(m[2])} gets +1/+0` : ""}`,
-    discharges: (m) => `Kael discharges: 2 damage to ${en(m[1])}`,
-    ultimate: () => "Kael's Ultimate: 3 damage to the Nemesis, your creatures get +1/+0",
     attacks: (m, nemesis) => `${nemesis ? "The Nemesis attacks" : "You attack"} with ${attackers(m[1], en, (b) => `blocked by ${b}`)}`,
     executes: (m) => `The Nemesis casts ${en(m[1])}${m[2] ? ` on your ${en(m[2])}` : ""}`,
     reveals: (m) => `New Omen: ${en(m[1])} · the Nemesis has ${m[2]} life left`,
@@ -260,11 +232,6 @@ const ES: typeof EN = {
   bendBottom: "Lanzar: el Presagio al fondo, revela otro y Adivinar 1",
   bendKeep: "Lanzar: conserva el Presagio y Adivinar 1",
   counterspell: "lo contrarresta el Contraconjuro",
-  asLand: (land, color) => `Jugar como tierra: ${land} {${color}}`,
-  charge: (from, to) => `Cargar (${from} → ${to})`,
-  chargeOn: (charge, target) => `${charge}: +1/+0 a ${target}`,
-  discharge: (from, to, target) => `Descargar (${from} → ${to}): 2 de daño a ${target}`,
-  ultimate: "Definitiva (IV → I): 3 de daño a la Némesis y tus criaturas obtienen +1/+0",
   archivist: "{T}: Adivinar 1",
   blocked: (attacker, blocker) => `${blocker} bloquea a ${attacker}`,
   unblocked: (attacker) => `nadie bloquea a ${attacker}`,
@@ -286,7 +253,7 @@ const ES: typeof EN = {
   mulliganNote: "Haz clic en 1 de tus cartas nuevas para ponerla en tu cementerio.",
   toGrave: "Al cementerio",
   mainTitle: (step) => (step === 1 ? "Tu turno · Fase principal" : "Tu turno · Segunda fase principal"),
-  mainNote: (landDone, kaelDone) => `Juega hasta 1 tierra${landDone ? " (hecho)" : ""}, lanza hechizos y usa a Kael una vez${kaelDone ? " (hecho)" : ""}. Haz clic en una carta que brille para ver qué puede hacer.`,
+  mainNote: (mana) => `Lanza hechizos con tu maná: te ${mana === 1 ? "queda 1" : `quedan ${mana}`}. Haz clic en una carta que brille para ver qué puede hacer.`,
   toCombat: "Al combate",
   endTurn: "Terminar turno",
   attackTitle: "Combate · Declara atacantes",
@@ -322,7 +289,6 @@ const ES: typeof EN = {
   sick: "Mareo de invocación",
   frozen: "Congelada",
   lowered: "Bajada: girada",
-  raised: "Levantada: enderezada",
   pacified: "Pacificada",
   shielded: "Daño prevenido",
   attacking: "Atacando",
@@ -339,13 +305,10 @@ const ES: typeof EN = {
   threatDeck: (life) => `Mazo de Amenaza · <b>${life}</b> ${life === 1 ? "vida" : "vidas"}`,
   omen: "Presagio · próximo turno de la Némesis",
   omenIs: (name) => `Presagio: ${name}`,
-  lands: (n, max, open) => `Tierras ${n}/${max} · <b>${open}</b> de maná libre`,
-  landPlayed: "ya has jugado tierra este turno",
-  landOpen: "puedes jugar una tierra",
+  mana: (left, round) => `Maná · te ${left === 1 ? "queda" : "quedan"} <b>${left}</b> · ${round} por ronda`,
   library: (life) => `Biblioteca · <b>${life}</b> ${life === 1 ? "vida" : "vidas"}`,
   life: (n) => `<b>${n}</b> ${n === 1 ? "vida" : "vidas"}`,
   top: (name) => `arriba: ${name}`,
-  kael: (state, used) => `Kael · estado <b>${state}</b>${used ? " · usado" : ""}`,
   hand: (n) => `Mano · <b>${n}</b>`,
   limit: (n) => ` · límite ${n}`,
   leftmost: " · la carta de más a la izquierda es la más antigua",
@@ -364,9 +327,9 @@ const ES: typeof EN = {
   noBlock: "sin bloquear",
   confirmBlocks: "Confirmar bloqueos",
   leftHand: "Mano izquierda · La Mesa",
-  leftHow: "un abanico, de izquierda a derecha: Ruina, Amenazas boca abajo y Presagio › criaturas de la Némesis › tus criaturas › Kael, con tus tierras detrás",
+  leftHow: "un abanico, de izquierda a derecha: Ruina, Amenazas boca abajo y Presagio › criaturas de la Némesis › tus criaturas",
   rightHand: "Mano derecha · El Grimorio",
-  rightHow: "un paquete, de delante a detrás: mano, cara de hechizo, en abanico › biblioteca = vida, cara de tierra › cementerio, cara de hechizo",
+  rightHow: "un paquete, de delante a detrás: mano, cara de hechizo, en abanico › biblioteca = vida, por el dorso › cementerio, cara de hechizo",
   emptyHand: "sin cartas",
   you: "Tú",
   setup: "Preparación",
@@ -398,13 +361,9 @@ const ES: typeof EN = {
     pickedUpTo: "{n} de hasta {max} elegidas",
   },
   log: {
-    playsLand: (m) => `Juegas ${es(m[2])} como ${landIn("es", m[1])}`,
     draws: (m) => `Robas ${es(m[1])} (te quedan ${lives(Number(m[2]))})`,
     countered: (m) => `Lanzas ${es(m[1])}, pero lo contrarrestan`,
     casts: (m) => `Lanzas ${es(m[1])}${m[2] ? ` sobre ${es(m[2])}` : m[3] ? " a la Némesis" : ""}`,
-    charges: (m) => `Kael carga a ${ROMAN[Number(m[1])]}${m[2] ? `: ${es(m[2])} obtiene +1/+0` : ""}`,
-    discharges: (m) => `Kael descarga: 2 de daño a ${es(m[1])}`,
-    ultimate: () => "Definitiva de Kael: 3 de daño a la Némesis y tus criaturas obtienen +1/+0",
     attacks: (m, nemesis) => `${nemesis ? "La Némesis ataca" : "Atacas"} con ${attackers(m[1], es, (b) => `la bloquea ${b}`)}`,
     executes: (m) => `La Némesis lanza ${es(m[1])}${m[2] ? ` sobre tu ${es(m[2])}` : ""}`,
     reveals: (m) => `Nuevo Presagio: ${es(m[1])} · a la Némesis le quedan ${lives(Number(m[2]))}`,

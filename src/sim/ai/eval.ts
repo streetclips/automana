@@ -1,10 +1,9 @@
-import { DEATHTOUCH, DEFENDER, FLYING, type Mana, REACH, TRAMPLE } from "../engine/defs";
+import { DEATHTOUCH, DEFENDER, FLYING, REACH, TRAMPLE } from "../engine/defs";
 import { GROVEKEEPER, kwOf } from "../engine/engine";
-import { MAX_CREATURES, type Perm, type State, defOf } from "../engine/state";
+import { MAX_CREATURES, type Perm, ROUND_MANA, type State, defOf } from "../engine/state";
 import type { DecisionCtx } from "./know";
 import {
-  W, castFactor, kaelValue, landsValue, lifeScore, manaCtx, mineValue, nemScore, nemValue,
-  omenThreat, staticPow, staticTough, cardValue,
+  W, lifeScore, mineValue, nemScore, nemValue, omenThreat, staticPow, staticTough, cardValue,
 } from "./values";
 
 export const WIN = 10000;
@@ -69,30 +68,32 @@ export function allOutDamage(s: State): number {
   return unblocked();
 }
 
-function burnNextTurn(s: State): number {
-  let mana = s.lands.length;
-  let red = 0;
-  for (const uid of s.lands) if (defOf(s, uid).color === "R") red++;
+function nextMana(s: State): number {
+  let mana = ROUND_MANA;
   for (const p of s.mine) if (p.def.id === GROVEKEEPER) mana++;
+  return mana;
+}
+
+function burnNextTurn(s: State): number {
+  let mana = nextMana(s);
   let burn = 0;
   for (const uid of s.hand) {
     const d = defOf(s, uid);
     const dmg = d.id === "ember-bolt" ? 3 : d.id === "kindle" ? 2 : d.id === "drain-essence" ? 2 : d.id === "pyre-titan" ? 2 : d.id === "blood-acolyte" ? 1 : 0;
     if (!dmg || d.mv > mana) continue;
-    if (d.pips[0] === "R" && red === 0) continue;
-    if (d.pips[0] !== "R" && !s.lands.some((u) => defOf(s, u).color === (d.pips[0] as Mana))) continue;
     mana -= d.mv;
     burn += dmg;
   }
-  if (s.kael === 4) burn += 3;
   return burn;
 }
 
 export function upkeepLethal(s: State): boolean {
-  let red = 0;
-  for (const uid of s.lands) if (defOf(s, uid).color === "R") red++;
+  let mana = nextMana(s);
   let dmg = 0;
-  for (const uid of s.hand) if (defOf(s, uid).id === "ember-bolt" && red > 0) { red--; dmg += 3; }
+  for (const uid of s.hand) {
+    const d = defOf(s, uid);
+    if (d.id === "ember-bolt" && d.mv <= mana) { mana -= d.mv; dmg += 3; }
+  }
   return dmg >= s.faceDown.length;
 }
 
@@ -135,7 +136,7 @@ function danger(s: State, eff: number): number {
 
 function material(s: State): number {
   let v = s.library.length - s.faceDown.length;
-  for (const p of s.mine) v += mineValue(s, p);
+  for (const p of s.mine) v += mineValue(p);
   for (const p of s.nem) v -= nemValue(p);
   return Math.max(-40, Math.min(40, v));
 }
@@ -147,12 +148,9 @@ export function evaluate(s: State, dc: DecisionCtx): number {
   if (eff <= 0) return upkeepLethal(s) ? WIN / 2 : -WIN + 10 * s.round + 5 + 0.1 * material(s);
   const n = s.faceDown.length;
   let v = lifeScore(eff) - nemScore(n);
-  for (const p of s.mine) v += mineValue(s, p);
+  for (const p of s.mine) v += mineValue(p);
   for (const p of s.nem) v -= nemValue(p);
-  const m = manaCtx(s);
-  for (const uid of s.hand) v += dc.unknown[uid] ? dc.avgCard : cardValue(s, defOf(s, uid), eff, dc.avgCard) * castFactor(defOf(s, uid), m);
-  v += landsValue(s.lands.length);
-  v += kaelValue(s.kael);
+  for (const uid of s.hand) v += dc.unknown[uid] ? dc.avgCard : cardValue(s, defOf(s, uid), eff, dc.avgCard);
   if (s.omen >= 0) v -= dc.unknown[s.omen] ? dc.avgThreat : omenThreat(s, s.omen);
   v -= W.counter * s.counters.length;
   v -= danger(s, eff);
