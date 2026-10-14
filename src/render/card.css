@@ -59,3 +59,5 @@
 .pip-N { background: #cfc6b5; }
 .pip-T { background: #d9c296; color: #3a2a10; }
 .pip-X { background: #2a1612; color: #ffb15c; }
+.pip-tier { display: inline-flex; align-items: center; justify-content: center; }
+.pip-tier b { font-size: .62em; letter-spacing: -.04em; }

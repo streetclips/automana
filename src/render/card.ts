@@ -1,17 +1,19 @@
-import { collectorNumber, getCard } from "../content";
+import { collectorNumber, getCard, type CollectorNumber } from "../content";
 import type { Card } from "../content/types";
 import { getLocale, t } from "../i18n/locale";
 import { hasArt } from "./art";
 import { collectionIcon, grimoireMark, icon } from "./icons";
 import { pip, pips } from "./pips";
 
-export function renderCard(idOrCard: string | Card, copy = 0): string {
+const TIERS = ["", "I", "II", "III"];
+
+export function renderCard(idOrCard: string | Card, copy = 0, number?: CollectorNumber): string {
   const card = typeof idOrCard === "string" ? getCard(idOrCard) : idOrCard;
-  const num = collectorNumber(card.id);
+  const num = number ?? collectorNumber(card.id);
   const set = num ? `<div class="c-set">${collectionIcon(num.collection)}<span>${num.first + copy}/${num.total}</span></div>` : "";
   const tx = card[getLocale()];
   const strings = t();
-  const cost = pip(card.threat ? "X" : String(card.cost ?? 0));
+  const cost = card.tier ? `<span class="pip pip-X pip-tier"><b>${TIERS[card.tier]}</b></span>` : pip(card.threat ? "X" : String(card.cost ?? 0));
   const glyph = icon(card.threat ? "X" : card.type);
   const type = (card.threat ? strings.threatPrefix : "") + strings.typeLabel[card.type] + (tx.sub ? ` — ${tx.sub}` : "");
   const fit = tx.name.length > 20 ? "xlong" : tx.name.length > 16 ? "long" : "";

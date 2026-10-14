@@ -9,6 +9,7 @@
     "preview": "tsx watch src/preview/server.ts",
     "play": "tsx watch src/play/server.ts",
     "pnp": "tsx src/pnp/build.ts",
+    "pnp:box": "tsx src/pnp/build.ts box",
     "art": "tsx src/art/generate.ts",
     "build": "npm run typecheck && npm run pnp",
     "sim": "tsx src/sim/batch/run.ts",

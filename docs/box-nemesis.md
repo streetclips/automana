@@ -91,12 +91,22 @@ Creatures keep their Palmwalker names, effects and quantities. Their sizes were 
 8. **Mantis Queen's +1/+0 also reaches the Queen.** It is summoning sick, so this changes nothing.
 9. **Ward is untested here.** Targeting skips any creature with a `ward` keyword, but this branch has no ward yet; the Beginner Box merge brings it.
 
+## Print and play
+
+`npm run pnp:box` writes `dist/palmwalker-box-pnp-en.pdf` and `-es.pdf`: 81 cards on 9 A4 sheets, in the same format as Palmwalker's PnP (63 × 88 mm like Magic cards, 3 mm bleed, odd pages fronts, even pages backs mirrored for long-edge duplex, CMYK).
+
+1. **A quick reference** for the box mode: setup, the Nemesis turn, its mind, and how your cards work against it.
+2. **The 4 Threat decks**, 20 cards each, with the plain Threat back. The tuned sizes and tiers come from `src/box/nemesis/threats.ts`, the names, art and flavour from Palmwalker's content (`src/pnp/box.ts`).
+3. **Tier mark:** the roman numeral at the top of the index strip (I, II or III), where Palmwalker Threats show their Threat pip. Collector numbers follow the tiers, so cards 1 to 6 or 7 of each deck are tier I.
+4. **Wording for Magic:** "the battlefield" for Palmwalker's Table, the official Spanish keywords (*Vuela*, *Arrolla*), a random discard for Rebound and Mind Theft, and "tap" for Mass Illusion.
+
 ## Tools
 
 | Command | What it does |
 |---|---|
 | `npm run box -- --games 100 --seed 1 [--decks a,b] [--nemeses vorthrax,morwen] [--workers N]` | Games per deck × Nemesis in worker threads. Prints the win-rate table and the metrics per Nemesis, and writes `dist/box/box-seed<S>-g<N>.{md,json}`. Every game has its own seed, so results don't depend on the worker count. |
 | `npm run box:trace -- <seed> <deck> <nemesis>` | The log of one game. |
+| `npm run pnp:box` | The print-and-play PDFs of the box mode. |
 | `npm run box:test:nemesis` | The rules above as 20 scenario tests, on Threats pinned to fixed sizes so tuning never breaks them. |
 | `BOX_THREAT_SIZES=vorthrax=1/2,morwen=0/-1 npm run box` | Adds power/toughness to every creature of the named Nemeses, to probe sizes without editing the deck lists. |
 

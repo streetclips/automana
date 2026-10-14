@@ -1,4 +1,5 @@
 import { REFERENCE } from "../content";
+import type { Reference } from "../content/types";
 import { getLocale, t } from "../i18n/locale";
 import { pips } from "./pips";
 
@@ -19,8 +20,8 @@ function fourStateCard(cls: string, upright: Half, flipped: Half, face: Face): s
   return `<div class="pw-card pw-face ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${t().face} ${face}</div></div>`;
 }
 
-export function referenceFace(face: Face): string {
-  const sides = REFERENCE[getLocale()];
+export function referenceFace(face: Face, reference: Reference = REFERENCE): string {
+  const sides = reference[getLocale()];
   const [upright, flipped] = face === "A" ? [sides[0], sides[1]] : [sides[2], sides[3]];
   const half = (side: (typeof sides)[number]): Half => ({ state: side.title, name: "", body: side.items });
   return fourStateCard("reference", half(upright), half(flipped), face);

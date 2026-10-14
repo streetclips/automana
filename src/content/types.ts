@@ -19,6 +19,7 @@ export interface Card {
   qty: number;
   pt?: string;
   threat?: boolean;
+  tier?: 1 | 2 | 3;
   art: string;
   en: CardText;
   es: CardText;
