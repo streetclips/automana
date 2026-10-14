@@ -52,26 +52,26 @@ Replay space: 10 colour pairs × 4 Nemeses = 40 configurations.
 
 ## 3. Anatomy of a card
 
-Cards are read in a **fan**. When cards overlap, only their left edge shows, like the corner index of a deck of playing cards. That is why every card carries its key information in the **index strip** down its left side.
+Cards follow the classic layout of a dueling card.
 
 ```
-┌───┬──────────────────────┐
-│ 2 │ [ Cinder Hound     ] │  1. Cost: the mana it takes, 1 to 3. Threats have none.
-│ ⚔ │ ┌──────────────────┐ │     The frame has the card's colour; Threats have a dark strip.
-│   │ │                  │ │  2. Type glyph: ⚔ creature, ϟ instant, ✶ sorcery,
-│   │ │      (art)       │ │     ◈ aura, ✹ Threat.
-│   │ │                  │ │  3. Power/Toughness at the foot of the strip.
-│   │ └──────────────────┘ │  4. Name bar, above the art.
-│   │ [ Creature — Hound ] │  5. Type line, below the art.
-│   │ ┌──────────────────┐ │  6. Rules text; italic text is flavour.
-│   │ │ Rules text       │ │  7. Collection symbol and number: ◆ = Emberkin,
-│   │ │ Flavour (italic) │ │     card 5 of its 12.
-│   │ │           ◆ 5/12 │ │
-│2/2│ └──────────────────┘ │
-└───┴──────────────────────┘
+┌────────────────────────────┐
+│ [ Cinder Hound        (2) ]│  1. Name bar, with the cost at its right: the mana
+│ ┌────────────────────────┐ │     it takes, 1 to 3. Threats show a Threat mark.
+│ │                        │ │  2. Art. The frame has the card's colour;
+│ │         (art)          │ │     Threats have a dark one.
+│ │                        │ │  3. Type line.
+│ └────────────────────────┘ │  4. Rules text; italic text is flavour.
+│ [ Creature — Hound        ]│  5. Collection symbol and number: ◆ = Emberkin,
+│ ┌────────────────────────┐ │     card 5 of its 12.
+│ │ Rules text             │ │  6. Power/Toughness, at the bottom right.
+│ │ Flavour (italic)       │ │
+│ │ ◆ 5/12          [ 2/2 ]│ │
+│ └────────────────────────┘ │
+└────────────────────────────┘
 ```
 
-**Collection and number.** Every Grimoire and Threat card shows, at the bottom right of its text box, the symbol of its half-grimoire or Threat deck and its number in it. Copies of a card have consecutive numbers: the two Reckless Goblins are 1/12 and 2/12. After a game, sort the cards by symbol and lay each pile out by number: a gap is a missing card, and the card lists in section 17 name it. The quick reference has no symbol.
+**Collection and number.** Every Grimoire and Threat card shows, at the bottom left of its text box, the symbol of its half-grimoire or Threat deck and its number in it. Copies of a card have consecutive numbers: the two Reckless Goblins are 1/12 and 2/12. After a game, sort the cards by symbol and lay each pile out by number: a gap is a missing card, and the card lists in section 17 name it. The quick reference has no symbol.
 
 **Mana.** At the start of each of your turns you have 3 mana. Casting a spell spends its cost. Mana you don't spend on your turn stays until the start of your next turn, so you can keep some for instants on the Nemesis turn. It never piles up: every turn of yours starts again at 3. Mana has no colour and nothing to tap: count it in your head.
 
@@ -183,8 +183,7 @@ RIGHT HAND — THE GRIMOIRE (one packet, front → back)
 └──────────────────────┘   └─────────────────────┘   └──────────────────────┘
 ```
 
-1. Only the left strip of each Table card shows: that is exactly where the index sits.
-2. The library shows its backs; hand and graveyard show the spell side, so the boundaries between zones are always visible, even when the packet is squared.
+The library shows its backs; hand and graveyard show the spell side, so the boundaries between zones are always visible, even when the packet is squared.
 
 **Up and lowered.** Raised (aligned with the fan) = untapped. Lowered (slid down about 2 cm) = tapped. The classic 90° turn also works for small fans; lowering is easier to hold.
 

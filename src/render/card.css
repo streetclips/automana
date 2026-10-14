@@ -3,7 +3,7 @@
   background: radial-gradient(ellipse 65% 28% at 28% 16%, rgba(255,255,255,.3), transparent), radial-gradient(ellipse 50% 24% at 80% 50%, rgba(255,255,255,.16), transparent),
     radial-gradient(ellipse 45% 30% at 10% 66%, rgba(0,0,0,.16), transparent), radial-gradient(ellipse 85% 30% at 50% 92%, rgba(0,0,0,.24), transparent), linear-gradient(165deg, var(--f-1), var(--f-2)); }
 .pw-card > div { position: absolute; box-sizing: border-box; }
-.pw-card .c-index, .pw-card .c-name, .pw-card .c-type, .pw-face .hhead { background: linear-gradient(rgba(255,255,255,var(--f-sheen, .6)), rgba(255,255,255,0) 45%, rgba(0,0,0,.1)), var(--f-bar);
+.pw-card .c-name, .pw-card .c-type, .pw-card .c-pt, .pw-face .hhead { background: linear-gradient(rgba(255,255,255,var(--f-sheen, .6)), rgba(255,255,255,0) 45%, rgba(0,0,0,.1)), var(--f-bar);
   color: var(--f-ink, #17110c); border: .09em solid #120d09; box-shadow: 0 0 0 .1em rgba(255,255,255,.7), .06em .16em .26em rgba(0,0,0,.55), inset 0 0 0 .06em rgba(255,255,255,.35); z-index: 1; }
 .pw-card .c-name, .pw-card .c-type { display: flex; align-items: center; padding: 0 .6em; white-space: nowrap; overflow: hidden; }
 .pw-card .c-name span, .pw-card .c-type span { position: relative; top: .07em; }
@@ -15,14 +15,12 @@
 .pw-card .c-type span { font-size: 1.15em; font-weight: bold; }
 .pw-card.type-long .c-type span { font-size: 1.02em; }
 .pw-card.type-xlong .c-type span { font-size: .92em; }
-.pw-card .c-index { left: .4em; top: .4em; bottom: .5em; width: 2.95em; padding: .6em 0; display: flex; flex-direction: column; align-items: center; gap: .45em;
-  color: var(--f-mark, var(--c-d)); font-family: "Avenir Next", "Helvetica Neue", sans-serif; z-index: 2; }
-.pw-card .c-cost { display: flex; flex-direction: column; align-items: center; gap: .2em; font-size: 1.4em; }
-.pw-card .c-glyph { font-size: 1.5em; }
-.pw-card .c-ipt { margin-top: auto; font-family: "Avenir Next Condensed", "Avenir Next", sans-serif; font-size: 1.65em; font-weight: 800; text-shadow: 0 .03em 0 var(--f-emboss, rgba(255,255,255,.7)); }
+.pw-card .c-name .c-cost { margin-left: auto; padding-left: .4em; display: flex; align-items: center; gap: .15em; font-size: 1.35em; }
+.pw-card .c-pt { right: .4em; bottom: .15em; height: 2.2em; min-width: 4.6em; padding: 0 .5em; display: flex; align-items: center; justify-content: center; z-index: 2; }
+.pw-card .c-pt span { font: 800 1.55em/1 "Avenir Next Condensed", "Avenir Next", sans-serif; text-shadow: 0 .03em 0 var(--f-emboss, rgba(255,255,255,.7)); }
 .pw-card .c-art, .pw-card .c-text, .pw-face .hbody { border: .09em solid #0b0807; box-shadow: 0 0 0 .1em rgba(255,255,255,.7); }
 .pw-card .c-text, .pw-face .hbody { background: radial-gradient(ellipse 70% 55% at 25% 25%, rgba(255,255,255,.6), transparent), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(0,0,0,.06), transparent), var(--f-box); }
-.pw-card .c-name, .pw-card .c-type, .pw-card .c-art, .pw-card .c-text { left: 3.85em; right: .4em; }
+.pw-card .c-name, .pw-card .c-type, .pw-card .c-art, .pw-card .c-text { left: .4em; right: .4em; }
 .pw-card .c-art { top: 3em; bottom: 13.45em; overflow: hidden; }
 .pw-card .c-art::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 1em rgba(0,0,0,.45); }
 .pw-card .c-glow { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
@@ -33,7 +31,8 @@
 .pw-card .c-flavor { font-style: italic; color: #4b3d2f; }
 .pw-card .c-text .c-flavor { font-size: 1.02em; }
 .pw-card.no-flavor .c-flavor { display: none; }
-.pw-card .c-set { position: absolute; right: .8em; bottom: .45em; display: flex; align-items: center; gap: .3em; font: 600 .75em/1 "Avenir Next", "Helvetica Neue", sans-serif; color: var(--c-d); opacity: .6; }
+.pw-card.has-pt .c-text { padding-bottom: 2em; }
+.pw-card .c-set { position: absolute; left: .8em; bottom: .45em; display: flex; align-items: center; gap: .3em; font: 600 .75em/1 "Avenir Next", "Helvetica Neue", sans-serif; color: var(--c-d); opacity: .6; }
 .pw-card .c-set .icon { width: 1.5em; height: 1.5em; }
 .pw-card.pw-back .c-art { inset: .4em; }
 .pw-card.pw-back .c-glow { font-size: 7.5em; color: #ffb15c; }

@@ -97,7 +97,7 @@ Creatures keep their Palmwalker names, effects and quantities. Their sizes were 
 
 1. **A quick reference** for the box mode: setup, the Nemesis turn, its mind, and how your cards work against it.
 2. **The 4 Threat decks**, 20 cards each, with the plain Threat back. The tuned sizes and tiers come from `src/box/nemesis/threats.ts`, the names, art and flavour from Palmwalker's content (`src/pnp/box.ts`).
-3. **Tier mark:** the roman numeral at the top of the index strip (I, II or III), where Palmwalker Threats show their Threat pip. Collector numbers follow the tiers, so cards 1 to 6 or 7 of each deck are tier I.
+3. **Tier mark:** the roman numeral at the right of the name bar (I, II or III), where a Magic card shows its mana cost. Collector numbers follow the tiers, so cards 1 to 6 or 7 of each deck are tier I.
 4. **Wording for Magic:** "the battlefield" for Palmwalker's Table, the official Spanish keywords (*Vuela*, *Arrolla*), a random discard for Rebound and Mind Theft, and "tap" for Mass Illusion.
 
 ## Tools

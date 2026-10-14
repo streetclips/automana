@@ -11,18 +11,18 @@ interface Half {
   body: string[];
 }
 
-function fourStateCard(cls: string, upright: Half, flipped: Half, face: Face): string {
-  const half = (h: Half, flip: boolean) => `
-<div class="half${flip ? " flip" : ""}">
+function twoHalfCard(cls: string, top: Half, bottom: Half, face: Face): string {
+  const half = (h: Half) => `
+<div class="half">
   <div class="hhead"><span class="state">${h.state}</span><span class="hname">${h.name}</span></div>
   <div class="hbody">${h.body.map((p) => `<p>${pips(p)}</p>`).join("")}</div>
 </div>`;
-  return `<div class="pw-card pw-face ${cls}"><div class="halves">${half(upright, false)}${half(flipped, true)}</div><div class="facetag">${t().face} ${face}</div></div>`;
+  return `<div class="pw-card pw-face ${cls}"><div class="halves">${half(top)}${half(bottom)}</div><div class="facetag">${t().face} ${face}</div></div>`;
 }
 
 export function referenceFace(face: Face, reference: Reference = REFERENCE): string {
   const sides = reference[getLocale()];
-  const [upright, flipped] = face === "A" ? [sides[0], sides[1]] : [sides[2], sides[3]];
+  const [top, bottom] = face === "A" ? [sides[0], sides[1]] : [sides[2], sides[3]];
   const half = (side: (typeof sides)[number]): Half => ({ state: side.title, name: "", body: side.items });
-  return fourStateCard("reference", half(upright), half(flipped), face);
+  return twoHalfCard("reference", half(top), half(bottom), face);
 }

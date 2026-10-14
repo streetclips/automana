@@ -14,18 +14,17 @@ export function renderCard(idOrCard: string | Card, copy = 0, number?: Collector
   const tx = card[getLocale()];
   const strings = t();
   const cost = card.tier ? `<span class="pip pip-X pip-tier"><b>${TIERS[card.tier]}</b></span>` : pip(card.threat ? "X" : String(card.cost ?? 0));
-  const glyph = icon(card.threat ? "X" : card.type);
   const type = (card.threat ? strings.threatPrefix : "") + strings.typeLabel[card.type] + (tx.sub ? ` — ${tx.sub}` : "");
   const fit = tx.name.length > 20 ? "xlong" : tx.name.length > 16 ? "long" : "";
   const typeFit = type.length > 33 ? "type-xlong" : type.length > 30 ? "type-long" : "";
-  const cls = ["pw-card", `col-${card.color}`, tx.flavor ? "" : "no-flavor", fit, typeFit].filter(Boolean).join(" ");
+  const cls = ["pw-card", `col-${card.color}`, tx.flavor ? "" : "no-flavor", card.pt ? "has-pt" : "", fit, typeFit].filter(Boolean).join(" ");
   const art = hasArt(card.id) ? `<div class="c-img art-${card.id}"></div>` : `<div class="c-glow"></div>`;
   return `<div class="${cls}">
   <div class="c-art">${art}</div>
-  <div class="c-index"><div class="c-cost">${cost}</div><div class="c-glyph">${glyph}</div><div class="c-ipt">${card.pt ?? ""}</div></div>
-  <div class="c-name"><span>${tx.name}</span></div>
+  <div class="c-name"><span>${tx.name}</span><div class="c-cost">${cost}</div></div>
   <div class="c-type"><span>${type}</span></div>
   <div class="c-text"><p class="c-rules">${pips(tx.text || "&nbsp;")}</p><p class="c-flavor">${tx.flavor ?? ""}</p>${set}</div>
+  ${card.pt ? `<div class="c-pt"><span>${card.pt}</span></div>` : ""}
 </div>`;
 }
 
