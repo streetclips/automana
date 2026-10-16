@@ -98,13 +98,13 @@ lines.push(
 );
 lines.push('## Game metrics by Nemesis', '');
 lines.push(
-  '| Nemesis | Win rate | Rounds | Rounds (wins) | Player life (wins) | Nemesis life (losses) | Mulligans / game | Overflows / game | Draws | Errors |',
+  '| Nemesis | Win rate | Rounds | Rounds (wins) | Player life (wins) | Nemesis life (losses) | Mulligans / game | Draws | Errors |',
 );
-lines.push('|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|');
+lines.push('|---|---:|---:|---:|---:|---:|---:|---:|---:|');
 const metrics = (name: string, t: Tally): string => {
   const valid = t.games - t.errors;
   const losses = valid - t.wins - t.draws;
-  return `| ${name} | ${pct(t.wins, valid)} | ${avg(t.rounds, valid)} | ${avg(t.roundsInWins, t.wins)} | ${avg(t.lifeInWins, t.wins)} | ${avg(t.nemesisLifeInLosses, losses)} | ${(t.mulligans / Math.max(1, t.games)).toFixed(2)} | ${(t.overflows / Math.max(1, t.games)).toFixed(2)} | ${t.draws} | ${t.errors} |`;
+  return `| ${name} | ${pct(t.wins, valid)} | ${avg(t.rounds, valid)} | ${avg(t.roundsInWins, t.wins)} | ${avg(t.lifeInWins, t.wins)} | ${avg(t.nemesisLifeInLosses, losses)} | ${(t.mulligans / Math.max(1, t.games)).toFixed(2)} | ${t.draws} | ${t.errors} |`;
 };
 nemeses.forEach(({ nemesis }, i) => lines.push(metrics(nemesis.name, columns[i] as Tally)));
 lines.push(metrics('All', everything));

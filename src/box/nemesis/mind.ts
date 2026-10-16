@@ -121,6 +121,8 @@ export function nemesisAttackers(s: GameState, player: PlayerId): CardId[] {
   const defenders = creaturesOf(s, opponent(player)).filter((id) => !getCard(s, id).tapped);
   return eligibleAttackers(s).filter(
     (attacker) =>
+      getPower(s, attacker) > 0 &&
+      !defOf(s, attacker).challenge?.passive &&
       !defenders.some((blocker) => {
         if (!couldBlock(s, blocker, attacker)) return false;
         const outcome = duel(s, attacker, blocker);
@@ -225,7 +227,6 @@ export function nemesisTargets(s: GameState, player: PlayerId, specs: TargetSpec
 
 function castOmen(s: GameState, player: PlayerId): Action | null {
   if (s.activePlayer !== player || s.stack.length > 0) return null;
-  if (s.step !== 'main1' && !s.players[player].challenge) return null;
   for (const card of s.players[player].hand) {
     const targets = nemesisTargets(s, player, defOf(s, card).spell?.targets ?? []);
     if (targets && !castError(s, player, card, targets)) return { type: 'cast', player, card, targets };
@@ -240,13 +241,12 @@ export function nemesisAction(s: GameState, player: PlayerId): Action {
     case 'priority':
       return castOmen(s, player) ?? { type: 'pass', player };
     case 'declareAttackers': {
-      const attackers = s.players[player].challenge
-        ? forcedAttackers(s, player, eligibleAttackers(s))
-        : nemesisAttackers(s, player);
+      const forced = forcedAttackers(s, player, eligibleAttackers(s));
+      const attackers = [...new Set([...forced, ...nemesisAttackers(s, player)])];
       return { type: 'declareAttackers', player, attackers };
     }
     case 'declareBlockers':
-      return { type: 'declareBlockers', player, blocks: s.players[player].challenge ? [] : nemesisBlocks(s, player) };
+      return { type: 'declareBlockers', player, blocks: nemesisBlocks(s, player) };
     case 'chooseTargets': {
       const trigger = s.triggers.find((candidate) => candidate.id === pending.trigger);
       const specs = trigger ? (triggeredAbility(defOf(s, trigger.source), trigger.ability)?.targets ?? []) : [];
@@ -285,8 +285,7 @@ export function hideFaceDownThreats(s: GameState): GameState {
   if (library.length <= 1) return s;
   const view = cloneState(s);
   const sorted = [...library].sort(compareIds);
-  const tiers = [1, 2, 3].map((tier) => sorted.filter((id) => (defOf(s, id).threat?.tier ?? 3) === tier));
-  for (const tier of tiers) shuffleInPlace(view, tier);
-  view.players[seat].library = tiers.flat();
+  shuffleInPlace(view, sorted);
+  view.players[seat].library = sorted;
   return view;
 }

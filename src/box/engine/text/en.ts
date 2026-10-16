@@ -414,6 +414,8 @@ const CHALLENGE_TEXT: Record<ChallengeEffect['kind'], string> = {
   weakSpot: 'Destroy a Head.',
   swallow: 'Your opponent exiles a creature until a Head leaves.',
   freezeHeads: "Tap Heads; they don't untap during your next untap step.",
+  revealHead: 'Reveal your top card: a Head enters, anything else goes to your graveyard.',
+  pingIfUntapped: 'If it is untapped, it deals damage to your opponent.',
 };
 
 const TRIGGER_OPENERS: Record<TriggerEvent, string> = {

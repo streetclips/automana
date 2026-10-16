@@ -10,7 +10,6 @@ export interface Tally {
   lifeInWins: number;
   nemesisLifeInLosses: number;
   mulligans: number;
-  overflows: number;
   ms: number;
   firstError?: string;
 }
@@ -26,7 +25,6 @@ export function emptyTally(): Tally {
     lifeInWins: 0,
     nemesisLifeInLosses: 0,
     mulligans: 0,
-    overflows: 0,
     ms: 0,
   };
 }
@@ -35,7 +33,6 @@ export function addResult(t: Tally, r: GameResult, ms: number): void {
   t.games += 1;
   t.ms += ms;
   t.mulligans += r.mulligans;
-  t.overflows += r.overflows;
   if (r.error) {
     t.errors += 1;
     t.firstError ??= r.error;
@@ -60,7 +57,6 @@ export function merge(into: Tally, from: Tally): void {
   into.lifeInWins += from.lifeInWins;
   into.nemesisLifeInLosses += from.nemesisLifeInLosses;
   into.mulligans += from.mulligans;
-  into.overflows += from.overflows;
   into.ms += from.ms;
   into.firstError ??= from.firstError;
 }

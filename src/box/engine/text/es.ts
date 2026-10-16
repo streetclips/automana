@@ -482,6 +482,8 @@ const CHALLENGE_TEXT: Record<ChallengeEffect['kind'], string> = {
   weakSpot: 'Destruye una Cabeza.',
   swallow: 'Tu rival exilia una criatura hasta que una Cabeza salga.',
   freezeHeads: 'Gira Cabezas; no se enderezan en tu próximo paso de enderezar.',
+  revealHead: 'Revela tu primera carta: una Cabeza entra, lo demás va a tu cementerio.',
+  pingIfUntapped: 'Si está enderezada, hace daño a tu rival.',
 };
 
 const TRIGGER_OPENERS: Record<TriggerEvent, string> = {

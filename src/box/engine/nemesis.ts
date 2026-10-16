@@ -1,11 +1,10 @@
-import { challengeDrawStep } from './challenge';
+import { extraReveals, revealCards } from './challenge';
 import { applyDamage, targetLegality } from './effects';
 import { randomInt } from './rng';
 import {
   changeLife,
   creaturesOf,
   defOf,
-  drawCards,
   getCard,
   getPower,
   getToughness,
@@ -16,8 +15,6 @@ import {
 } from './state';
 import { isPlayerTarget } from './targets';
 import type { CardId, GameState, PlayerId, StackItem, Target, ThreatEffect, Zone } from './types';
-
-export const NEMESIS_CREATURE_LIMIT = 4;
 
 export function isNemesis(s: GameState, player: PlayerId): boolean {
   return s.players[player].nemesis === true;
@@ -30,12 +27,10 @@ export function nemesisSeat(s: GameState): PlayerId | null {
 
 export function arrangeThreatDeck(s: GameState, player: PlayerId): void {
   const ps = s.players[player];
-  const tierOf = (id: CardId): number => defOf(s, id).threat?.tier ?? 3;
-  ps.library = [1, 2, 3].flatMap((tier) => ps.library.filter((id) => tierOf(id) === tier));
   ps.nemesis = true;
   ps.kept = true;
   ps.bottomed = true;
-  ps.overflows = 0;
+  ps.turnRules = [];
 }
 
 export function nemesisDestination(
@@ -45,8 +40,7 @@ export function nemesisDestination(
   to: Zone,
 ): { to: Zone; toBottom: boolean } | null {
   const card = s.cards[id];
-  if (!card || !isNemesis(s, card.owner) || s.players[card.owner].challenge) return null;
-  if (from === 'stack' && to === 'graveyard') return { to: 'library', toBottom: true };
+  if (!card || !isNemesis(s, card.owner)) return null;
   if (from === 'battlefield' && to === 'hand') return { to: 'library', toBottom: false };
   return null;
 }
@@ -57,35 +51,12 @@ export function recursOnDeath(s: GameState, id: CardId, from: Zone, to: Zone): b
   return isNemesis(s, card.owner) && defOf(s, id).threat?.recur === true;
 }
 
-export function overflow(s: GameState, player: PlayerId, card: CardId): void {
-  moveCard(s, card, 'library', { toBottom: true });
-  const ps = s.players[player];
-  ps.overflows = (ps.overflows ?? 0) + 1;
-  applyDamage(s, [{ source: card, target: { player: opponent(player) }, amount: getPower(s, card) }], false);
-}
-
-function enterOrOverflow(s: GameState, player: PlayerId, card: CardId): boolean {
-  if (creaturesOf(s, player).length >= NEMESIS_CREATURE_LIMIT) {
-    overflow(s, player, card);
-    return false;
-  }
+function enter(s: GameState, player: PlayerId, card: CardId): void {
   moveCard(s, card, 'battlefield', { controller: player });
-  return true;
 }
 
 export function nemesisDrawStep(s: GameState, player: PlayerId): void {
-  const challenge = s.players[player].challenge;
-  if (challenge) {
-    challengeDrawStep(s, player, challenge);
-    return;
-  }
-  const next = s.players[player].library[0];
-  if (next === undefined) return;
-  if (isCreatureDef(defOf(s, next)) && creaturesOf(s, player).length >= NEMESIS_CREATURE_LIMIT) {
-    overflow(s, player, next);
-    return;
-  }
-  drawCards(s, player, 1);
+  revealCards(s, player, 1 + extraReveals(s, player));
 }
 
 export function spellTax(s: GameState, player: PlayerId): number {
@@ -107,7 +78,7 @@ export function afterCast(s: GameState, player: PlayerId, card: CardId): void {
   s.stack.splice(index, 1);
   moveCard(s, card, 'graveyard');
   s.events.push({ t: 'counter', card, player });
-  moveCard(s, reminder, 'library', { toBottom: true });
+  moveCard(s, reminder, 'graveyard');
 }
 
 function weaken(s: GameState, card: CardId, amount: number): void {
@@ -161,15 +132,16 @@ function runThreatEffect(s: GameState, effect: ThreatEffect, item: StackItem, ta
         return;
       }
       for (const card of chosen) {
-        if (enterOrOverflow(s, player, card)) s.events.push({ t: 'return', player, card });
+        enter(s, player, card);
+        s.events.push({ t: 'return', player, card });
       }
       return;
     }
     case 'reveal': {
       const revealed = s.players[player].library.slice(0, effect.count);
       for (const card of revealed) {
-        if (isCreatureDef(defOf(s, card))) enterOrOverflow(s, player, card);
-        else moveCard(s, card, 'library', { toBottom: true });
+        if (isCreatureDef(defOf(s, card))) enter(s, player, card);
+        else moveCard(s, card, 'graveyard');
       }
       return;
     }
@@ -213,12 +185,6 @@ export function resolveThreatSpell(s: GameState, item: StackItem): boolean {
   return true;
 }
 
-export function nemesisDiscard(s: GameState, player: PlayerId, amount: number): boolean {
-  if (!isNemesis(s, player)) return false;
-  if (s.players[player].challenge) return true;
-  for (const card of s.players[player].library.slice(0, amount)) {
-    moveCard(s, card, 'graveyard');
-    s.events.push({ t: 'mill', card, player });
-  }
-  return true;
+export function nemesisDiscard(s: GameState, player: PlayerId): boolean {
+  return isNemesis(s, player);
 }

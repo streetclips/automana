@@ -1,5 +1,5 @@
 import { canPay, choosePayment, manaValue, parseCost, type ManaSource } from './mana';
-import { afterChallengeMove, cantLeave, challengeDestination, challengeLifeChange, subtypeCount } from './challenge';
+import { afterChallengeMove, cantLeave, subtypeCount } from './challenge';
 import { nemesisDestination, recursOnDeath, spellTax } from './nemesis';
 import { getCardDef, getCost } from './registry';
 import {
@@ -447,11 +447,10 @@ export function createToken(s: GameState, defId: string, controller: PlayerId): 
   return id;
 }
 
-export function moveCard(s: GameState, id: CardId, requestedDestination: Zone, requested: MoveOptions = {}): void {
+export function moveCard(s: GameState, id: CardId, destination: Zone, requested: MoveOptions = {}): void {
   const card = getCard(s, id);
   const from = card.zone;
   if (from === 'battlefield' && cantLeave(s, id)) return;
-  const destination = challengeDestination(s, id, from, requestedDestination) ?? requestedDestination;
   const def = getCardDef(card.def);
   const exiled =
     from === 'battlefield' &&
@@ -598,7 +597,7 @@ export function drawCards(s: GameState, player: PlayerId, count: number): void {
 }
 
 export function changeLife(s: GameState, player: PlayerId, delta: number): void {
-  if (delta === 0 || challengeLifeChange(s, player, delta)) return;
+  if (delta === 0) return;
   const ps = s.players[player];
   ps.life += delta;
   if (delta < 0) ps.lostLifeThisTurn = true;

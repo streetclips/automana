@@ -1,4 +1,5 @@
-import { applyDamage, sourceHasKeyword, type DamageAssignment, type EffectContext } from './effects';
+import { applyDamage, type DamageAssignment, type EffectContext } from './effects';
+import { shuffleInPlace } from './rng';
 import {
   changeLife,
   creaturesOf,
@@ -15,12 +16,10 @@ import {
   opponent,
   queueTriggers,
 } from './state';
-import { isPlayerTarget } from './targets';
 import type {
   CardId,
   CardType,
   ChallengeEffect,
-  ChallengeKind,
   GameState,
   Keyword,
   PlayerId,
@@ -28,32 +27,12 @@ import type {
   Zone,
 } from './types';
 
-const REVEALS: Record<ChallengeKind, number> = { horde: 2, god: 2, hydra: 1 };
 const ELITE_HEAD_DAMAGE = 2;
 const HIDE_TURNS = 2;
 
-export function challengeOf(s: GameState, player: PlayerId): ChallengeKind | undefined {
-  return s.players[player].challenge;
-}
-
-function seatOf(s: GameState, id: CardId): ChallengeKind | undefined {
+function isNemesisCard(s: GameState, id: CardId): boolean {
   const card = s.cards[id];
-  return card ? s.players[card.owner].challenge : undefined;
-}
-
-export function arrangeChallenge(
-  s: GameState,
-  player: PlayerId,
-  kind: ChallengeKind,
-  options: { headStart?: number } = {},
-): void {
-  const ps = s.players[player];
-  ps.nemesis = true;
-  ps.challenge = kind;
-  ps.kept = true;
-  ps.bottomed = true;
-  ps.turnRules = [];
-  if (options.headStart) s.players[opponent(player)].extraTurns = options.headStart;
+  return card !== undefined && s.players[card.owner].nemesis === true;
 }
 
 function bodyValue(s: GameState, id: CardId): number {
@@ -84,117 +63,48 @@ export function subtypeCount(s: GameState, subtype: string): number {
   return count;
 }
 
+function refill(s: GameState, player: PlayerId): void {
+  const ps = s.players[player];
+  if (ps.library.length > 0 || ps.graveyard.length === 0) return;
+  for (const card of [...ps.graveyard]) moveCard(s, card, 'library');
+  shuffleInPlace(s, ps.library);
+}
+
 export function revealCards(s: GameState, player: PlayerId, count: number): void {
   const ps = s.players[player];
-  for (const card of ps.library.slice(0, count)) {
+  for (let i = 0; i < count; i++) {
+    refill(s, player);
+    const card = ps.library[0];
+    if (card === undefined) return;
     moveCard(s, card, 'hand');
     s.events.push({ t: 'draw', player, card });
   }
 }
 
-export function challengeDrawStep(s: GameState, player: PlayerId, kind: ChallengeKind): void {
-  const extra = s.players[player].battlefield.reduce((sum, id) => sum + (defOf(s, id).challenge?.reveals ?? 0), 0);
-  revealCards(s, player, REVEALS[kind] + extra);
-}
-
-export function syncChallengeLife(s: GameState): void {
-  for (const ps of s.players) {
-    if (ps.challenge === 'horde') ps.life = ps.library.length + creaturesOf(s, ps.id).length;
-  }
-}
-
-function mill(s: GameState, player: PlayerId, amount: number): void {
-  for (const card of s.players[player].library.slice(0, amount)) {
-    moveCard(s, card, 'graveyard');
-    s.events.push({ t: 'mill', card, player });
-  }
-}
-
-export function challengeLifeChange(s: GameState, player: PlayerId, delta: number): boolean {
-  const kind = challengeOf(s, player);
-  if (!kind) return false;
-  if (delta >= 0) return true;
-  if (kind === 'horde') {
-    s.players[player].lostLifeThisTurn = true;
-    mill(s, player, -delta);
-    syncChallengeLife(s);
-    return true;
-  }
-  const source = receiversOf(s, player)[0];
-  if (source) applyDamage(s, [{ source, target: { player }, amount: -delta }], false);
-  return true;
-}
-
-function receiversOf(s: GameState, player: PlayerId): CardId[] {
-  const creatures = creaturesOf(s, player);
-  if (challengeOf(s, player) === 'god') {
-    const anchors = creatures.filter((id) => defOf(s, id).challenge?.anchor);
-    return [...creatures.filter((id) => !defOf(s, id).challenge?.anchor), ...anchors];
-  }
-  return creatures;
-}
-
-export function redirectDamage(s: GameState, assignments: DamageAssignment[]): DamageAssignment[] {
-  const redirected = (assignment: DamageAssignment): boolean => {
-    if (!isPlayerTarget(assignment.target)) return false;
-    const kind = challengeOf(s, assignment.target.player);
-    return kind === 'god' || kind === 'hydra';
-  };
-  if (!assignments.some(redirected)) return assignments;
-  const planned = new Map<CardId, number>();
-  const remaining = (id: CardId, deathtouch: boolean): number => {
-    if (hasKeyword(s, id, 'indestructible')) return Number.POSITIVE_INFINITY;
-    const left = getToughness(s, id) - getCard(s, id).damage - (planned.get(id) ?? 0);
-    return deathtouch && left > 0 && (planned.get(id) ?? 0) === 0 ? 1 : left;
-  };
-  const kept = assignments.filter((assignment) => !redirected(assignment));
-  const chunks = assignments.filter(redirected).sort((a, b) => b.amount - a.amount);
-  for (const chunk of chunks) {
-    const seat = (chunk.target as { player: PlayerId }).player;
-    const deathtouch = sourceHasKeyword(s, chunk.source, 'deathtouch');
-    const alive = receiversOf(s, seat).filter((id) => onBattlefield(s, id) && remaining(id, false) > 0);
-    const open = alive.filter((id) => !defOf(s, id).challenge?.anchor || alive.every((other) => other === id));
-    const killable = open.filter((id) => remaining(id, deathtouch) <= chunk.amount);
-    const pick =
-      killable.sort((a, b) => remaining(b, deathtouch) - remaining(a, deathtouch))[0] ??
-      open.sort((a, b) => remaining(a, deathtouch) - remaining(b, deathtouch))[0];
-    if (!pick) continue;
-    planned.set(pick, (planned.get(pick) ?? 0) + chunk.amount);
-    kept.push({ ...chunk, target: { card: pick } });
-  }
-  return kept;
-}
-
-export function challengeDestination(s: GameState, id: CardId, from: Zone, to: Zone): Zone | null {
-  if (!seatOf(s, id) || from !== 'battlefield') return null;
-  return to === 'hand' || to === 'exile' ? 'graveyard' : null;
+export function extraReveals(s: GameState, player: PlayerId): number {
+  return s.players[player].battlefield.reduce((sum, id) => {
+    const info = defOf(s, id).challenge;
+    if (!info?.reveals || (info.revealsWith !== undefined && revelers(s).length < info.revealsWith)) return sum;
+    return sum + info.reveals;
+  }, 0);
 }
 
 export function cantLeave(s: GameState, id: CardId): boolean {
-  return defOf(s, id).challenge?.anchor === true && seatOf(s, id) === 'god' && revelers(s).length > 0;
-}
-
-function regrow(s: GameState, player: PlayerId): void {
-  for (const card of s.players[player].library.slice(0, 2)) {
-    if (hasSubtype(defOf(s, card), 'Head')) moveCard(s, card, 'battlefield', { controller: player });
-    else moveCard(s, card, 'graveyard');
-  }
+  return defOf(s, id).challenge?.anchor === true && isNemesisCard(s, id) && revelers(s).length > 0;
 }
 
 export function afterChallengeMove(s: GameState, id: CardId, from: Zone, to: Zone): void {
-  const kind = seatOf(s, id);
-  if (!kind) return;
+  if (!isNemesisCard(s, id)) return;
   const owner = getCard(s, id).owner;
   if (to === 'graveyard') queueTriggers(s, id, 'graveyard', owner);
   if (from !== 'battlefield' || to === 'battlefield') return;
   if (defOf(s, id).challenge?.anchor) s.players[owner].defeated = true;
-  if (kind !== 'hydra' || !hasSubtype(defOf(s, id), 'Head')) return;
+  if (!hasSubtype(defOf(s, id), 'Head')) return;
   const swallowed = s.players[owner].swallowed ?? [];
   s.players[owner].swallowed = [];
   for (const card of swallowed) {
     if (s.cards[card]?.zone === 'exile') moveCard(s, card, 'battlefield', { controller: getCard(s, card).owner });
   }
-  regrow(s, owner);
 }
 
 function addRule(s: GameState, player: PlayerId, rule: TurnRule, source: CardId): void {
@@ -350,6 +260,18 @@ export function runChallengeEffect(s: GameState, effect: ChallengeEffect, ctx: E
       if (elite) s.players[seat].extraTurns = (s.players[seat].extraTurns ?? 0) + 1;
       return;
     }
+    case 'revealHead':
+      for (let i = 0; i < effect.count; i++) {
+        refill(s, seat);
+        const card = s.players[seat].library[0];
+        if (card === undefined) return;
+        if (hasSubtype(defOf(s, card), 'Head')) moveCard(s, card, 'battlefield', { controller: seat });
+        else moveCard(s, card, 'graveyard');
+      }
+      return;
+    case 'pingIfUntapped':
+      if (onBattlefield(s, ctx.source) && !getCard(s, ctx.source).tapped) damagePlayer(s, ctx.source, foe, effect.amount);
+      return;
     case 'swallow': {
       const victim = byValue(s, creaturesOf(s, foe))[0];
       if (!victim) return;
@@ -388,15 +310,8 @@ export function forcedAttackers(s: GameState, player: PlayerId, eligible: CardId
 
 export function challengeBeginCombat(s: GameState): void {
   const seat = s.activePlayer;
-  const kind = challengeOf(s, seat);
-  if (!kind) return;
+  if (!s.players[seat].nemesis) return;
   const foe = opponent(seat);
-  if (kind === 'hydra') {
-    const assignments = heads(s, seat)
-      .filter((id) => !getCard(s, id).tapped)
-      .map((id) => ({ source: id, target: { player: foe } as const, amount: headDamage(s, id) }));
-    applyDamage(s, assignments, true);
-  }
   for (const rule of rulesOf(s, seat)) {
     switch (rule.kind) {
       case 'combatDamage': {
@@ -431,7 +346,7 @@ export function challengeBeginCombat(s: GameState): void {
 
 export function challengeAttacks(s: GameState, attackers: CardId[]): void {
   const seat = s.activePlayer;
-  if (!challengeOf(s, seat) || attackers.length === 0) return;
+  if (!s.players[seat].nemesis || attackers.length === 0) return;
   for (const rule of rulesOf(s, seat)) {
     if (rule.kind !== 'attackers') continue;
     for (const id of attackers.filter((card) => hasSubtype(defOf(s, card), rule.subtype))) {
@@ -452,15 +367,13 @@ export function challengeEndCombat(s: GameState): void {
 }
 
 export function challengeUntap(s: GameState, player: PlayerId): void {
-  if (!challengeOf(s, player)) return;
+  if (!s.players[player].nemesis) return;
   s.players[opponent(player)].silenced = false;
   s.players[player].swallowed = [];
 }
 
 export function challengeCleanup(s: GameState): void {
   for (const ps of s.players) {
-    if (!ps.challenge) continue;
-    ps.turnRules = [];
-    if (ps.challenge === 'hydra' && heads(s, ps.id).length === 0) ps.defeated = true;
+    if (ps.nemesis) ps.turnRules = [];
   }
 }

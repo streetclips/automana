@@ -2,7 +2,6 @@ import {
   applyAction,
   blockOptions,
   blocksError,
-  cloneState,
   defOf,
   getCost,
   hasKeyword,
@@ -25,7 +24,6 @@ import { quickTargets } from './targets';
 
 const MAX_FORECAST_ACTIONS = 200;
 const MIN_GAIN = 0.5;
-const GUESSES = 3;
 const NEMESIS_PRECOMBAT: ReadonlySet<Step> = new Set([
   'untap',
   'upkeep',
@@ -141,19 +139,7 @@ export function forecast(start: GameState, player: PlayerId): GameState {
   return s;
 }
 
-function guesses(s: GameState, player: PlayerId): GameState[] {
-  const seat = opponent(player);
-  const library = s.players[seat].library;
-  if (s.activePlayer !== player || s.players[seat].challenge) return [s];
-  return library.slice(0, GUESSES).map((next) => {
-    const guess = cloneState(s);
-    guess.players[seat].library = [next, ...library.filter((card) => card !== next)];
-    return guess;
-  });
-}
-
 export function evaluateAhead(s: GameState, player: PlayerId): number {
   if (!needsForecast(s, player)) return evaluate(s, player);
-  const outcomes = guesses(s, player).map((guess) => evaluate(forecast(guess, player), player));
-  return outcomes.reduce((sum, value) => sum + value, 0) / Math.max(1, outcomes.length);
+  return evaluate(forecast(s, player), player);
 }

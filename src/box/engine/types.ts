@@ -229,8 +229,6 @@ export type ThreatEffect =
   | { kind: 'randomDiscard'; fallback: number }
   | { kind: 'tapAll' };
 
-export type ChallengeKind = 'horde' | 'god' | 'hydra';
-
 export type TurnRule = (
   | { kind: 'attackers'; subtype: string; power: number; keywords: Keyword[]; destroy?: boolean }
   | { kind: 'mustAttack'; subtype: string; haste?: boolean; keywords?: Keyword[] }
@@ -254,19 +252,22 @@ export type ChallengeEffect =
   | { kind: 'breath'; amount: number }
   | { kind: 'weakSpot' }
   | { kind: 'swallow' }
-  | { kind: 'freezeHeads'; count: number };
+  | { kind: 'freezeHeads'; count: number }
+  | { kind: 'revealHead'; count: number }
+  | { kind: 'pingIfUntapped'; amount: number };
 
 export interface ChallengeInfo {
   mustAttack?: boolean | number;
   reveals?: number;
+  revealsWith?: number;
   anchor?: boolean;
   elite?: boolean;
   flame?: number;
   panic?: number;
+  passive?: boolean;
 }
 
 export interface ThreatInfo {
-  tier: 1 | 2 | 3;
   effect?: ThreatEffect;
   recur?: boolean;
   tax?: number;
@@ -346,10 +347,7 @@ export interface PlayerState {
   drawOnFirstTurn?: boolean;
   nemesis?: boolean;
   spellsCastThisTurn?: number;
-  overflows?: number;
-  challenge?: ChallengeKind;
   turnRules?: TurnRule[];
-  turnsBeforeFirst?: number;
   extraTurns?: number;
   silenced?: boolean;
   swallowed?: CardId[];

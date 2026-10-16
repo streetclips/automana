@@ -16,6 +16,7 @@ import {
 } from '../engine';
 import { nemesisDrawStep } from '../engine/nemesis';
 import { hideFaceDownThreats, nemesisAction, nemesisAttackers, nemesisBlocks, nemesisTargets } from './mind';
+import './challenges';
 import { NEMESES, getNemesis } from './threats';
 
 const TEST_CARDS: CardDef[] = [
@@ -147,14 +148,12 @@ function resolveStack(s: GameState): GameState {
   return passAll(s, (state) => state.stack.length === 0 && state.pending?.kind === 'priority');
 }
 
-test('the Nemesis has 20 life and a Threat deck in tiers from the top', () => {
+test('the Nemesis has 20 life, a shuffled Threat deck and no hand', () => {
   const nemesis = getNemesis('vorthrax');
   const s = createGame({ seed: 7, players: [{ deck: Array.from({ length: 40 }, () => 'zz_land') }, { deck: nemesis.threats, nemesis: true }] });
   assert.equal(s.players[1].library.length, 20);
   assert.equal(s.players[1].life, 20);
   assert.equal(s.players[1].hand.length, 0);
-  const tiers = s.players[1].library.map((id) => getCardDef(getCard(s, id).def).threat?.tier ?? 0);
-  assert.deepEqual(tiers, [...tiers].sort((a, b) => a - b));
   assert.equal(s.startingPlayer, 0);
   for (const deck of NEMESES) assert.equal(deck.threats.length, 20, deck.id);
 });
@@ -182,7 +181,7 @@ test('damage lowers the Nemesis life and leaves its Threat deck alone', () => {
   assert.deepEqual(s.players[1].graveyard, []);
 });
 
-test('Nemesis spells go face-down to the bottom after resolving', () => {
+test('Nemesis spells go to its graveyard after resolving', () => {
   let s = scenario({
     activePlayer: 1,
     players: [{ battlefield: ['zz_bear'] }, { hand: ['nm_searing_breath'], library: ['zt_ash_imp', 'zt_cinderclaw_brute'] }],
@@ -191,23 +190,33 @@ test('Nemesis spells go face-down to the bottom after resolving', () => {
   s = act(s, nemesisAction(s, 1));
   assert.equal(s.stack.length, 1);
   s = resolveStack(s);
-  assert.equal(s.players[1].library.at(-1), breath);
+  assert.deepEqual(s.players[1].graveyard, [breath]);
   assert.equal(s.players[1].life, 20);
   assert.equal(s.players[0].battlefield.includes(idOf(s, 'zz_bear')), false);
 });
 
-test('overflow: a fifth creature hits the player for its power and goes to the bottom', () => {
+test('the Nemesis reveals one card a turn, and one more for each permanent that says so', () => {
   const s = scenario({
     activePlayer: 1,
     players: [{}, { battlefield: ['zt_ash_imp', 'zt_ash_imp', 'zt_ash_imp', 'zt_magma_sentinel'], library: ['zt_lava_behemoth', 'zt_ash_imp', 'zt_cinderclaw_brute'] }],
   });
-  const behemoth = idOf(s, 'zt_lava_behemoth');
   const t = cloneState(s);
   nemesisDrawStep(t, 1);
-  assert.equal(t.players[0].life, 20 - (getCardDef('zt_lava_behemoth').power ?? 0));
-  assert.equal(t.players[1].library.at(-1), behemoth);
-  assert.equal(t.players[1].hand.length, 0);
-  assert.equal(t.players[1].overflows, 1);
+  assert.deepEqual(t.players[1].hand, [idOf(s, 'zt_lava_behemoth')]);
+  const u = scenario({
+    activePlayer: 1,
+    players: [{}, { battlefield: ['ch_war_drums'], library: ['zt_ash_imp', 'zt_cinderclaw_brute', 'zt_lava_behemoth'] }],
+  });
+  nemesisDrawStep(u, 1);
+  assert.equal(u.players[1].hand.length, 2);
+});
+
+test('with an empty library the Nemesis shuffles its graveyard into a new one', () => {
+  const s = scenario({ activePlayer: 1, players: [{}, { library: [], graveyard: ['zt_ash_imp', 'zt_cinderclaw_brute'] }] });
+  nemesisDrawStep(s, 1);
+  assert.equal(s.players[1].hand.length, 1);
+  assert.equal(s.players[1].library.length, 1);
+  assert.deepEqual(s.players[1].graveyard, []);
 });
 
 test('attack rule: stay home only when a blocker could kill and survive', () => {
@@ -279,19 +288,19 @@ test('bouncing a Nemesis creature puts it on top of its Threat deck', () => {
   assert.equal(s.players[1].life, 20);
 });
 
-test('making the Nemesis discard sends its top Threats to the Ruin', () => {
+test('making the Nemesis discard does nothing', () => {
   let s = scenario({
     players: [{ hand: ['zz_mind_rot'], battlefield: ['zz_land'] }, { library: ['zt_ash_imp', 'zt_cinderclaw_brute', 'zt_scorch_fiend', 'zt_lava_behemoth'] }],
   });
-  const [first, second, third, fourth] = s.players[1].library;
+  const library = [...s.players[1].library];
   s = act(s, { type: 'cast', player: 0, card: idOf(s, 'zz_mind_rot'), targets: [] });
   s = resolveStack(s);
-  assert.deepEqual(s.players[1].library, [third, fourth]);
-  assert.deepEqual(s.players[1].graveyard, [first, second]);
+  assert.deepEqual(s.players[1].library, library);
+  assert.deepEqual(s.players[1].graveyard, []);
   assert.equal(s.players[1].life, 20);
 });
 
-test('Counterspell waits for the next spell, counters it, then goes to the bottom', () => {
+test('Counterspell waits for the next spell, counters it, then goes to the graveyard', () => {
   let s = scenario({
     activePlayer: 1,
     players: [{ hand: ['zz_opt', 'zz_opt'], battlefield: ['zz_land', 'zz_land'], library: ['zz_land', 'zz_land', 'zz_land'] }, { hand: ['nm_counterspell'], library: ['zt_ash_imp', 'zt_cinderclaw_brute'] }],
@@ -304,7 +313,7 @@ test('Counterspell waits for the next spell, counters it, then goes to the botto
   const [first, second] = idsOf(s, 'zz_opt');
   s = act(s, { type: 'cast', player: 0, card: first as string, targets: [] });
   assert.equal(getCard(s, first as string).zone, 'graveyard');
-  assert.equal(s.players[1].library.at(-1), counter);
+  assert.equal(getCard(s, counter).zone, 'graveyard');
   s = resolveStack(s);
   const handBefore = s.players[0].hand.length;
   s = act(s, { type: 'cast', player: 0, card: second as string, targets: [] });
@@ -330,7 +339,7 @@ test('Refraction Golem: the first spell each turn costs 1 more', () => {
   assert.equal(castBlocker(s, 0, b as string), null);
 });
 
-test('Brood executes the creatures it reveals and sends the rest to the bottom', () => {
+test('Brood executes the creatures it reveals and sends the rest to the graveyard', () => {
   let s = scenario({
     activePlayer: 1,
     players: [{}, { hand: ['nm_brood'], library: ['zt_armored_drone', 'nm_pheromones', 'zt_darting_wasp', 'zt_ash_imp'] }],
@@ -341,17 +350,17 @@ test('Brood executes the creatures it reveals and sends the rest to the bottom',
   s = act(s, nemesisAction(s, 1));
   s = resolveStack(s);
   assert.equal(getCard(s, drone).zone, 'battlefield');
-  assert.deepEqual(s.players[1].library.slice(-2), [pheromones, brood]);
+  assert.deepEqual(s.players[1].graveyard, [pheromones, brood]);
   assert.equal(s.players[1].library[0], idOf(s, 'zt_darting_wasp'));
 });
 
-test('Egg Laying executes one creature, or sends a spell to the bottom', () => {
+test('Egg Laying executes one creature, or sends a spell to the graveyard', () => {
   let s = scenario({ activePlayer: 1, players: [{}, { hand: ['nm_egg_laying'], library: ['nm_insect_plague', 'zt_ash_imp', 'zt_armored_drone'] }] });
   const plague = idOf(s, 'nm_insect_plague');
   s = act(s, nemesisAction(s, 1));
   s = resolveStack(s);
   assert.equal(s.players[1].battlefield.length, 0);
-  assert.equal(s.players[1].library.at(-2), plague);
+  assert.ok(s.players[1].graveyard.includes(plague));
 });
 
 test('Uprising returns the two strongest creatures from the Ruin; Exhume with an empty Ruin costs 2 life', () => {

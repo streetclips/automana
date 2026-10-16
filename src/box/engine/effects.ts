@@ -1,5 +1,5 @@
 import { parseCost } from './mana';
-import { challengeOf, redirectDamage, runChallengeEffect } from './challenge';
+import { runChallengeEffect } from './challenge';
 import { nemesisDiscard, resolveThreatSpell } from './nemesis';
 import { getCardDef } from './registry';
 import { shuffleInPlace } from './rng';
@@ -64,7 +64,7 @@ export function sourceHasKeyword(s: GameState, source: CardId, keyword: Keyword)
 
 export function applyDamage(s: GameState, assignments: DamageAssignment[], combat: boolean): void {
   const lifelinkGains = new Map<PlayerId, number>();
-  for (const assignment of redirectDamage(s, assignments)) {
+  for (const assignment of assignments) {
     const { source, target, amount } = assignment;
     if (amount <= 0) continue;
     if (isPlayerTarget(target)) {
@@ -306,7 +306,7 @@ export function executeEffects(s: GameState, effects: Effect[], ctx: EffectConte
       }
       case 'draw': {
         const player = playerOf(ctx, effect.who);
-        if (!challengeOf(s, player)) drawCards(s, player, effect.amount);
+        if (!s.players[player].nemesis) drawCards(s, player, effect.amount);
         break;
       }
       case 'gainLife':
@@ -350,7 +350,7 @@ export function executeEffects(s: GameState, effects: Effect[], ctx: EffectConte
         break;
       case 'discard': {
         const player = playerOf(ctx, effect.who);
-        if (nemesisDiscard(s, player, effect.amount)) break;
+        if (nemesisDiscard(s, player)) break;
         const count = Math.min(effect.amount, s.players[player].hand.length);
         if (count > 0) s.pending = { kind: 'discard', player, count, source: ctx.source };
         break;

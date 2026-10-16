@@ -3,7 +3,6 @@ import { chooseAction } from '../ai';
 import {
   applyAction,
   castBlocker,
-  createGame,
   createScenario,
   getCardDef,
   registerCard,
@@ -12,8 +11,8 @@ import {
   type ScenarioSpec,
   type Target,
 } from '../engine';
-import { challengeDrawStep } from '../engine/challenge';
-import { CHALLENGES } from './challenges';
+import { nemesisDrawStep } from '../engine/nemesis';
+import './challenges';
 import { nemesisAction } from './mind';
 
 const TEST_CARDS: CardDef[] = [
@@ -33,11 +32,11 @@ const TEST_CARDS: CardDef[] = [
     spell: { targets: [{ kind: 'creature' }], effects: [{ kind: 'destroy', to: 0 }] },
   },
   {
-    id: 'zc_unsummon',
-    name: 'Test Unsummon',
+    id: 'zc_shatter',
+    name: 'Test Shatter',
     types: ['instant'],
     cost: '{1}',
-    spell: { targets: [{ kind: 'creature' }], effects: [{ kind: 'bounce', to: 0 }] },
+    spell: { targets: [{ kind: 'permanent', types: ['artifact'] }], effects: [{ kind: 'destroy', to: 0 }] },
   },
 ];
 for (const def of TEST_CARDS) registerCard(def);
@@ -88,63 +87,21 @@ function cast(s: GameState, card: string, target: Target): GameState {
   return settle(applyAction(s, { type: 'cast', player: 0, card, targets: [target] }));
 }
 
-function scenario(kind: 'horde' | 'god' | 'hydra', spec: ScenarioSpec): GameState {
+function scenario(spec: ScenarioSpec): GameState {
   const nemesis = spec.players[1] ?? {};
-  return createScenario({ ...spec, players: [spec.players[0], { ...nemesis, challenge: kind }] });
+  return createScenario({ ...spec, players: [spec.players[0], { ...nemesis, nemesis: true }] });
 }
 
-const caster = { battlefield: ['zc_land', 'zc_land'] };
+const caster = { battlefield: ['zc_land', 'zc_land', 'zc_land'] };
 
-test('damage to the Horde mills that many cards, and its life is its library plus its creatures', () => {
-  let s = scenario('horde', {
-    players: [{ ...caster, hand: ['zc_blast'] }, { battlefield: ['ch_hornbound_whelp'], library: Array(5).fill('ch_hornbound_whelp') }],
-  });
-  assert.equal(s.players[1].life, 6);
-  s = cast(s, idOf(s, 'zc_blast'), { player: 1 });
-  assert.equal(s.players[1].library.length, 2);
-  assert.equal(s.players[1].graveyard.length, 3);
-  assert.equal(s.players[1].life, 3);
-});
-
-test("a Horde artifact milled from the library gives the player its Hero's Reward", () => {
-  let s = scenario('horde', {
-    players: [
-      { ...caster, hand: ['zc_blast'] },
-      { library: ['ch_spring_draught', 'ch_hornbound_whelp', 'ch_hornbound_whelp', 'ch_hornbound_whelp'] },
-    ],
-  });
-  s = cast(s, idOf(s, 'zc_blast'), { player: 1 });
+test("a Stampede artifact put into a graveyard gives the player its Hero's Reward", () => {
+  let s = scenario({ players: [{ ...caster, hand: ['zc_shatter'] }, { battlefield: ['ch_spring_draught'] }] });
+  s = cast(s, idOf(s, 'zc_shatter'), { card: idOf(s, 'ch_spring_draught') });
   assert.equal(s.players[0].life, 25);
 });
 
-test('the player wins when the Horde has no library and no creatures', () => {
-  let s = scenario('horde', { players: [{ ...caster, hand: ['zc_blast'] }, { library: ['ch_hornbound_whelp'] }] });
-  s = applyAction(s, { type: 'cast', player: 0, card: idOf(s, 'zc_blast'), targets: [{ player: 1 }] });
-  s = playUntil(s, (state) => state.pending?.kind === 'gameOver');
-  assert.deepEqual(s.pending, { kind: 'gameOver', winner: 0, reason: 'life' });
-});
-
-test("the player takes the Stampede's head-start turns before its first turn", () => {
-  const stampede = CHALLENGES.find((deck) => deck.id === 'stampede');
-  assert.ok(stampede);
-  let s = createGame({
-    seed: 3,
-    players: [{ deck: Array(40).fill('zc_land') }, { deck: stampede.threats, nemesis: true, challenge: 'horde', headStart: stampede.headStart }],
-  });
-  s = playUntil(s, (state) => state.activePlayer === 1);
-  assert.equal(s.turn, (stampede.headStart ?? 0) + 2);
-});
-
-test('the Horde reveals two cards and one more for each of its artifacts', () => {
-  const s = scenario('horde', {
-    players: [{}, { battlefield: ['ch_looted_idol'], library: Array(6).fill('ch_hornbound_whelp') }],
-  });
-  challengeDrawStep(s, 1, 'horde');
-  assert.equal(s.players[1].hand.length, 3);
-});
-
 test('Blood Frenzy pumps the attacking Minotaurs and destroys them at end of combat', () => {
-  let s = scenario('horde', {
+  let s = scenario({
     activePlayer: 1,
     players: [{}, { hand: ['ch_blood_frenzy'], battlefield: ['ch_hornbound_whelp'], library: Array(5).fill('ch_hornbound_reaver') }],
   });
@@ -153,15 +110,9 @@ test('Blood Frenzy pumps the attacking Minotaurs and destroys them at end of com
   assert.ok(s.players[1].graveyard.includes(idOf(s, 'ch_hornbound_whelp')));
 });
 
-test("a Challenge permanent that would go to its owner's hand goes to the graveyard", () => {
-  let s = scenario('horde', { players: [{ ...caster, hand: ['zc_unsummon'] }, { battlefield: ['ch_hornbound_whelp'] }] });
-  s = cast(s, idOf(s, 'zc_unsummon'), { card: idOf(s, 'ch_hornbound_whelp') });
-  assert.deepEqual(s.players[1].graveyard, [idOf(s, 'ch_hornbound_whelp')]);
-});
-
 test("the Revel King can't leave while a Reveler is on the battlefield, and the player wins when it leaves", () => {
-  let s = scenario('god', {
-    players: [{ ...caster, battlefield: [...caster.battlefield, 'zc_land'], hand: ['zc_murder', 'zc_murder', 'zc_murder'] }, { battlefield: ['ch_revel_king', 'ch_drunken_throng'] }],
+  let s = scenario({
+    players: [{ ...caster, hand: ['zc_murder', 'zc_murder', 'zc_murder'] }, { battlefield: ['ch_revel_king', 'ch_drunken_throng'] }],
   });
   const [first, second, third] = idsOf(s, 'zc_murder') as [string, string, string];
   s = cast(s, first, { card: idOf(s, 'ch_revel_king') });
@@ -172,15 +123,18 @@ test("the Revel King can't leave while a Reveler is on the battlefield, and the 
   assert.deepEqual(s.pending, { kind: 'gameOver', winner: 0, reason: 'challenge' });
 });
 
-test('damage to the Revel King player goes to a Reveler it can kill, not to the King', () => {
-  let s = scenario('god', { players: [{ ...caster, hand: ['zc_blast'] }, { battlefield: ['ch_revel_king', 'ch_drunken_throng'] }] });
-  s = cast(s, idOf(s, 'zc_blast'), { player: 1 });
-  assert.ok(s.players[1].graveyard.includes(idOf(s, 'ch_drunken_throng')));
-  assert.equal(s.cards[idOf(s, 'ch_revel_king')]?.damage, 0);
+test('the Revel King reveals one more card each turn while there are three or more Revelers', () => {
+  const library = Array(4).fill('ch_kings_strike');
+  const few = scenario({ activePlayer: 1, players: [{}, { battlefield: ['ch_revel_king', 'ch_drunken_throng', 'ch_drunken_throng'], library }] });
+  nemesisDrawStep(few, 1);
+  assert.equal(few.players[1].hand.length, 1);
+  const party = scenario({ activePlayer: 1, players: [{}, { battlefield: ['ch_revel_king', 'ch_drunken_throng', 'ch_drunken_throng', 'ch_drunken_throng'], library }] });
+  nemesisDrawStep(party, 1);
+  assert.equal(party.players[1].hand.length, 2);
 });
 
 test('Frenzied Piper entering makes the Revel King attack this turn', () => {
-  let s = scenario('god', {
+  let s = scenario({
     activePlayer: 1,
     players: [{}, { hand: ['ch_frenzied_piper'], battlefield: ['ch_revel_king'], library: Array(5).fill('ch_kings_strike') }],
   });
@@ -188,14 +142,15 @@ test('Frenzied Piper entering makes the Revel King attack this turn', () => {
   assert.equal(s.players[0].life, 20 - (getCardDef('ch_revel_king').power ?? 0));
 });
 
-test('damage to the Hydra kills a Head, and the Head that leaves reveals two cards: Heads enter, sorceries go to the graveyard', () => {
-  let s = scenario('hydra', {
+test('a Head that dies reveals two cards: Heads enter, the rest goes to the graveyard', () => {
+  let s = scenario({
     players: [
       { ...caster, hand: ['zc_blast'] },
       { battlefield: ['ch_lesser_head', 'ch_brute_head'], library: ['ch_lesser_head', 'ch_weak_spot', 'ch_lesser_head'] },
     ],
   });
-  s = cast(s, idOf(s, 'zc_blast'), { player: 1 });
+  const [dying] = s.players[1].battlefield;
+  s = cast(s, idOf(s, 'zc_blast'), { card: dying as string });
   const heads = s.players[1].battlefield.map((id) => s.cards[id]?.def);
   assert.deepEqual(heads.sort(), ['ch_brute_head', 'ch_lesser_head']);
   assert.ok(s.players[1].graveyard.includes(idOf(s, 'ch_weak_spot')));
@@ -203,28 +158,18 @@ test('damage to the Hydra kills a Head, and the Head that leaves reveals two car
   assert.equal(s.players[0].life, 22);
 });
 
-test('on its turn each untapped Head deals 1 damage to the player, and each elite Head 2', () => {
-  let s = scenario('hydra', {
+test('at the start of its combat each untapped Head deals 1 damage, and Heads never attack', () => {
+  let s = scenario({
     activePlayer: 1,
-    players: [{}, { battlefield: ['ch_lesser_head', 'ch_brute_head', { card: 'ch_lesser_head', tapped: true }], library: Array(5).fill('ch_weak_spot') }],
+    players: [{}, { battlefield: ['ch_lesser_head', 'ch_brute_head', { card: 'ch_lesser_head', tapped: true }], library: Array(5).fill('ch_iron_scales') }],
   });
   s = playUntil(s, (state) => state.step === 'main2');
-  assert.equal(s.players[0].life, 17);
-});
-
-test('the player wins at the end of a turn with no Heads on the battlefield', () => {
-  let s = scenario('hydra', {
-    players: [{ ...caster, hand: ['zc_blast'] }, { battlefield: ['ch_lesser_head'], library: ['ch_dazing_gaze', 'ch_dazing_gaze'] }],
-  });
-  s = cast(s, idOf(s, 'zc_blast'), { player: 1 });
-  assert.equal(s.pending?.kind, 'priority');
-  s = playUntil(s, (state) => state.pending?.kind === 'gameOver');
-  assert.deepEqual(s.pending, { kind: 'gameOver', winner: 0, reason: 'challenge' });
-  assert.equal(s.turn, 3);
+  assert.equal(s.players[0].life, 18);
+  assert.equal(s.combat, null);
 });
 
 test("Dazing Gaze stops the player from casting spells until the Hydra's next turn", () => {
-  let s = scenario('hydra', {
+  let s = scenario({
     activePlayer: 1,
     players: [{ ...caster, hand: ['zc_blast'] }, { hand: ['ch_dazing_gaze'], battlefield: ['ch_brute_head'], library: Array(5).fill('ch_iron_scales') }],
   });

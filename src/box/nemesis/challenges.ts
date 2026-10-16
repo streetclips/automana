@@ -21,6 +21,7 @@ interface CreatureSpec {
   triggers?: TriggeredAbility[];
   challenge?: ChallengeInfo;
   entersTapped?: boolean;
+  statics?: StaticAbility[];
 }
 
 function creature(spec: CreatureSpec): CardDef {
@@ -35,6 +36,7 @@ function creature(spec: CreatureSpec): CardDef {
     triggers: spec.triggers,
     challenge: spec.challenge,
     entersTapped: spec.entersTapped,
+    statics: spec.statics,
   };
 }
 
@@ -69,6 +71,8 @@ const relic = (reward: Effect): { challenge: ChallengeInfo; triggers: TriggeredA
   triggers: [on('graveyard', reward)],
 });
 const minotaur = ['Minotaur'];
+const ping = (amount: number): TriggeredAbility => on('beginCombat', rule({ kind: 'pingIfUntapped', amount }));
+const regrow = on('dies', rule({ kind: 'revealHead', count: 2 }));
 
 const CARDS: CardDef[] = [
   creature({ id: 'ch_hornbound_raider', name: 'Hornbound Raider', subtypes: minotaur, power: 3, toughness: 2, keywords: ['haste'], challenge: { mustAttack: true } }),
@@ -95,6 +99,7 @@ const CARDS: CardDef[] = [
   permanent('ch_looted_idol', 'Looted Idol', ['artifact'], relic(draw)),
   permanent('ch_spring_draught', 'Spring Draught', ['artifact'], relic(gain(5))),
   permanent('ch_healing_balm', 'Healing Balm', ['artifact'], relic(rule({ kind: 'returnCreatures' }))),
+  permanent('ch_war_drums', 'War Drums', ['enchantment'], { challenge: { reveals: 1 } }),
 
   creature({
     id: 'ch_revel_king',
@@ -103,7 +108,8 @@ const CARDS: CardDef[] = [
     subtypes: ['God'],
     power: 3,
     toughness: 5,
-    challenge: { anchor: true },
+    challenge: { anchor: true, reveals: 1, revealsWith: 3, passive: true },
+    statics: [{ kind: 'cantBlock' }],
   }),
   creature({
     id: 'ch_crazed_nymph',
@@ -112,7 +118,7 @@ const CARDS: CardDef[] = [
     subtypes: ['Nymph', 'Reveler'],
     power: 4,
     toughness: 2,
-    challenge: { mustAttack: 5 },
+    challenge: { mustAttack: 5, passive: true },
     triggers: [on('dies', gain(3))],
   }),
   creature({
@@ -121,19 +127,24 @@ const CARDS: CardDef[] = [
     subtypes: ['Satyr', 'Reveler'],
     power: 2,
     toughness: 1,
+    challenge: { passive: true },
     triggers: [on('enters', rule({ kind: 'turnRule', rule: { kind: 'mustAttack', subtype: 'God' } })), on('dies', gain(2))],
   }),
-  creature({ id: 'ch_wildband_centaur', name: 'Wildband Centaur', subtypes: ['Centaur', 'Reveler'], power: 4, toughness: 2, triggers: [on('dies', draw)] }),
+  creature({ id: 'ch_wildband_centaur', name: 'Wildband Centaur', subtypes: ['Centaur', 'Reveler'], power: 4, toughness: 2, challenge: { passive: true },
+    triggers: [on('dies', draw)] }),
   creature({
     id: 'ch_drunken_throng',
     name: 'Drunken Throng',
     subtypes: ['Human', 'Reveler'],
     power: 1,
     toughness: 1,
+    challenge: { passive: true },
     triggers: [on('enters', rule({ kind: 'revealCast', count: 1 }))],
   }),
-  creature({ id: 'ch_viper_dancers', name: 'Viper Dancers', subtypes: ['Human', 'Reveler'], power: 2, toughness: 2, keywords: ['deathtouch'], triggers: [on('dies', draw)] }),
-  creature({ id: 'ch_howling_maenads', name: 'Howling Maenads', subtypes: ['Human', 'Reveler'], power: 3, toughness: 1, keywords: ['firstStrike'], triggers: [on('dies', gain(3))] }),
+  creature({ id: 'ch_viper_dancers', name: 'Viper Dancers', subtypes: ['Human', 'Reveler'], power: 2, toughness: 2, keywords: ['deathtouch'], challenge: { passive: true },
+    triggers: [on('dies', draw)] }),
+  creature({ id: 'ch_howling_maenads', name: 'Howling Maenads', subtypes: ['Human', 'Reveler'], power: 3, toughness: 1, keywords: ['firstStrike'], challenge: { passive: true },
+    triggers: [on('dies', gain(3))] }),
   sorcery('ch_reckless_rush', 'Reckless Rush', { kind: 'turnRule', rule: { kind: 'mustAttack', subtype: 'Reveler', haste: true } }),
   sorcery('ch_wild_smashing', 'Wild Smashing', { kind: 'sacrificeOrDamage', types: ['artifact', 'enchantment'], amount: 3 }),
   sorcery(
@@ -151,8 +162,8 @@ const CARDS: CardDef[] = [
     statics: [{ kind: 'anthem', subtypes: ['Reveler'], keywords: ['haste'], ifCount: 5 }],
   }),
 
-  creature({ id: 'ch_lesser_head', name: 'Lesser Head', subtypes: ['Head'], power: 0, toughness: 2, triggers: [on('dies', gain(2))] }),
-  creature({ id: 'ch_brute_head', name: 'Brute Head', subtypes: ['Head'], power: 0, toughness: 2, challenge: { elite: true }, triggers: [on('dies', gain(2), draw)] }),
+  creature({ id: 'ch_lesser_head', name: 'Lesser Head', subtypes: ['Head'], power: 0, toughness: 2, triggers: [ping(1), regrow, on('dies', gain(2))] }),
+  creature({ id: 'ch_brute_head', name: 'Brute Head', subtypes: ['Head'], power: 0, toughness: 2, challenge: { elite: true }, triggers: [ping(1), regrow, on('dies', gain(2), draw)] }),
   creature({
     id: 'ch_frenzy_head',
     name: 'Frenzy Head',
@@ -160,7 +171,7 @@ const CARDS: CardDef[] = [
     power: 0,
     toughness: 4,
     challenge: { elite: true },
-    triggers: [on('endStep', rule({ kind: 'revealCast', count: 1 })), on('dies', gain(4), draw)],
+    triggers: [ping(1), regrow, on('endStep', rule({ kind: 'revealCast', count: 1 })), on('dies', gain(4), draw)],
   }),
   creature({
     id: 'ch_screaming_head',
@@ -169,7 +180,7 @@ const CARDS: CardDef[] = [
     power: 0,
     toughness: 4,
     challenge: { elite: true },
-    triggers: [on('endStep', { kind: 'discard', amount: 1, who: 'opponent' }), on('dies', gain(4), draw)],
+    triggers: [ping(1), regrow, on('endStep', { kind: 'discard', amount: 1, who: 'opponent' }), on('dies', gain(4), draw)],
   }),
   creature({
     id: 'ch_fang_head',
@@ -178,7 +189,7 @@ const CARDS: CardDef[] = [
     power: 0,
     toughness: 4,
     challenge: { elite: true },
-    triggers: [on('endStep', rule({ kind: 'damagePlayer', amount: 1 })), on('dies', gain(4), draw)],
+    triggers: [ping(1), regrow, on('endStep', rule({ kind: 'damagePlayer', amount: 1 })), on('dies', gain(4), draw)],
   }),
   sorcery('ch_dazing_gaze', 'Dazing Gaze', { kind: 'silence' }),
   sorcery('ch_bait_the_beast', 'Bait the Beast', { kind: 'distract', life: 3 }),
@@ -193,7 +204,6 @@ const CARDS: CardDef[] = [
 ];
 
 interface Override {
-  headStart?: number;
   battlefield?: string[];
   copies?: Record<string, number>;
   sizes?: Record<string, [number, number]>;
@@ -215,8 +225,6 @@ const DECKS: NemesisDeck[] = [
   {
     id: 'stampede',
     name: 'The Stampede',
-    rules: 'horde',
-    headStart: 2,
     threats: copies([
       ['ch_hornbound_raider', 5],
       ['ch_hornbound_whelp', 6],
@@ -233,13 +241,13 @@ const DECKS: NemesisDeck[] = [
       ['ch_looted_idol', 2],
       ['ch_spring_draught', 2],
       ['ch_healing_balm', 1],
+      ['ch_war_drums', 2],
     ]),
   },
   {
     id: 'revel',
     name: 'The Revel King',
-    rules: 'god',
-    battlefield: ['ch_revel_king', 'ch_drunken_throng'],
+    battlefield: ['ch_revel_king', 'ch_drunken_throng', 'ch_drunken_throng'],
     threats: copies([
       ['ch_crazed_nymph', 2],
       ['ch_frenzied_piper', 6],
@@ -255,16 +263,15 @@ const DECKS: NemesisDeck[] = [
       ['ch_kings_strike', 5],
       ['ch_fire_dance', 2],
       ['ch_panic_dance', 2],
+      ['ch_war_drums', 2],
     ]),
   },
   {
     id: 'hydra',
     name: 'The Hydra',
-    rules: 'hydra',
-    battlefield: ['ch_lesser_head', 'ch_lesser_head', 'ch_lesser_head'],
+    battlefield: ['ch_lesser_head', 'ch_lesser_head'],
     threats: copies([
       ['ch_lesser_head', 3],
-      ['ch_brute_head', 2],
       ['ch_frenzy_head', 1],
       ['ch_screaming_head', 1],
       ['ch_fang_head', 1],
@@ -289,7 +296,6 @@ function overridden(deck: NemesisDeck): NemesisDeck {
   for (const [id, count] of Object.entries(override.copies ?? {})) counts.set(id, count);
   return {
     ...deck,
-    headStart: override.headStart ?? deck.headStart,
     battlefield: override.battlefield ?? deck.battlefield,
     threats: copies([...counts]),
   };

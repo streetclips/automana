@@ -3,7 +3,7 @@ import { CHALLENGES } from "../box/nemesis/challenges";
 import { NEMESES as BOX_NEMESES } from "../box/nemesis/threats";
 import { getCard } from "../content";
 import { BOX_REFERENCE } from "../content/box-reference";
-import { CHALLENGE_CARDS, CHALLENGE_DECKS } from "../content/challenges";
+import { CHALLENGE_CARDS } from "../content/challenges";
 import type { Card, CardText } from "../content/types";
 import { renderCard, renderThreatBack } from "../render/card";
 import { referenceFace } from "../render/faces";
@@ -21,6 +21,34 @@ const TEXT: Record<string, { en: string; es: string }> = {
   "mass-illusion": {
     en: "Tap all your creatures.",
     es: "Gira todas tus criaturas.",
+  },
+  "egg-laying": {
+    en: "Reveal the Nemesis's top card. If it is a creature, it enters the battlefield. Otherwise put it into its graveyard.",
+    es: "Revela la primera carta de la Némesis. Si es una criatura, entra en el campo de batalla. Si no, ponla en su cementerio.",
+  },
+  brood: {
+    en: "Reveal the Nemesis's top 2 cards. The creatures enter the battlefield; put the rest into its graveyard.",
+    es: "Revela las 2 primeras cartas de la Némesis. Las criaturas entran en el campo de batalla; pon las demás en su cementerio.",
+  },
+  "wandering-skeleton": {
+    en: "When it dies, put it at the bottom of the Nemesis's library.",
+    es: "Cuando muere, ponlo en el fondo de la biblioteca de la Némesis.",
+  },
+  "soul-drain": {
+    en: "You lose 2 life and the Nemesis gains 2 life.",
+    es: "Pierdes 2 vidas y la Némesis gana 2 vidas.",
+  },
+  exhume: {
+    en: "Return the highest-power creature from its graveyard to the battlefield. If there is none, you lose 2 life.",
+    es: "Devuelve al campo de batalla la criatura de mayor fuerza de su cementerio. Si no hay ninguna, pierdes 2 vidas.",
+  },
+  uprising: {
+    en: "Return the 2 highest-power creatures from its graveyard to the battlefield. If there are none, you lose 2 life.",
+    es: "Devuelve al campo de batalla las 2 criaturas de mayor fuerza de su cementerio. Si no hay ninguna, pierdes 2 vidas.",
+  },
+  "cinder-rebirth": {
+    en: "Return the highest-power creature from its graveyard to the battlefield. If there is none, it deals 2 damage to you.",
+    es: "Devuelve al campo de batalla la criatura de mayor fuerza de su cementerio. Si no hay ninguna, te hace 2 de daño.",
   },
 };
 
@@ -43,9 +71,9 @@ function boxThreats(engineIds: string[]): Card[] {
     const def = getCardDef(id);
     const card = getCard(id.replace(/^nm_/, "").replaceAll("_", "-"));
     const pt = def.power === undefined ? undefined : `${def.power}/${def.toughness}`;
-    return { ...card, qty, pt, tier: def.threat?.tier ?? 1, en: boxText(card, "en"), es: boxText(card, "es") };
+    return { ...card, qty, pt, tier: undefined, en: boxText(card, "en"), es: boxText(card, "es") };
   });
-  return cards.sort((a, b) => (a.tier ?? 1) - (b.tier ?? 1));
+  return cards;
 }
 
 function challengeCards(engineIds: string[]): Card[] {
@@ -75,11 +103,6 @@ export function buildBoxDeck(): PrintCard[] {
   return [
     { front: referenceFace("A", BOX_REFERENCE), back: referenceFace("B", BOX_REFERENCE) },
     ...BOX_NEMESES.flatMap((nemesis) => numbered(nemesis.id, boxThreats(nemesis.threats), back)),
-    ...CHALLENGES.flatMap((deck) => {
-      const reference = CHALLENGE_DECKS[deck.id]?.reference;
-      if (!reference) throw new Error(`No reference card for ${deck.id}`);
-      const cards = challengeCards([...(deck.battlefield ?? []), ...deck.threats]);
-      return [{ front: referenceFace("A", reference), back: referenceFace("B", reference) }, ...numbered(deck.id, cards, back)];
-    }),
+    ...CHALLENGES.flatMap((deck) => numbered(deck.id, challengeCards([...(deck.battlefield ?? []), ...deck.threats]), back)),
   ];
 }

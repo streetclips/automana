@@ -12,7 +12,6 @@ export interface GameResult {
   playerLife: number;
   nemesisLife: number;
   mulligans: number;
-  overflows: number;
   error?: string;
 }
 
@@ -24,9 +23,7 @@ export function startNemesisGame(seed: number, deck: string[], nemesis: NemesisD
       {
         deck: nemesis.threats,
         nemesis: true,
-        challenge: nemesis.rules,
         battlefield: nemesis.battlefield,
-        headStart: nemesis.headStart,
       },
     ],
   });
@@ -69,7 +66,6 @@ export function playNemesisGame(seed: number, deck: string[], nemesis: NemesisDe
     playerLife: s.players[0].life,
     nemesisLife: s.players[1].life,
     mulligans: s.players[0].mulligans,
-    overflows: s.players[1].overflows ?? 0,
     error,
   };
 }

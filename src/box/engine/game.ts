@@ -12,15 +12,7 @@ import {
 import { DEFAULT_DECK_ID, expandDeck, resolveDeck, type DeckSpec } from './decks';
 import { defaultPlayerNames, refusalText } from './describe';
 import { resolveTopOfStack } from './effects';
-import {
-  arrangeChallenge,
-  cantLeave,
-  challengeBeginCombat,
-  challengeCleanup,
-  challengeEndCombat,
-  challengeUntap,
-  syncChallengeLife,
-} from './challenge';
+import { cantLeave, challengeBeginCombat, challengeCleanup, challengeEndCombat, challengeUntap } from './challenge';
 import { afterCast, arrangeThreatDeck, nemesisDrawStep } from './nemesis';
 import { parseCost } from './mana';
 import { getCardDef, hasCardDef } from './registry';
@@ -61,7 +53,6 @@ import { isPlayerTarget, targetCombos, targetsError } from './targets';
 import type {
   Action,
   CardId,
-  ChallengeKind,
   GameOverReason,
   GameState,
   PendingDecision,
@@ -96,8 +87,6 @@ export interface PlayerSetup {
   relics?: string[];
   drawOnFirstTurn?: boolean;
   nemesis?: boolean;
-  challenge?: ChallengeKind;
-  headStart?: number;
 }
 
 export interface GameOptions {
@@ -245,9 +234,7 @@ export function createGame(options: GameOptions = {}): GameState {
       s.players[player].library.push(id);
     }
     shuffleInPlace(s, s.players[player].library);
-    const challenge = options.players?.[player]?.challenge;
-    if (challenge) arrangeChallenge(s, player, challenge, options.players?.[player]);
-    else if (options.players?.[player]?.nemesis) arrangeThreatDeck(s, player);
+    if (options.players?.[player]?.nemesis) arrangeThreatDeck(s, player);
   }
   for (const player of [0, 1] as const) {
     const setup = options.players?.[player];
@@ -613,7 +600,6 @@ function endGame(s: GameState, winner: PlayerId | null, reason: GameOverReason):
 function runStateBasedActions(s: GameState): void {
   if (s.pending?.kind === 'gameOver') return;
   for (let guard = 0; guard < 100; guard++) {
-    syncChallengeLife(s);
     const reasons = s.players.map(losingReason);
     const losers = ([0, 1] as const).filter((player) => reasons[player] !== null);
     const firstLoser = losers[0];
