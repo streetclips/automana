@@ -28,7 +28,7 @@ Win rates over the 45 box deck pairs, 1,800 games per Nemesis. The rules, the de
 | `npm run build` | `typecheck`, then `pnp` |
 | `npm run art` | `art/{card id}.jpg`: AI illustrations for the cards with an art scene and no image yet. `npm run art -- nm_brood nm_uprising` regenerates those cards |
 
-Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`. `npm run art` needs `OPENROUTER_API_KEY`.
+Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`. `npm run art` needs `OPENROUTER_API_KEY`, and macOS's `sips` when the model returns PNGs.
 
 ## Card preview
 
@@ -92,15 +92,15 @@ Every card uses the modern Magic frame in its Nemesis's colour, as if it were a 
 
 ## Card art
 
-`npm run art` illustrates cards with [Gemini 3.1 Flash Lite Image](https://openrouter.ai/google/gemini-3.1-flash-lite-image) through OpenRouter, 4 at a time, about 10 s per image:
+`npm run art` illustrates cards with [Hy Image 3.5 Preview](https://openrouter.ai/tencent/hy-image-v3.5-preview) through OpenRouter, 4 at a time, about 13 s per image:
 
-1. A card with an illustration describes its scene in its `art` field, for example `art: "a swarm of insect hatchlings bursting out of a cluster of glowing eggs in a dark hive chamber"`. The 43 cards of the four Automana decks have one; the Challenge deck cards have none yet.
-2. `src/art/generate.ts` wraps it in the shared style: `Art illustration in the old Magic: The Gathering style of {art}, like a classic {type} card. Match the painting style, palette and level of detail of the reference images, which are other cards of the same set. No border, frame or text.`
-3. The illustrations of the first 3 other cards of its Nemesis deck go with the prompt as style references.
-4. Images are 1152 × 928 JPEGs in `art/`, named by card id. Commit them: the model takes no seed, so a new run gives a different image. The older ones are 1088 × 960, from Ming Image 0.1 Design, which OpenRouter no longer serves; the card frame crops both sizes to fit.
-5. Each image cost $0.034 on 14 October 2026: $0.0336 for the image and less than $0.001 for the prompt and its 3 references. The script prints the cost of every image and the total.
+1. A card with an illustration describes its scene in its `art` field, for example `art: "a swarm of insect hatchlings bursting out of a cluster of glowing eggs in a dark hive chamber"`. Every card of the seven decks has one; in `src/content/challenges.ts` it is the last argument of `card()`.
+2. `src/art/generate.ts` wraps it in the shared style: `Art illustration in the old Magic: The Gathering style of {art}, like a classic {type} card. No border, frame or text.`
+3. No style references: given other cards of its deck, Hy Image repaints their character, pose and outfit instead of borrowing only their style. With `REFERENCES` above 0, the illustrations of the first cards of its Nemesis deck go with the prompt, which then asks to match their painting style, palette and level of detail; the Automana decks were made that way, with 3, on Gemini.
+4. Hy Image returns 1024 × 816 PNGs; the script converts them to JPEG at quality 80 with macOS's `sips`, about 320 KB each, in `art/`, named by card id. Commit them: a new run gives a different image. The Automana decks' images are 1152 × 928, from Gemini 3.1 Flash Lite Image, or 1088 × 960, from Ming Image 0.1 Design, which OpenRouter no longer serves; the card frame crops every size to fit.
+5. Each image cost $0.024 on 16 October 2026, against $0.034 with Gemini. The script prints the cost of every image and the total. The 44 Challenge deck images took 67 generations, $1.61.
 6. The preview and the PDFs show `art/{id}.jpg` when it exists and the deck's symbol on its frame colour otherwise.
-7. Look at every new image and regenerate any with a border, text or the wrong scene: `npm run art -- {id}`.
+7. Look at every new image and regenerate any with a border, text, nudity or the wrong scene: `npm run art -- {id}`. Hy Image paints figures of Greek myth (maenads, nymphs, heroes) naked unless the scene dresses them, minotaurs with human faces unless they are "bull-headed" and satyrs without goat legs unless they are "goat-legged".
 
 ## Structure
 
@@ -115,7 +115,7 @@ src/
 │   └── nemesis/        the seven Nemesis decks, the Nemesis mind, the simulator and its tests
 ├── content/            printed card data, bilingual (en/es), no rendering
 │   ├── threats.ts      names, texts and art scenes of the four Automana decks
-│   ├── challenges.ts   names and texts of the three Challenge decks
+│   ├── challenges.ts   names, texts and art scenes of the three Challenge decks
 │   ├── box-reference.ts the rules card
 │   └── index.ts        catalog: PRINTED_CARDS, DECK_NAMES, getPrintedCard(id)
 ├── i18n/               UI strings per locale + current locale

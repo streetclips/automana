@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { relative } from "node:path";
 import type { Card } from "../content/types";
@@ -5,11 +6,12 @@ import { ART, ROOT, artPath, ensureDir } from "../lib/paths";
 import { BOX_DECKS } from "../pnp/box";
 
 const API = "https://openrouter.ai/api/v1/images";
-const MODEL = "google/gemini-3.1-flash-lite-image";
+const MODEL = "tencent/hy-image-v3.5-preview";
 const ASPECT_RATIO = "5:4";
-const REFERENCES = 3;
+const REFERENCES = 0;
 const PARALLEL = 4;
 const TIMEOUT_MS = 180_000;
+const JPEG_QUALITY = "80";
 
 interface ImageResponse {
   data?: { b64_json: string }[];
@@ -19,7 +21,7 @@ interface ImageResponse {
 
 const COLLECTIONS: Card[][] = BOX_DECKS.map((deck) => deck.cards);
 
-const ALL_CARDS = COLLECTIONS.flat().filter((card) => card.art);
+const ALL_CARDS = COLLECTIONS.flat().filter((card, i, all) => card.art && all.findIndex((c) => c.id === card.id) === i);
 
 function getCard(id: string): Card {
   const card = ALL_CARDS.find((c) => c.id === id);
@@ -60,6 +62,11 @@ async function generate(card: Card, apiKey: string): Promise<{ image: Buffer; co
   return { image: Buffer.from(image, "base64"), cost: json.usage?.cost ?? 0 };
 }
 
+function saveJpeg(path: string, image: Buffer): void {
+  writeFileSync(path, image);
+  if (image[0] !== 0xff || image[1] !== 0xd8) execFileSync("sips", ["-s", "format", "jpeg", "-s", "formatOptions", JPEG_QUALITY, path], { stdio: "ignore" });
+}
+
 async function pool<T>(items: T[], size: number, task: (item: T) => Promise<void>): Promise<void> {
   const queue = [...items];
   const worker = async () => {
@@ -83,7 +90,7 @@ await pool(cards, PARALLEL, async (card) => {
   const t0 = performance.now();
   try {
     const { image, cost } = await generate(card, apiKey);
-    writeFileSync(artPath(card.id), image);
+    saveJpeg(artPath(card.id), image);
     spent += cost;
     console.log(`${relative(ROOT, artPath(card.id))} (${((performance.now() - t0) / 1000).toFixed(0)} s, $${cost.toFixed(3)})`);
   } catch (err) {

@@ -122,7 +122,7 @@ What it still doesn't do:
 
 1. **One rules card** for all seven Nemeses (`src/content/box-reference.ts`): setup and starting cards, the Nemesis turn, its mind, and how the player's cards work against it, with Bite and Regrow.
 2. **The 4 Automana decks**, 20 cards each, with the Threat back. Sizes come from `src/box/nemesis/threats.ts`; names, texts and art scenes from `src/content/threats.ts`.
-3. **The 3 Challenge decks** after them: the Stampede (43 cards), the Revel King (46, its 3 starting cards included) and the Hydra (38, its 2 starting Heads included). Their names and texts are in `src/content/challenges.ts`, their sizes and copies come from `src/box/nemesis/challenges.ts`, and they have no art yet: the art box shows the deck's symbol.
+3. **The 3 Challenge decks** after them: the Stampede (43 cards), the Revel King (46, its 3 starting cards included) and the Hydra (38, its 2 starting Heads included). Their names, texts and art scenes are in `src/content/challenges.ts`, their sizes and copies come from `src/box/nemesis/challenges.ts`.
 4. **No tier mark:** every Threat shows the Threat burst where a Magic card shows its mana cost.
 5. **Wording for Magic:** "the battlefield", the official Spanish keywords (*Vuela*, *Arrolla*), a random discard for Rebound and Mind Theft, "tap" for Mass Illusion, and the graveyard for Egg Laying, Brood, Wandering Skeleton, Soul Drain, Exhume, Uprising and Cinder Rebirth.
 
