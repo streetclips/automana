@@ -52,8 +52,8 @@ function spell(id: string, name: string, threat: ThreatInfo, ability: Partial<No
 }
 
 const THREATS: CardDef[] = [
-  creature({ id: 'nm_ash_imp', name: 'Ash Imp', subtype: 'Imp', power: 3, toughness: 2, keywords: ['flying'], threat: { tier: 1 } }),
-  creature({ id: 'nm_magma_sentinel', name: 'Magma Sentinel', subtype: 'Elemental', power: 3, toughness: 5, keywords: ['defender'], threat: { tier: 1 } }),
+  creature({ id: 'nm_ash_imp', name: 'Ash Imp', subtype: 'Imp', power: 3, toughness: 3, keywords: ['flying'], threat: { tier: 1 } }),
+  creature({ id: 'nm_magma_sentinel', name: 'Magma Sentinel', subtype: 'Elemental', power: 3, toughness: 2, keywords: ['defender'], threat: { tier: 1 } }),
   spell('nm_rain_of_cinders', 'Rain of Cinders', { tier: 1, effect: { kind: 'damageEach', creatures: 1, player: 1 } }),
   spell('nm_tyrants_roar', "Tyrant's Roar", { tier: 1 }, { effects: [{ kind: 'pumpTeam', power: 1, toughness: 0 }] }),
   spell('nm_searing_breath', 'Searing Breath', { tier: 2 }, { targets: [{ kind: 'any' }], effects: [{ kind: 'damage', amount: 2, to: 0 }] }),
@@ -73,10 +73,10 @@ const THREATS: CardDef[] = [
   creature({ id: 'nm_inferno_charger', name: 'Inferno Charger', subtype: 'Elemental', power: 6, toughness: 3, keywords: ['haste'], threat: { tier: 3 } }),
   spell('nm_cinder_rebirth', 'Cinder Rebirth', { tier: 3, effect: { kind: 'reanimate', count: 1, fallback: 2, damage: true } }),
 
-  creature({ id: 'nm_ravenous_larva', name: 'Ravenous Larva', subtype: 'Insect', power: 3, toughness: 3, keywords: ['lifelink'], threat: { tier: 1 } }),
+  creature({ id: 'nm_ravenous_larva', name: 'Ravenous Larva', subtype: 'Insect', power: 3, toughness: 4, keywords: ['lifelink'], threat: { tier: 1 } }),
   spell('nm_pheromones', 'Pheromones', { tier: 1 }, { effects: [{ kind: 'pumpTeam', power: 1, toughness: 1 }] }),
   spell('nm_insect_plague', 'Insect Plague', { tier: 1, effect: { kind: 'damageEach', creatures: 1, player: 0 } }),
-  creature({ id: 'nm_armored_drone', name: 'Armored Drone', subtype: 'Insect', power: 4, toughness: 4, threat: { tier: 2 } }),
+  creature({ id: 'nm_armored_drone', name: 'Armored Drone', subtype: 'Insect', power: 3, toughness: 4, threat: { tier: 2 } }),
   creature({ id: 'nm_darting_wasp', name: 'Darting Wasp', subtype: 'Insect', power: 4, toughness: 3, keywords: ['flying'], threat: { tier: 2 } }),
   creature({ id: 'nm_shieldbreaker_beetle', name: 'Shieldbreaker Beetle', subtype: 'Insect', power: 4, toughness: 5, keywords: ['trample'], threat: { tier: 3 } }),
   creature({
@@ -91,10 +91,10 @@ const THREATS: CardDef[] = [
   spell('nm_egg_laying', 'Egg Laying', { tier: 3, effect: { kind: 'reveal', count: 1 } }),
   spell('nm_brood', 'Brood', { tier: 3, effect: { kind: 'reveal', count: 2 } }),
 
-  creature({ id: 'nm_wandering_skeleton', name: 'Wandering Skeleton', subtype: 'Skeleton', power: 3, toughness: 2, threat: { tier: 1, recur: true } }),
-  creature({ id: 'nm_rotting_zombie', name: 'Rotting Zombie', subtype: 'Zombie', power: 3, toughness: 4, threat: { tier: 1 } }),
+  creature({ id: 'nm_wandering_skeleton', name: 'Wandering Skeleton', subtype: 'Skeleton', power: 3, toughness: 3, threat: { tier: 1, recur: true } }),
+  creature({ id: 'nm_rotting_zombie', name: 'Rotting Zombie', subtype: 'Zombie', power: 3, toughness: 5, threat: { tier: 1 } }),
   spell('nm_plague', 'Plague', { tier: 1, effect: { kind: 'shrinkAll', amount: 1 } }),
-  creature({ id: 'nm_vampire_bat', name: 'Vampire Bat', subtype: 'Bat', power: 3, toughness: 3, keywords: ['flying', 'lifelink'], threat: { tier: 2 } }),
+  creature({ id: 'nm_vampire_bat', name: 'Vampire Bat', subtype: 'Bat', power: 3, toughness: 4, keywords: ['flying', 'lifelink'], threat: { tier: 2 } }),
   spell('nm_withering_touch', 'Withering Touch', { tier: 2, effect: { kind: 'shrinkTarget', amount: 2, fallback: 2 } }, { targets: [{ kind: 'any' }] }),
   spell('nm_soul_drain', 'Soul Drain', { tier: 2 }, {
     effects: [
@@ -103,14 +103,14 @@ const THREATS: CardDef[] = [
     ],
   }),
   spell('nm_exhume', 'Exhume', { tier: 2, effect: { kind: 'reanimate', count: 1, fallback: 2, damage: false } }),
-  creature({ id: 'nm_morwens_ghoul', name: "Morwen's Ghoul", subtype: 'Zombie', power: 4, toughness: 3, keywords: ['deathtouch'], threat: { tier: 3 } }),
-  creature({ id: 'nm_deathless_knight', name: 'Deathless Knight', subtype: 'Zombie Knight', power: 5, toughness: 5, keywords: ['lifelink'], threat: { tier: 3 } }),
+  creature({ id: 'nm_morwens_ghoul', name: "Morwen's Ghoul", subtype: 'Zombie', power: 4, toughness: 4, keywords: ['deathtouch'], threat: { tier: 3 } }),
+  creature({ id: 'nm_deathless_knight', name: 'Deathless Knight', subtype: 'Zombie Knight', power: 5, toughness: 6, keywords: ['lifelink'], threat: { tier: 3 } }),
   creature({
     id: 'nm_crypt_horror',
     name: 'Crypt Horror',
     subtype: 'Horror',
     power: 6,
-    toughness: 5,
+    toughness: 6,
     keywords: ['lifelink'],
     threat: { tier: 3 },
     triggers: [{ on: 'enters', targets: [], effects: [{ kind: 'loseLife', amount: 1, who: 'opponent' }] }],
@@ -204,6 +204,24 @@ export const NEMESES: NemesisDeck[] = [
     ]),
   },
 ];
+
+const COPIES = new Map(
+  (process.env.BOX_THREAT_COPIES ?? '')
+    .split(',')
+    .filter(Boolean)
+    .map((entry) => {
+      const [id = '', count = '0'] = entry.split('=');
+      return [id, Number(count)] as const;
+    }),
+);
+
+for (const nemesis of NEMESES) {
+  if (!nemesis.threats.some((id) => COPIES.has(id))) continue;
+  const counts = new Map<string, number>();
+  for (const id of nemesis.threats) counts.set(id, (counts.get(id) ?? 0) + 1);
+  for (const [id, count] of COPIES) if (counts.has(id)) counts.set(id, count);
+  nemesis.threats = copies([...counts]);
+}
 
 const SIZES = new Map(
   (process.env.BOX_THREAT_SIZES ?? '')

@@ -47,13 +47,13 @@ It never responds and never activates abilities. `src/box/nemesis/mind.ts`:
 
 ## Threat decks at Magic scale
 
-Creatures keep their Palmwalker names, effects and quantities. Their sizes sit in the range of Magic creatures, so a Nemesis's strength comes from its abilities, not from oversized bodies: Vorthrax and Morwen at Palmwalker's power and toughness − 4, Vaskara at Palmwalker's power and toughness − 3, the Mirror Archmage at power − 1 and toughness − 5. Spells keep their numbers. Data: `src/box/nemesis/threats.ts`. Each tier lists the cards in it and how many of each.
+Creatures keep their Palmwalker names, effects and quantities. Their sizes sit in the range of Magic creatures, so a Nemesis's strength comes from its abilities, not from oversized bodies: Vorthrax and Morwen at Palmwalker's power and toughness − 4, Vaskara at Palmwalker's power and toughness − 3, the Mirror Archmage at power − 1 and toughness − 5, then tuned card by card (Tuning, point 7): Morwen's creatures got +1 toughness, Ash Imp +1 toughness, Magma Sentinel −3 toughness, Ravenous Larva +1 toughness and Armored Drone −1 power. Spells keep their numbers. Data: `src/box/nemesis/threats.ts`. Each tier lists the cards in it and how many of each.
 
 | Nemesis | Tier 1 | Tier 2 | Tier 3 |
 |---|---|---|---|
-| Vorthrax | 3 Ash Imp 3/2 flying, Magma Sentinel 3/5 defender, Rain of Cinders, Tyrant's Roar | 2 Searing Breath, 3 Cinderclaw Brute 6/3, 2 Ember Wyrmling 5/3 flying | 2 Vorthrax's Herald 6/4, 2 Scorch Fiend 7/4 trample, Lava Behemoth 7/6, Inferno Charger 6/3 haste, Cinder Rebirth |
-| Vaskara | 3 Ravenous Larva 3/3 lifelink, 2 Pheromones, Insect Plague | 4 Armored Drone 4/4, 3 Darting Wasp 4/3 flying | 2 Shieldbreaker Beetle 4/5 trample, 2 Mantis Queen 5/6, 2 Egg Laying, Brood |
-| Morwen | 4 Wandering Skeleton 3/2, Rotting Zombie 3/4, Plague | 3 Vampire Bat 3/3 flying lifelink, 2 Withering Touch, Soul Drain, Exhume | 2 Morwen's Ghoul 4/3 deathtouch, 2 Deathless Knight 5/5 lifelink, 2 Crypt Horror 6/5 lifelink, Uprising |
+| Vorthrax | 3 Ash Imp 3/3 flying, Magma Sentinel 3/2 defender, Rain of Cinders, Tyrant's Roar | 2 Searing Breath, 3 Cinderclaw Brute 6/3, 2 Ember Wyrmling 5/3 flying | 2 Vorthrax's Herald 6/4, 2 Scorch Fiend 7/4 trample, Lava Behemoth 7/6, Inferno Charger 6/3 haste, Cinder Rebirth |
+| Vaskara | 3 Ravenous Larva 3/4 lifelink, 2 Pheromones, Insect Plague | 4 Armored Drone 3/4, 3 Darting Wasp 4/3 flying | 2 Shieldbreaker Beetle 4/5 trample, 2 Mantis Queen 5/6, 2 Egg Laying, Brood |
+| Morwen | 4 Wandering Skeleton 3/3, Rotting Zombie 3/5, Plague | 3 Vampire Bat 3/4 flying lifelink, 2 Withering Touch, Soul Drain, Exhume | 2 Morwen's Ghoul 4/4 deathtouch, 2 Deathless Knight 5/6 lifelink, 2 Crypt Horror 6/6 lifelink, Uprising |
 | Mirror Archmage | 3 Fragile Illusion 4/1 flying, Crystal Golem 2/4 defender, 2 Counterspell | 3 Water Elemental 4/4, 2 Rebound, Mind Theft, Mass Illusion | 2 Guardian Sphinx 4/3 flying, 2 Mirror Djinn 5/2 flying, 2 Tide Serpent 5/5, Refraction Golem 2/4 defender |
 
 ## Tuning
@@ -73,6 +73,18 @@ Creatures keep their Palmwalker names, effects and quantities. Their sizes sit i
 
 5. **The deck decides a lot.** The 45 pairs run from 30.0% (Wizards + Goblins) to 77.2% (Cats + Healing), and 17 of them fall more than 10 points from the average. Average over the 9 pairs of each deck: Healing 64.7%, Elves 62.2%, Cats 58.6%, Primal 55.4%, Wizards 51.7%, Undead 48.6%, Inferno 48.5%, Vampires 47.5%, Pirates 44.8%, Goblins 37.3%. Other Threat shapes don't narrow the spread: +2/+0 and +2/+1 on Vorthrax, Vaskara and Morwen give a standard deviation across pairs of 13.9 and 15.1 points, against 12.9 for the tuned sizes on the same seed.
 6. **New sizes and a stronger AI need a new pass.** The creatures moved to Magic sizes (see Threat decks at Magic scale) and the player's AI got stronger (see below). On the same seed and games the player wins 58.3%: Vorthrax 63.6%, Vaskara 59.7%, Morwen 62.2%, Mirror Archmage 47.7%, so only the Archmage stays on target. Games last longer, 9.7 rounds against 7.6. The pairs run from 33.3% (Pirates + Goblins) to 82.5% (Cats + Healing), with a standard deviation of 11.7 points, and 18 of them fall more than 10 points from the average. Average over the 9 pairs of each deck: Healing 70.0%, Wizards 66.2%, Cats 65.2%, Elves 60.7%, Primal 59.0%, Inferno 57.0%, Undead 56.0%, Vampires 54.0%, Pirates 53.3%, Goblins 41.8%. The batch ran at 19 games/s with 10 workers, against 152 before.
+7. **Card-by-card pass** for the Magic sizes and the current AI, on seeds 1, 3, 5 and 7 (10 games per pair and Nemesis on each, 1,800 games per Nemesis; ±2.3 points). The knobs stay small so the creatures stay at Magic scale: one point on a card, or on every creature of Morwen.
+
+| Nemesis | Target | Before (seed 1) | Change | Seed 1 | Seed 3 | Seed 5 | Seed 7 | All |
+|---|---:|---:|---|---:|---:|---:|---:|---:|
+| Vorthrax | 52–58% | 62.0% | Ash Imp 3/2 → 3/3, Magma Sentinel 3/5 → 3/2 | 54.7% | 53.8% | 56.7% | 59.8% | 56.3% |
+| Vaskara | 52–58% | 61.6% | Ravenous Larva 3/3 → 3/4, Armored Drone 4/4 → 3/4 | 57.1% | 49.6% | 53.3% | 54.2% | 53.6% |
+| Morwen | 42–48% | 63.8% | +1 toughness on every creature | 45.1% | 41.1% | 44.9% | 43.8% | 43.7% |
+| Mirror Archmage | 42–48% | — | none | — | 49.1% | 50.7% | 44.9% | 48.2% |
+
+   1. **Tier 1 decides:** the games are decided before tier 3 shows up. A point of toughness on Cinderclaw Brute, Ember Wyrmling and Vorthrax's Herald together moved Vorthrax by 4 points; one on Ash Imp alone by 15. One Ash Imp fewer, with a second Tyrant's Roar in its place, raised the player to 77.8%.
+   2. **Deck-wide steps are too coarse** for Vorthrax and Vaskara: +1 power on every creature moved the three Nemeses by 15 to 25 points, +1 toughness by 12 to 19. For Morwen, +1 toughness landed on target.
+   3. **The Archmage** stays as it was: its 48.2% is within noise of the target's top.
 
 ## The player's AI
 
@@ -186,6 +198,7 @@ Deviations from the printed rules:
 | `npm run pnp:box` | The print-and-play PDFs of the box mode. |
 | `npm run box:test:challenges` | The Challenge deck rules as 14 scenario tests. |
 | `npm run box:test:nemesis` | The rules above as 25 scenario tests, on Threats pinned to fixed sizes so tuning never breaks them; 6 of them check the player's AI. |
+| `BOX_THREAT_COPIES=nm_ash_imp=2,nm_tyrants_roar=2 npm run box` | Sets the copies of named Threats in their decks, to probe deck lists without editing them. |
 | `BOX_THREAT_SIZES=vorthrax=1/2,morwen=0/-1 npm run box` | Adds power/toughness to every creature of the named Nemeses, to probe sizes without editing the deck lists. |
 | `BOX_OMEN=0 npm run box` | No Omen: each Nemesis turn reveals the top Threat and executes it. Every face-down Threat is life (20 at the start), and damage, discards, Brood and Egg Laying take the top cards. |
 
