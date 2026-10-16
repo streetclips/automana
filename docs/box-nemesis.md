@@ -47,14 +47,14 @@ It never responds and never activates abilities. `src/box/nemesis/mind.ts`:
 
 ## Threat decks at Magic scale
 
-Creatures keep their Palmwalker names, effects and quantities. Their sizes were tuned against the 45 pairs of Beginner Box decks (see Tuning): Vorthrax, Vaskara and Morwen at Palmwalker's power − 1 and Palmwalker's toughness, the Mirror Archmage at power − 2 and toughness − 3. Spells keep their numbers. Data: `src/box/nemesis/threats.ts`. Each tier lists the cards in it and how many of each.
+Creatures keep their Palmwalker names, effects and quantities. Their sizes sit in the range of Magic creatures, so a Nemesis's strength comes from its abilities, not from oversized bodies: Vorthrax and Morwen at Palmwalker's power and toughness − 4, Vaskara at Palmwalker's power and toughness − 3, the Mirror Archmage at power − 1 and toughness − 5. Spells keep their numbers. Data: `src/box/nemesis/threats.ts`. Each tier lists the cards in it and how many of each.
 
 | Nemesis | Tier 1 | Tier 2 | Tier 3 |
 |---|---|---|---|
-| Vorthrax | 3 Ash Imp 2/6 flying, Magma Sentinel 2/9 defender, Rain of Cinders, Tyrant's Roar | 2 Searing Breath, 3 Cinderclaw Brute 5/7, 2 Ember Wyrmling 4/7 flying | 2 Vorthrax's Herald 5/8, 2 Scorch Fiend 6/8 trample, Lava Behemoth 6/10, Inferno Charger 5/7 haste, Cinder Rebirth |
-| Vaskara | 3 Ravenous Larva 2/6 lifelink, 2 Pheromones, Insect Plague | 4 Armored Drone 3/7, 3 Darting Wasp 3/6 flying | 2 Shieldbreaker Beetle 3/8 trample, 2 Mantis Queen 4/9, 2 Egg Laying, Brood |
-| Morwen | 4 Wandering Skeleton 2/6, Rotting Zombie 2/8, Plague | 3 Vampire Bat 2/7 flying lifelink, 2 Withering Touch, Soul Drain, Exhume | 2 Morwen's Ghoul 3/7 deathtouch, 2 Deathless Knight 4/9 lifelink, 2 Crypt Horror 5/9 lifelink, Uprising |
-| Mirror Archmage | 3 Fragile Illusion 3/3 flying, Crystal Golem 1/6 defender, 2 Counterspell | 3 Water Elemental 3/6, 2 Rebound, Mind Theft, Mass Illusion | 2 Guardian Sphinx 3/5 flying, 2 Mirror Djinn 4/4 flying, 2 Tide Serpent 4/7, Refraction Golem 1/6 defender |
+| Vorthrax | 3 Ash Imp 3/2 flying, Magma Sentinel 3/5 defender, Rain of Cinders, Tyrant's Roar | 2 Searing Breath, 3 Cinderclaw Brute 6/3, 2 Ember Wyrmling 5/3 flying | 2 Vorthrax's Herald 6/4, 2 Scorch Fiend 7/4 trample, Lava Behemoth 7/6, Inferno Charger 6/3 haste, Cinder Rebirth |
+| Vaskara | 3 Ravenous Larva 3/3 lifelink, 2 Pheromones, Insect Plague | 4 Armored Drone 4/4, 3 Darting Wasp 4/3 flying | 2 Shieldbreaker Beetle 4/5 trample, 2 Mantis Queen 5/6, 2 Egg Laying, Brood |
+| Morwen | 4 Wandering Skeleton 3/2, Rotting Zombie 3/4, Plague | 3 Vampire Bat 3/3 flying lifelink, 2 Withering Touch, Soul Drain, Exhume | 2 Morwen's Ghoul 4/3 deathtouch, 2 Deathless Knight 5/5 lifelink, 2 Crypt Horror 6/5 lifelink, Uprising |
+| Mirror Archmage | 3 Fragile Illusion 4/1 flying, Crystal Golem 2/4 defender, 2 Counterspell | 3 Water Elemental 4/4, 2 Rebound, Mind Theft, Mass Illusion | 2 Guardian Sphinx 4/3 flying, 2 Mirror Djinn 5/2 flying, 2 Tide Serpent 5/5, Refraction Golem 2/4 defender |
 
 ## Tuning
 
@@ -72,7 +72,7 @@ Creatures keep their Palmwalker names, effects and quantities. Their sizes were 
 | All | 45–55% | 51.9% | 7.6 | 9.6 | 9.9 |
 
 5. **The deck decides a lot.** The 45 pairs run from 30.0% (Wizards + Goblins) to 77.2% (Cats + Healing), and 17 of them fall more than 10 points from the average. Average over the 9 pairs of each deck: Healing 64.7%, Elves 62.2%, Cats 58.6%, Primal 55.4%, Wizards 51.7%, Undead 48.6%, Inferno 48.5%, Vampires 47.5%, Pirates 44.8%, Goblins 37.3%. Other Threat shapes don't narrow the spread: +2/+0 and +2/+1 on Vorthrax, Vaskara and Morwen give a standard deviation across pairs of 13.9 and 15.1 points, against 12.9 for the tuned sizes on the same seed.
-6. **The player's AI got stronger after this tuning,** so these sizes need a new pass. With the AI below, the same seed and games give the player 59.9% (+8.0 points ± 0.7, paired games): Vorthrax 64.7%, Vaskara 65.0%, Morwen 58.6%, Mirror Archmage 51.4%. The pairs now run from 41.5% (Pirates + Goblins) to 77.3% (Elves + Primal), with a standard deviation of 9.8 points: part of the old spread was the AI misplaying some decks, Goblins most of all (37.3% → 48.9%). The batch runs at about 30 games/s, against 152 before.
+6. **New sizes and a stronger AI need a new pass.** The creatures moved to Magic sizes (see Threat decks at Magic scale) and the player's AI got stronger (see below). On the same seed and games the player wins 58.3%: Vorthrax 63.6%, Vaskara 59.7%, Morwen 62.2%, Mirror Archmage 47.7%, so only the Archmage stays on target. Games last longer, 9.7 rounds against 7.6. The pairs run from 33.3% (Pirates + Goblins) to 82.5% (Cats + Healing), with a standard deviation of 11.7 points, and 18 of them fall more than 10 points from the average. Average over the 9 pairs of each deck: Healing 70.0%, Wizards 66.2%, Cats 65.2%, Elves 60.7%, Primal 59.0%, Inferno 57.0%, Undead 56.0%, Vampires 54.0%, Pirates 53.3%, Goblins 41.8%. The batch ran at 19 games/s with 10 workers, against 152 before.
 
 ## The player's AI
 
