@@ -54,7 +54,7 @@ export function opponent(player: PlayerId): PlayerId {
 
 export function cloneState(s: GameState): GameState {
   const cards: Record<CardId, CardInstance> = {};
-  for (const id in s.cards) cards[id] = { ...(s.cards[id] as CardInstance) };
+  for (const id of Object.keys(s.cards)) cards[id] = { ...(s.cards[id] as CardInstance) };
   return {
     ...s,
     players: [clonePlayer(s.players[0]), clonePlayer(s.players[1])],
@@ -177,27 +177,27 @@ export function allCreatures(s: GameState): CardId[] {
   return [...creaturesOf(s, 0), ...creaturesOf(s, 1)];
 }
 
-function battlefieldIds(s: GameState): CardId[] {
-  return [...s.players[0].battlefield, ...s.players[1].battlefield];
-}
-
 export function attachmentsOf(s: GameState, id: CardId): AttachmentEffect[] {
   const found: AttachmentEffect[] = [];
-  for (const other of battlefieldIds(s)) {
-    const card = getCard(s, other);
-    if (card.attachedTo !== id) continue;
-    const attachment = getCardDef(card.def).attachment;
-    if (!attachment) continue;
-    if (attachment.yourTurn && s.activePlayer !== getCard(s, id).controller) continue;
-    found.push(attachment);
+  for (const ps of s.players) {
+    for (const other of ps.battlefield) {
+      const card = getCard(s, other);
+      if (card.attachedTo !== id) continue;
+      const attachment = getCardDef(card.def).attachment;
+      if (!attachment) continue;
+      if (attachment.yourTurn && s.activePlayer !== getCard(s, id).controller) continue;
+      found.push(attachment);
+    }
   }
   return found;
 }
 
 export function abilitiesLost(s: GameState, id: CardId): boolean {
-  for (const other of battlefieldIds(s)) {
-    const card = getCard(s, other);
-    if (card.attachedTo === id && getCardDef(card.def).attachment?.loseAbilities) return true;
+  for (const ps of s.players) {
+    for (const other of ps.battlefield) {
+      const card = getCard(s, other);
+      if (card.attachedTo === id && getCardDef(card.def).attachment?.loseAbilities) return true;
+    }
   }
   return false;
 }
@@ -253,10 +253,12 @@ function keywordConditionHolds(s: GameState, id: CardId, condition: 'attacking' 
 }
 
 function basePowerToughness(s: GameState, id: CardId): [number, number] {
-  for (const other of battlefieldIds(s)) {
-    const card = getCard(s, other);
-    const base = card.attachedTo === id ? getCardDef(card.def).attachment?.base : undefined;
-    if (base) return base;
+  for (const ps of s.players) {
+    for (const other of ps.battlefield) {
+      const card = getCard(s, other);
+      const base = card.attachedTo === id ? getCardDef(card.def).attachment?.base : undefined;
+      if (base) return base;
+    }
   }
   const def = defOf(s, id);
   return [def.power ?? 0, def.toughness ?? 0];
@@ -299,7 +301,9 @@ export function getKeywords(s: GameState, id: CardId): Keyword[] {
 }
 
 export function hasKeyword(s: GameState, id: CardId, keyword: Keyword): boolean {
-  return getKeywords(s, id).includes(keyword);
+  for (const effect of s.effects) if (effect.card === id && effect.keywords?.includes(keyword)) return true;
+  if (defOf(s, id).keywords?.includes(keyword) && !abilitiesLost(s, id)) return true;
+  return s.cards[id]?.zone === 'battlefield' && staticBonus(s, id).keywords.includes(keyword);
 }
 
 export function cantAttack(s: GameState, id: CardId): boolean {
