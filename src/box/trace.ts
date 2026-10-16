@@ -1,7 +1,7 @@
 import { setLocale } from './i18n/locale';
 import { playerDecks } from './nemesis/decks';
 import { playNemesisGame } from './nemesis/game';
-import { getNemesis } from './nemesis/threats';
+import { findNemesis as getNemesis } from './nemesis/all';
 
 const [seedArg = '1', deckArg, nemesisArg = 'vorthrax'] = process.argv.slice(2);
 const decks = playerDecks();

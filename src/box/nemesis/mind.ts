@@ -24,6 +24,7 @@ import {
 } from '../engine';
 import { canBlockAttacker } from '../engine/combat';
 import { compareIds } from '../engine/mana';
+import { forcedAttackers } from '../engine/challenge';
 import { nemesisSeat } from '../engine/nemesis';
 import { castError } from '../engine/rules';
 import { isLegalTarget, legalTargets, sameTarget } from '../engine/targets';
@@ -223,7 +224,8 @@ export function nemesisTargets(s: GameState, player: PlayerId, specs: TargetSpec
 }
 
 function castOmen(s: GameState, player: PlayerId): Action | null {
-  if (s.activePlayer !== player || s.step !== 'main1' || s.stack.length > 0) return null;
+  if (s.activePlayer !== player || s.stack.length > 0) return null;
+  if (s.step !== 'main1' && !s.players[player].challenge) return null;
   for (const card of s.players[player].hand) {
     const targets = nemesisTargets(s, player, defOf(s, card).spell?.targets ?? []);
     if (targets && !castError(s, player, card, targets)) return { type: 'cast', player, card, targets };
@@ -237,10 +239,14 @@ export function nemesisAction(s: GameState, player: PlayerId): Action {
   switch (pending.kind) {
     case 'priority':
       return castOmen(s, player) ?? { type: 'pass', player };
-    case 'declareAttackers':
-      return { type: 'declareAttackers', player, attackers: nemesisAttackers(s, player) };
+    case 'declareAttackers': {
+      const attackers = s.players[player].challenge
+        ? forcedAttackers(s, player, eligibleAttackers(s))
+        : nemesisAttackers(s, player);
+      return { type: 'declareAttackers', player, attackers };
+    }
     case 'declareBlockers':
-      return { type: 'declareBlockers', player, blocks: nemesisBlocks(s, player) };
+      return { type: 'declareBlockers', player, blocks: s.players[player].challenge ? [] : nemesisBlocks(s, player) };
     case 'chooseTargets': {
       const trigger = s.triggers.find((candidate) => candidate.id === pending.trigger);
       const specs = trigger ? (triggeredAbility(defOf(s, trigger.source), trigger.ability)?.targets ?? []) : [];

@@ -69,6 +69,8 @@ function timingError(s: GameState, player: PlayerId, cardId: CardId): Refusal | 
   const def = getCardDef(card.def);
   if (isLandDef(def)) return { code: 'landsAreNotCast' };
   if (!hasPriority(s, player)) return { code: 'noPriority' };
+  if (s.players[player].silenced) return { code: 'silenced' };
+  if (s.players[player].challenge) return s.activePlayer === player && s.stack.length === 0 ? null : { code: 'sorceryTiming' };
   if (!isInstantDef(def) && !hasFlashDef(def) && !canActAtSorcerySpeed(s, player)) {
     return { code: 'sorceryTiming' };
   }

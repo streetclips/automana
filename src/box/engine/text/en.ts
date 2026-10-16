@@ -6,6 +6,7 @@ import {
   COLORS,
   type AttachmentEffect,
   type CardDef,
+  type ChallengeEffect,
   type CardId,
   type CardType,
   type Color,
@@ -331,8 +332,10 @@ function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext
     case 'counter':
       return `Counter ${ref(effect.to, 'object')}.`;
     case 'draw':
+      if (effect.who === 'opponent') return `Your opponent draws ${cardsCount(effect.amount)}.`;
       return `Draw ${cardsCount(effect.amount)}.`;
     case 'gainLife':
+      if (effect.who === 'opponent') return `Your opponent gains ${lifeAmount(effect.amount)}.`;
       if (effect.times) return `You gain ${lifeAmount(effect.amount)} for each ${countPhrase(effect.times)}.`;
       return `You gain ${lifeAmount(effect.amount)}.`;
     case 'loseLife':
@@ -389,8 +392,29 @@ function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext
       return `${ref(effect.to, 'subject')} can't be blocked this turn.`;
     case 'doom':
       return `When ${ref(effect.to, 'subject')} deals combat damage this turn, sacrifice it.`;
+    case 'challenge':
+      return CHALLENGE_TEXT[effect.effect.kind];
   }
 }
+
+const CHALLENGE_TEXT: Record<ChallengeEffect['kind'], string> = {
+  turnRule: 'A rule applies this turn.',
+  revealCast: 'Reveal the top card of your library and cast it.',
+  sacrificeOwn: 'Sacrifice creatures.',
+  returnCreatures: 'Each player returns a creature card from their graveyard to the battlefield.',
+  damagePlayer: 'Deal damage to your opponent.',
+  sacrificeOrDamage: 'Your opponent sacrifices an artifact or enchantment or takes damage.',
+  returnNamed: 'Return cards from your graveyard to the battlefield.',
+  silence: "Your opponent can't cast spells until your next turn.",
+  distract: 'Your opponent sacrifices a creature to tap a Head, or loses life.',
+  regrow: 'Heads return from your graveyard or library.',
+  hide: 'Heads gain indestructible until the end of your next turn.',
+  tangle: "Tap two Heads; they don't untap, or cast the top card.",
+  breath: 'Deal damage to your opponent, or destroy their tapped creatures.',
+  weakSpot: 'Destroy a Head.',
+  swallow: 'Your opponent exiles a creature until a Head leaves.',
+  freezeHeads: "Tap Heads; they don't untap during your next untap step.",
+};
 
 const TRIGGER_OPENERS: Record<TriggerEvent, string> = {
   upkeep: 'At the beginning of your upkeep',
@@ -409,6 +433,7 @@ const TRIGGER_OPENERS: Record<TriggerEvent, string> = {
   draw: 'Whenever you draw a card',
   secondDraw: 'Whenever you draw your second card each turn',
   allyCounters: 'Whenever one or more +1/+1 counters are put on another non-Hydra creature you control',
+  graveyard: 'When this card is put into a graveyard from anywhere',
 };
 
 const RELIC_OPENERS: Partial<Record<TriggerEvent, string>> = {
@@ -693,6 +718,8 @@ function refusal(refused: Refusal): string {
       return "you don't have priority";
     case 'sorceryTiming':
       return 'this can only be cast in your main phase while the stack is empty';
+    case 'silenced':
+      return "you can't cast spells until the Nemesis's next turn";
     case 'notEnoughMana':
       return 'not enough mana';
     case 'notYourPermanent':

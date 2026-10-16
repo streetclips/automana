@@ -2,7 +2,7 @@ import { defaultPlayerNames } from './describe';
 import { advance, emptyState } from './game';
 import { getCardDef, hasCardDef } from './registry';
 import { isRelicDef } from './state';
-import type { CardId, CardInstance, GameState, PlayerId, Zone } from './types';
+import type { CardId, CardInstance, ChallengeKind, GameState, PlayerId, Zone } from './types';
 
 export interface ScenarioCard {
   card: string;
@@ -31,6 +31,7 @@ export interface ScenarioPlayer {
   lostLifeThisTurn?: boolean;
   attackedThisTurn?: boolean;
   nemesis?: boolean;
+  challenge?: ChallengeKind;
 }
 
 export interface ScenarioSpec {
@@ -127,7 +128,11 @@ export function createScenario(spec: ScenarioSpec): GameState {
     for (const entry of ps.graveyard ?? []) place(player, 'graveyard', entry);
     for (const entry of ps.exile ?? []) place(player, 'exile', entry);
     for (const entry of ps.relics ?? []) place(player, 'command', entry);
-    if (ps.nemesis) state.nemesis = true;
+    if (ps.nemesis || ps.challenge) state.nemesis = true;
+    if (ps.challenge) {
+      state.challenge = ps.challenge;
+      state.turnRules = [];
+    }
   }
 
   advance(s);

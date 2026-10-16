@@ -2,7 +2,7 @@ import { parentPort } from 'node:worker_threads';
 import { playerDecks } from './decks';
 import { playNemesisGame } from './game';
 import { addResult, emptyTally } from './stats';
-import { NEMESES } from './threats';
+import { ALL_NEMESES as NEMESES } from './all';
 
 export interface Job {
   deck: number;

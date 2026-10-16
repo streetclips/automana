@@ -1,9 +1,20 @@
-import { registerCard, type CardDef, type Keyword, type ThreatInfo, type TriggeredAbility } from '../engine';
+import {
+  registerCard,
+  type CardDef,
+  type ChallengeKind,
+  type Keyword,
+  type ThreatInfo,
+  type TriggeredAbility,
+} from '../engine';
 
 export interface NemesisDeck {
   id: string;
   name: string;
   threats: string[];
+  rules?: ChallengeKind;
+  battlefield?: string[];
+  creatureLimit?: number;
+  headStart?: number;
 }
 
 interface CreatureSpec {

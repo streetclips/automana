@@ -1,3 +1,4 @@
+import { challengeDrawStep } from './challenge';
 import { applyDamage, targetLegality } from './effects';
 import { randomInt } from './rng';
 import {
@@ -44,7 +45,7 @@ export function nemesisDestination(
   to: Zone,
 ): { to: Zone; toBottom: boolean } | null {
   const card = s.cards[id];
-  if (!card || !isNemesis(s, card.owner)) return null;
+  if (!card || !isNemesis(s, card.owner) || s.players[card.owner].challenge) return null;
   if (from === 'stack' && to === 'graveyard') return { to: 'library', toBottom: true };
   if (from === 'battlefield' && to === 'hand') return { to: 'library', toBottom: false };
   return null;
@@ -73,6 +74,11 @@ function enterOrOverflow(s: GameState, player: PlayerId, card: CardId): boolean 
 }
 
 export function nemesisDrawStep(s: GameState, player: PlayerId): void {
+  const challenge = s.players[player].challenge;
+  if (challenge) {
+    challengeDrawStep(s, player, challenge);
+    return;
+  }
   const next = s.players[player].library[0];
   if (next === undefined) return;
   if (isCreatureDef(defOf(s, next)) && creaturesOf(s, player).length >= NEMESIS_CREATURE_LIMIT) {
@@ -209,6 +215,7 @@ export function resolveThreatSpell(s: GameState, item: StackItem): boolean {
 
 export function nemesisDiscard(s: GameState, player: PlayerId, amount: number): boolean {
   if (!isNemesis(s, player)) return false;
+  if (s.players[player].challenge) return true;
   for (const card of s.players[player].library.slice(0, amount)) {
     moveCard(s, card, 'graveyard');
     s.events.push({ t: 'mill', card, player });

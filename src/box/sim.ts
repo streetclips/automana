@@ -5,7 +5,7 @@ import { DIST, ensureDir } from '../lib/paths';
 import { playerDecks } from './nemesis/decks';
 import { Pool } from './nemesis/pool';
 import { emptyTally, merge, type Tally } from './nemesis/stats';
-import { NEMESES } from './nemesis/threats';
+import { ALL_NEMESES as NEMESES } from './nemesis/all';
 import type { Job } from './nemesis/worker';
 
 const args = new Map<string, string>();

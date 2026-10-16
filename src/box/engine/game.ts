@@ -12,6 +12,15 @@ import {
 import { DEFAULT_DECK_ID, expandDeck, resolveDeck, type DeckSpec } from './decks';
 import { defaultPlayerNames, refusalText } from './describe';
 import { resolveTopOfStack } from './effects';
+import {
+  arrangeChallenge,
+  cantLeave,
+  challengeBeginCombat,
+  challengeCleanup,
+  challengeEndCombat,
+  challengeUntap,
+  syncChallengeLife,
+} from './challenge';
 import { afterCast, arrangeThreatDeck, nemesisDrawStep } from './nemesis';
 import { parseCost } from './mana';
 import { getCardDef, hasCardDef } from './registry';
@@ -52,6 +61,7 @@ import { isPlayerTarget, targetCombos, targetsError } from './targets';
 import type {
   Action,
   CardId,
+  ChallengeKind,
   GameOverReason,
   GameState,
   PendingDecision,
@@ -86,6 +96,9 @@ export interface PlayerSetup {
   relics?: string[];
   drawOnFirstTurn?: boolean;
   nemesis?: boolean;
+  challenge?: ChallengeKind;
+  creatureLimit?: number;
+  headStart?: number;
 }
 
 export interface GameOptions {
@@ -233,7 +246,9 @@ export function createGame(options: GameOptions = {}): GameState {
       s.players[player].library.push(id);
     }
     shuffleInPlace(s, s.players[player].library);
-    if (options.players?.[player]?.nemesis) arrangeThreatDeck(s, player);
+    const challenge = options.players?.[player]?.challenge;
+    if (challenge) arrangeChallenge(s, player, challenge, options.players?.[player]);
+    else if (options.players?.[player]?.nemesis) arrangeThreatDeck(s, player);
   }
   for (const player of [0, 1] as const) {
     const setup = options.players?.[player];
@@ -584,6 +599,7 @@ export function advance(s: GameState): void {
 
 function losingReason(ps: PlayerState): GameOverReason | null {
   if (ps.conceded) return 'concede';
+  if (ps.defeated) return 'challenge';
   if (ps.life <= 0) return 'life';
   if (ps.drewFromEmptyLibrary) return 'decked';
   return null;
@@ -598,6 +614,7 @@ function endGame(s: GameState, winner: PlayerId | null, reason: GameOverReason):
 function runStateBasedActions(s: GameState): void {
   if (s.pending?.kind === 'gameOver') return;
   for (let guard = 0; guard < 100; guard++) {
+    syncChallengeLife(s);
     const reasons = s.players.map(losingReason);
     const losers = ([0, 1] as const).filter((player) => reasons[player] !== null);
     const firstLoser = losers[0];
@@ -608,6 +625,7 @@ function runStateBasedActions(s: GameState): void {
     }
     const dying = allCreatures(s).filter((id) => {
       const card = getCard(s, id);
+      if (cantLeave(s, id)) return false;
       const toughness = getToughness(s, id);
       if (toughness <= 0) return true;
       if (hasKeyword(s, id, 'indestructible')) return false;
@@ -691,10 +709,12 @@ function beginStep(s: GameState): void {
     case 'untap':
       for (const id of s.players[active].battlefield) {
         const card = getCard(s, id);
-        if (!doesntUntap(s, id)) card.tapped = false;
+        if (!doesntUntap(s, id) && !card.frozen) card.tapped = false;
         card.summoningSick = false;
+        delete card.frozen;
       }
       s.players[active].landsPlayedThisTurn = 0;
+      challengeUntap(s, active);
       return;
     case 'upkeep':
       for (const id of triggerSources(s, active)) queueTriggers(s, id, 'upkeep', active);
@@ -716,6 +736,7 @@ function beginStep(s: GameState): void {
     case 'beginCombat':
       s.combat = { attackers: [], blocks: [], blockersDeclared: false, blocked: [], firstStrikers: null };
       for (const id of triggerSources(s, active)) queueTriggers(s, id, 'beginCombat', active);
+      challengeBeginCombat(s);
       return;
     case 'declareAttackers':
       if (eligibleAttackers(s).length > 0) s.pending = { kind: 'declareAttackers', player: active };
@@ -736,6 +757,7 @@ function beginStep(s: GameState): void {
       performCombatDamage(s, 'regular');
       return;
     case 'endCombat':
+      challengeEndCombat(s);
       s.combat = null;
       return;
     case 'cleanup': {
@@ -753,7 +775,8 @@ function finishCleanup(s: GameState): void {
     card.damage = 0;
     card.deathtouchDamage = false;
   }
-  s.effects = s.effects.filter((effect) => effect.until !== 'endOfTurn');
+  s.effects = s.effects.filter((effect) => effect.until !== 'endOfTurn' || (effect.expires ?? 0) > s.turn);
+  challengeCleanup(s);
 }
 
 export function nextStepOf(s: GameState): Step {
@@ -797,7 +820,9 @@ function goToNextStep(s: GameState): void {
       s.activePlayer = s.startingPlayer;
     } else {
       s.turn += 1;
-      s.activePlayer = opponent(s.activePlayer);
+      const ps = s.players[s.activePlayer];
+      if (ps.extraTurns) ps.extraTurns -= 1;
+      else s.activePlayer = opponent(s.activePlayer);
     }
     for (const ps of s.players) {
       ps.damagedThisTurn = false;

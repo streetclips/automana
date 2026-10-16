@@ -1,3 +1,4 @@
+import { challengeAttacks } from './challenge';
 import { applyDamage, sourceHasKeyword, type DamageAssignment } from './effects';
 import { compareIds } from './mana';
 import {
@@ -103,6 +104,7 @@ export function performDeclareAttackers(s: GameState, attackers: CardId[]): void
   s.players[s.activePlayer].attackedThisTurn = true;
   for (const id of attackers) queueTriggers(s, id, 'attacks', s.activePlayer);
   for (const id of triggerSources(s, s.activePlayer)) queueTriggers(s, id, 'youAttack', s.activePlayer);
+  challengeAttacks(s, attackers);
 }
 
 export function performDeclareBlockers(s: GameState, blocks: Block[]): void {

@@ -100,8 +100,8 @@ export type Effect = (
   | { kind: 'destroy'; to: EffectTarget }
   | { kind: 'bounce'; to: EffectTarget }
   | { kind: 'counter'; to: number }
-  | { kind: 'draw'; amount: number }
-  | { kind: 'gainLife'; amount: number; times?: Count }
+  | { kind: 'draw'; amount: number; who?: Who }
+  | { kind: 'gainLife'; amount: number; times?: Count; who?: Who }
   | { kind: 'loseLife'; amount: number; who?: Who }
   | { kind: 'fight'; a: EffectTarget; b: EffectTarget }
   | { kind: 'bite'; a: EffectTarget; b: EffectTarget }
@@ -126,6 +126,7 @@ export type Effect = (
   | { kind: 'cantBlock'; to: EffectTarget }
   | { kind: 'unblockable'; to: EffectTarget }
   | { kind: 'doom'; to: EffectTarget }
+  | { kind: 'challenge'; effect: ChallengeEffect }
 ) & { if?: EffectCondition };
 
 export type TriggerEvent =
@@ -144,7 +145,8 @@ export type TriggerEvent =
   | 'youAttack'
   | 'draw'
   | 'secondDraw'
-  | 'allyCounters';
+  | 'allyCounters'
+  | 'graveyard';
 
 export type TriggerCondition =
   | 'opponentDamaged'
@@ -196,6 +198,7 @@ export type StaticAbility =
       power?: number;
       toughness?: number;
       keywords?: Keyword[];
+      ifCount?: number;
     }
   | { kind: 'keywordIf'; keyword: Keyword; condition: 'attacking' | 'controlDragon' | 'life25' }
   | { kind: 'cantBlock' }
@@ -225,6 +228,42 @@ export type ThreatEffect =
   | { kind: 'rebound' }
   | { kind: 'randomDiscard'; fallback: number }
   | { kind: 'tapAll' };
+
+export type ChallengeKind = 'horde' | 'god' | 'hydra';
+
+export type TurnRule = (
+  | { kind: 'attackers'; subtype: string; power: number; keywords: Keyword[]; destroy?: boolean }
+  | { kind: 'mustAttack'; subtype: string; haste?: boolean; keywords?: Keyword[] }
+  | { kind: 'combatDamage'; creatures: number }
+  | { kind: 'revelerDamage'; creatures: boolean }
+) & { source?: CardId };
+
+export type ChallengeEffect =
+  | { kind: 'turnRule'; rule: TurnRule }
+  | { kind: 'revealCast'; count: number }
+  | { kind: 'sacrificeOwn'; subtype: string; count: number }
+  | { kind: 'returnCreatures' }
+  | { kind: 'damagePlayer'; amount: number; perHead?: boolean }
+  | { kind: 'sacrificeOrDamage'; types: CardType[]; amount: number }
+  | { kind: 'returnNamed'; card: string; count: number }
+  | { kind: 'silence' }
+  | { kind: 'distract'; life: number }
+  | { kind: 'regrow'; card: string; count: number }
+  | { kind: 'hide' }
+  | { kind: 'tangle'; heads: number }
+  | { kind: 'breath'; amount: number }
+  | { kind: 'weakSpot' }
+  | { kind: 'swallow' }
+  | { kind: 'freezeHeads'; count: number };
+
+export interface ChallengeInfo {
+  mustAttack?: boolean | number;
+  reveals?: number;
+  anchor?: boolean;
+  elite?: boolean;
+  flame?: number;
+  panic?: number;
+}
 
 export interface ThreatInfo {
   tier: 1 | 2 | 3;
@@ -261,6 +300,7 @@ export interface CardDef {
   sacrificeCreatureOr?: string;
   flavor?: string;
   threat?: ThreatInfo;
+  challenge?: ChallengeInfo;
 }
 
 export type Zone = 'library' | 'hand' | 'battlefield' | 'graveyard' | 'exile' | 'command' | 'stack' | 'gone';
@@ -278,6 +318,7 @@ export interface CardInstance {
   counters: number;
   attachedTo?: CardId;
   spent?: boolean;
+  frozen?: boolean;
 }
 
 export interface PlayerState {
@@ -306,6 +347,14 @@ export interface PlayerState {
   nemesis?: boolean;
   spellsCastThisTurn?: number;
   overflows?: number;
+  challenge?: ChallengeKind;
+  creatureLimit?: number;
+  turnRules?: TurnRule[];
+  turnsBeforeFirst?: number;
+  extraTurns?: number;
+  silenced?: boolean;
+  swallowed?: CardId[];
+  defeated?: boolean;
 }
 
 export type Step =
@@ -364,7 +413,9 @@ export interface ContinuousEffect {
   unblockable?: boolean;
   exileIfDies?: boolean;
   doom?: boolean;
+  destroyAtEndOfCombat?: boolean;
   until: 'endOfTurn';
+  expires?: number;
 }
 
 export interface Block {
@@ -397,7 +448,7 @@ export type PendingDecision =
   | { kind: 'discard'; player: PlayerId; count: number; source?: CardId }
   | { kind: 'gameOver'; winner: PlayerId | null; reason: GameOverReason };
 
-export type GameOverReason = 'life' | 'decked' | 'concede' | 'turnLimit';
+export type GameOverReason = 'life' | 'decked' | 'concede' | 'turnLimit' | 'challenge';
 
 export type Action =
   | { type: 'keep'; player: PlayerId }

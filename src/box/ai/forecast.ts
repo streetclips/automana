@@ -144,7 +144,7 @@ export function forecast(start: GameState, player: PlayerId): GameState {
 function guesses(s: GameState, player: PlayerId): GameState[] {
   const seat = opponent(player);
   const library = s.players[seat].library;
-  if (s.activePlayer !== player) return [s];
+  if (s.activePlayer !== player || s.players[seat].challenge) return [s];
   return library.slice(0, GUESSES).map((next) => {
     const guess = cloneState(s);
     guess.players[seat].library = [next, ...library.filter((card) => card !== next)];

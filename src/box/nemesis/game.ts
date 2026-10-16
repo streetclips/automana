@@ -17,7 +17,20 @@ export interface GameResult {
 }
 
 export function startNemesisGame(seed: number, deck: string[], nemesis: NemesisDeck): GameState {
-  return createGame({ seed, players: [{ deck }, { deck: nemesis.threats, nemesis: true }] });
+  return createGame({
+    seed,
+    players: [
+      { deck },
+      {
+        deck: nemesis.threats,
+        nemesis: true,
+        challenge: nemesis.rules,
+        battlefield: nemesis.battlefield,
+        creatureLimit: nemesis.creatureLimit,
+        headStart: nemesis.headStart,
+      },
+    ],
+  });
 }
 
 export function nextAction(s: GameState): ReturnType<typeof chooseAction> {

@@ -6,6 +6,7 @@ import {
   COLORS,
   type AttachmentEffect,
   type CardDef,
+  type ChallengeEffect,
   type CardId,
   type CardType,
   type Color,
@@ -398,8 +399,10 @@ function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext
     case 'counter':
       return `Contrarresta ${ref(effect.to, 'object')}.`;
     case 'draw':
+      if (effect.who === 'opponent') return `Tu rival roba ${cardsCount(effect.amount)}.`;
       return `Roba ${cardsCount(effect.amount)}.`;
     case 'gainLife':
+      if (effect.who === 'opponent') return `Tu rival gana ${lifeAmount(effect.amount)}.`;
       if (effect.times) return `Ganas ${lifeAmount(effect.amount)} por cada ${countNoun(effect.times)}.`;
       return `Ganas ${lifeAmount(effect.amount)}.`;
     case 'loseLife':
@@ -457,8 +460,29 @@ function effectSentence(effect: Effect, ref: TargetRef, context: SentenceContext
       return withSubject(ref(effect.to, 'subject'), 'no puede ser bloqueada este turno.');
     case 'doom':
       return `Cuando ${ref(effect.to, 'subject')} haga daño de combate este turno, sacrifícala.`;
+    case 'challenge':
+      return CHALLENGE_TEXT[effect.effect.kind];
   }
 }
+
+const CHALLENGE_TEXT: Record<ChallengeEffect['kind'], string> = {
+  turnRule: 'Una regla se aplica este turno.',
+  revealCast: 'Revela la primera carta de tu biblioteca y lánzala.',
+  sacrificeOwn: 'Sacrifica criaturas.',
+  returnCreatures: 'Cada jugador devuelve una carta de criatura de su cementerio al campo de batalla.',
+  damagePlayer: 'Haz daño a tu rival.',
+  sacrificeOrDamage: 'Tu rival sacrifica un artefacto o encantamiento o recibe daño.',
+  returnNamed: 'Devuelve cartas de tu cementerio al campo de batalla.',
+  silence: 'Tu rival no puede lanzar hechizos hasta tu próximo turno.',
+  distract: 'Tu rival sacrifica una criatura para girar una Cabeza, o pierde vida.',
+  regrow: 'Vuelven Cabezas de tu cementerio o de tu biblioteca.',
+  hide: 'Las Cabezas ganan indestructible hasta el final de tu próximo turno.',
+  tangle: 'Gira dos Cabezas; no se enderezan, o lanza la primera carta.',
+  breath: 'Haz daño a tu rival, o destruye sus criaturas giradas.',
+  weakSpot: 'Destruye una Cabeza.',
+  swallow: 'Tu rival exilia una criatura hasta que una Cabeza salga.',
+  freezeHeads: 'Gira Cabezas; no se enderezan en tu próximo paso de enderezar.',
+};
 
 const TRIGGER_OPENERS: Record<TriggerEvent, string> = {
   upkeep: 'Al comienzo de tu mantenimiento',
@@ -478,6 +502,7 @@ const TRIGGER_OPENERS: Record<TriggerEvent, string> = {
   secondDraw: 'Siempre que robes tu segunda carta cada turno',
   allyCounters:
     'Siempre que se pongan uno o más contadores +1/+1 sobre otra criatura que no sea Hidra que controlas',
+  graveyard: 'Cuando esta carta vaya a un cementerio desde cualquier zona',
 };
 
 const RELIC_OPENERS: Partial<Record<TriggerEvent, string>> = {
@@ -776,6 +801,8 @@ function refusal(refused: Refusal): string {
       return 'no tienes la prioridad';
     case 'sorceryTiming':
       return 'esto solo se puede lanzar en tu fase principal con la pila vacía';
+    case 'silenced':
+      return 'no puedes lanzar hechizos hasta el próximo turno de la Némesis';
     case 'notEnoughMana':
       return 'no hay suficiente maná';
     case 'notYourPermanent':

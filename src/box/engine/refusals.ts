@@ -46,4 +46,5 @@ export type Refusal =
   | { code: 'menace'; attacker: CardId }
   | { code: 'abilityUsed' }
   | { code: 'invalidSacrifice' }
-  | { code: 'invalidX' };
+  | { code: 'invalidX' }
+  | { code: 'silenced' };

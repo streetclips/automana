@@ -1,4 +1,5 @@
 import { canPay, choosePayment, manaValue, parseCost, type ManaSource } from './mana';
+import { afterChallengeMove, cantLeave, challengeDestination, challengeLifeChange, subtypeCount } from './challenge';
 import { nemesisDestination, recursOnDeath, spellTax } from './nemesis';
 import { getCardDef, getCost } from './registry';
 import {
@@ -229,6 +230,7 @@ function staticBonus(s: GameState, id: CardId): StaticBonus {
         if (ability.other && source === id) continue;
         if (ability.attacking && !isAttacking(s, id)) continue;
         if (ability.subtypes && !ability.subtypes.some((subtype) => hasSubtype(def, subtype))) continue;
+        if (ability.ifCount && subtypeCount(s, ability.subtypes?.[0] ?? '') < ability.ifCount) continue;
         bonus.power += ability.power ?? 0;
         bonus.toughness += ability.toughness ?? 0;
         bonus.keywords.push(...(ability.keywords ?? []));
@@ -445,9 +447,11 @@ export function createToken(s: GameState, defId: string, controller: PlayerId): 
   return id;
 }
 
-export function moveCard(s: GameState, id: CardId, destination: Zone, requested: MoveOptions = {}): void {
+export function moveCard(s: GameState, id: CardId, requestedDestination: Zone, requested: MoveOptions = {}): void {
   const card = getCard(s, id);
   const from = card.zone;
+  if (from === 'battlefield' && cantLeave(s, id)) return;
+  const destination = challengeDestination(s, id, from, requestedDestination) ?? requestedDestination;
   const def = getCardDef(card.def);
   const exiled =
     from === 'battlefield' &&
@@ -499,6 +503,7 @@ export function moveCard(s: GameState, id: CardId, destination: Zone, requested:
     card.zone = 'gone';
   }
   if (recursOnDeath(s, id, from, to)) moveCard(s, id, 'library', { toBottom: true });
+  afterChallengeMove(s, id, from, to);
 }
 
 function loseTargetsOn(s: GameState, id: CardId): void {
@@ -593,7 +598,7 @@ export function drawCards(s: GameState, player: PlayerId, count: number): void {
 }
 
 export function changeLife(s: GameState, player: PlayerId, delta: number): void {
-  if (delta === 0) return;
+  if (delta === 0 || challengeLifeChange(s, player, delta)) return;
   const ps = s.players[player];
   ps.life += delta;
   if (delta < 0) ps.lostLifeThisTurn = true;

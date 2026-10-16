@@ -115,6 +115,60 @@ What it still doesn't do:
 8. **Mantis Queen's +1/+0 also reaches the Queen.** It is summoning sick, so this changes nothing.
 9. **Ward is untested here.** Targeting skips any creature with a `ward` keyword, but this branch has no ward yet; the Beginner Box merge brings it.
 
+## Challenge decks
+
+Wizards printed three self-running Challenge Decks for the Theros block (2013–2014). `src/box/nemesis/challenges.ts` copies their card stats, texts and quantities under new names, as three more Nemeses, so their win rates give a reference for ours. `src/box/engine/challenge.ts` holds their rules; the Palmwalker rules above (tiers, the creature limit, Threats going to the bottom) don't apply to them.
+
+| Nemesis | Original | Deck | Win for the player |
+|---|---|---|---|
+| `stampede` | Battle the Horde | 60 cards: 43 Minotaurs with haste that attack each turn, 10 sorceries, 7 artifacts | The Horde has no library and no creatures |
+| `revel` | Defeat a God | The Revel King (a 6/5 God, 5/5 here) and 2 Drunken Throngs start on the battlefield; 57 cards: 30 Revelers, 23 sorceries, 4 enchantments | The Revel King leaves the battlefield, which it can't do while a Reveler is there |
+| `hydra` | Face the Hydra | 3 Lesser Heads (0/3) start on the battlefield; 57 cards: 15 Heads, 6 of them elite (0/6, 0/8), 42 sorceries | No Head on the battlefield at the end of a turn |
+
+1. **Their turn:** at the draw step the Nemesis reveals its top cards and casts them for free, in order: the Stampede 2, plus 1 per artifact; the Revel King 2; the Hydra 1. It casts cards revealed at other times at once.
+2. **The Stampede has no life:** damage or life loss N mills its top N cards. Its `life` is kept equal to its library plus its creatures, so it reaches 0 exactly when the player wins.
+3. **Attacking creatures:** the player attacks the Revel King's and the Hydra's creatures by attacking the Nemesis. Damage to these two Nemeses, from combat or spells, goes to their creatures: each chunk, largest first, goes to the creature it can kill with the most toughness left, otherwise to the one closest to dying. The Revel King only takes damage when no Reveler is left.
+4. **The Hydra's damage:** at the start of its combat, each untapped Head deals 1 combat damage to the player, and each elite Head 2. A Head that leaves the battlefield reveals the Hydra's top two cards: Heads enter, sorceries go to the graveyard.
+5. **Attacks:** these Nemeses attack only with the creatures their cards force to attack; they never block.
+6. **Hero's Rewards:** a Head or Reveler that leaves the battlefield, or a Stampede artifact put into a graveyard from anywhere (milled included), gives the player life or a card.
+7. **Zones:** a permanent of these Nemeses that would go to a hand or to exile goes to the graveyard instead. Effects that would make them draw, discard or gain life do nothing.
+8. **The player's AI** plays the Nemesis turn out with one guess of its hidden library instead of three, since these decks don't keep tiers. That made the long Hydra games 7 times faster: one went from 149 s to 21 s.
+
+### Adapted for Palmwalker
+
+No Hero cards are used. The cards keep their printed texts and copies, and all but one their stats; the setup changes instead, so the decks keep their character and land in the 45–55% band:
+
+| Nemesis | Creature limit | Player head start | Other setup |
+|---|---:|---:|---|
+| The Stampede | 5 | 4 turns before its first (printed: 3) | — |
+| The Revel King | 6: the King and 5 Revelers, so Panic Dance and Crazed Nymph still work | 3 turns before its first (printed: 1) | 2 Drunken Throngs, the printed normal setup; the King is 5/5 (printed: 6/5) |
+| The Hydra | none: its Heads never attack and are what the player must clear | 3 turns before its first (printed: 1) | 3 Lesser Heads, the printed normal setup |
+
+1. **Creature limit:** a creature the Nemesis reveals while its creatures on the battlefield plus those waiting to be cast already reach the limit overflows: it deals damage equal to its power to the player and goes to the bottom of the library, as in the Palmwalker Nemeses. Encore and Healing Balm stop returning creatures at the limit.
+2. **Why head starts:** the printed decks hit from the Nemesis's first turn, when the player has one land and no Hero. With the printed setup and the limit the player won 28.3% against the Stampede, 1.7% against the Revel King and 11.7% against the Hydra (seed 1, 4 games per pair and Nemesis). In 45 probe games with the printed easy setups, the Revel King itself did 9.8 damage per game, because each of the 16 Frenzied Pipers makes it attack, and the Hydra's Heads did 15.4 of its 24.9. Cutting copies of the damage spells didn't help: the Revel King went from 7.8% to 5.6% without 3 King's Strikes and 3 Reckless Rushes, and the Hydra from 32.2% to 24.1% with Tangled Necks and Regrowths in place of 2 Divided Furies and 2 All-Heads Lunges. Each head-start turn moved the rates by 15 to 25 points.
+3. **The Revel King's last points:** with 2 Throngs the player won 44.6% over seeds 1, 3 and 5, and with 1 Throng 58.6%. Copies barely moved it: 13 Frenzied Pipers instead of 16 gave 43.6%, 9 Reckless Rushes 44.7%, and one fewer Rush and King's Strike 40.8%, because Rush sends the Revelers into the player's blockers, where they die and pay their Hero's Rewards. One point of power off the King gave 49.4%.
+4. **Tuning knob:** `BOX_CHALLENGE` takes JSON per Nemesis with `creatureLimit`, `headStart` (extra player turns before the Nemesis's first, on top of the first one), `battlefield` and `copies` (card id → count), for example `BOX_CHALLENGE='{"revel":{"headStart":3}}' npm run box -- --nemeses revel`.
+
+
+Result over seeds 1, 3 and 5, 0 errors (10 games per pair and Nemesis on each seed, 6 on seed 1 for the Stampede and the Hydra: 1,170 to 1,350 games per Nemesis, ±2.9 points):
+
+| Nemesis | Seed 1 | Seed 3 | Seed 5 | All | Rounds |
+|---|---:|---:|---:|---:|---:|
+| The Stampede | 46.7% | 48.4% | 50.0% | 48.6% | 8.5 |
+| The Revel King | 47.3% | 51.8% | 49.1% | 49.4% | 6.4 |
+| The Hydra | 52.2% | 50.0% | 54.2% | 52.1% | 7.7 |
+
+The deck decides even more than against the Palmwalker Nemeses: on seed 3 the standard deviation across the 45 pairs is 19.7 points against the Stampede, 17.4 against the Revel King and 20.7 against the Hydra, against 11.7 for the Palmwalker Nemeses. The Hydra games are the slowest, at about 2 games/s on 10 workers.
+
+Deviations from the printed rules:
+
+1. **No Hero cards.** The originals let the player start with up to two (Hydra) or three Hero cards on the battlefield. Without them the player has no head start, so these win rates understate the player.
+2. **"You make all choices for the Nemesis"** becomes fixed rules in the player's favour: Toxic Breath destroys the tapped creatures unless they are worth more than 5 life and the player has more than 10; Bait the Beast sacrifices the player's weakest creature if it is small or life is low; Weak Spot destroys a plain Head; Tangled Necks and Divided Fury tap the Heads that hit hardest; Wild Smashing sacrifices a noncreature artifact or enchantment only at 6 life or less; Swallowed Whole exiles the player's weakest creature; War Altar sacrifices the strongest Minotaurs; Healing Balm returns the player's strongest creature card and the Stampede's weakest.
+3. **Attack targets are chosen after blocks,** by the rule in 3 above, not when attackers are declared.
+4. **"Each player" means the player** in the Nemesis's own cards: Toxic Breath, Divided Fury and All-Heads Lunge don't also damage the Hydra.
+5. **Hunt the Weak's "must be blocked if able" is not modelled;** its first strike is.
+6. **Setup:** see Adapted for Palmwalker above.
+
 ## Print and play
 
 `npm run pnp:box` writes `dist/palmwalker-box-pnp-en.pdf` and `-es.pdf`: 81 cards on 9 A4 sheets, in the same format as Palmwalker's PnP (63 × 88 mm like Magic cards, 3 mm bleed, odd pages fronts, even pages backs mirrored for long-edge duplex, CMYK).
@@ -128,9 +182,10 @@ What it still doesn't do:
 
 | Command | What it does |
 |---|---|
-| `npm run box -- --games 100 --seed 1 [--decks a,b] [--nemeses vorthrax,morwen] [--workers N]` | Games per deck × Nemesis in worker threads. Prints the win-rate table and the metrics per Nemesis, and writes `dist/box/box-seed<S>-g<N>.{md,json}`. Every game has its own seed, so results don't depend on the worker count. |
+| `npm run box -- --games 100 --seed 1 [--decks a,b] [--nemeses vorthrax,morwen] [--workers N]` | Games per deck × Nemesis in worker threads, against all 7 Nemeses unless `--nemeses` names some (`vorthrax`, `vaskara`, `morwen`, `mirror-archmage`, `stampede`, `revel`, `hydra`). Prints the win-rate table and the metrics per Nemesis, and writes `dist/box/box-seed<S>-g<N>.{md,json}`. Every game has its own seed, so results don't depend on the worker count. |
 | `npm run box:trace -- <seed> <deck> <nemesis>` | The log of one game. |
 | `npm run pnp:box` | The print-and-play PDFs of the box mode. |
+| `npm run box:test:challenges` | The Challenge deck rules as 15 scenario tests. |
 | `npm run box:test:nemesis` | The rules above as 25 scenario tests, on Threats pinned to fixed sizes so tuning never breaks them; 6 of them check the player's AI. |
 | `BOX_THREAT_SIZES=vorthrax=1/2,morwen=0/-1 npm run box` | Adds power/toughness to every creature of the named Nemeses, to probe sizes without editing the deck lists. |
 | `BOX_OMEN=0 npm run box` | No Omen: each Nemesis turn reveals the top Threat and executes it. Every face-down Threat is life (20 at the start), and damage, discards, Brood and Egg Laying take the top cards. |
