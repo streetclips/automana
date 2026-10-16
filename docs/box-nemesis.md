@@ -182,12 +182,13 @@ Deviations from the printed rules:
 
 ## Print and play
 
-`npm run pnp:box` writes `dist/palmwalker-box-pnp-en.pdf` and `-es.pdf`: 81 cards on 9 A4 sheets, in the same format as Palmwalker's PnP (63 × 88 mm like Magic cards, 3 mm bleed, odd pages fronts, even pages backs mirrored for long-edge duplex, CMYK).
+`npm run pnp:box` writes `dist/palmwalker-box-pnp-en.pdf` and `-es.pdf`: 209 cards on 24 A4 sheets, in the same format as Palmwalker's PnP (63 × 88 mm like Magic cards, 3 mm bleed, odd pages fronts, even pages backs mirrored for long-edge duplex, CMYK).
 
 1. **A quick reference** for the box mode: setup, the Nemesis turn, its mind, and how your cards work against it.
 2. **The 4 Threat decks**, 20 cards each, with the plain Threat back. The tuned sizes and tiers come from `src/box/nemesis/threats.ts`, the names, art and flavour from Palmwalker's content (`src/pnp/box.ts`).
 3. **Tier mark:** the roman numeral at the right of the name bar (I, II or III), where a Magic card shows its mana cost. Collector numbers follow the tiers, so cards 1 to 6 or 7 of each deck are tier I.
-4. **Wording for Magic:** "the battlefield" for Palmwalker's Table, the official Spanish keywords (*Vuela*, *Arrolla*), a random discard for Rebound and Mind Theft, and "tap" for Mass Illusion.
+4. **The 3 Challenge decks** after them, each led by its own two-faced rules card: the Stampede (41 cards), the Revel King (43, the 2 that start on the battlefield included) and the Hydra (41, its 3 starting Heads included). Their names and texts are in `src/content/challenges.ts`, their sizes and copies come from `src/box/nemesis/challenges.ts`, and they have no art yet: the art box shows the Threat glow.
+5. **Wording for Magic:** "the battlefield" for Palmwalker's Table, the official Spanish keywords (*Vuela*, *Arrolla*), a random discard for Rebound and Mind Theft, and "tap" for Mass Illusion.
 
 ## Tools
 

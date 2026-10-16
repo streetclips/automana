@@ -1,7 +1,9 @@
 import { getCardDef } from "../box/engine";
+import { CHALLENGES } from "../box/nemesis/challenges";
 import { NEMESES as BOX_NEMESES } from "../box/nemesis/threats";
 import { getCard } from "../content";
 import { BOX_REFERENCE } from "../content/box-reference";
+import { CHALLENGE_CARDS, CHALLENGE_DECKS } from "../content/challenges";
 import type { Card, CardText } from "../content/types";
 import { renderCard, renderThreatBack } from "../render/card";
 import { referenceFace } from "../render/faces";
@@ -46,19 +48,38 @@ function boxThreats(engineIds: string[]): Card[] {
   return cards.sort((a, b) => (a.tier ?? 1) - (b.tier ?? 1));
 }
 
+function challengeCards(engineIds: string[]): Card[] {
+  const counts = new Map<string, number>();
+  for (const id of engineIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts].map(([id, qty]): Card => {
+    const def = getCardDef(id);
+    const text = CHALLENGE_CARDS[id];
+    if (!text) throw new Error(`No printed text for ${id}`);
+    const pt = def.power === undefined ? undefined : `${def.power}/${def.toughness}`;
+    return { id, color: "T", type: text.type, qty, pt, threat: true, art: "", en: text.en, es: text.es };
+  });
+}
+
+function numbered(collection: string, cards: Card[], back: string): PrintCard[] {
+  const total = cards.reduce((sum, c) => sum + c.qty, 0);
+  let first = 1;
+  return cards.flatMap((card) => {
+    const number = { collection, first, total };
+    first += card.qty;
+    return Array.from({ length: card.qty }, (_, copy) => ({ front: renderCard(card, copy, number), back }));
+  });
+}
+
 export function buildBoxDeck(): PrintCard[] {
   const back = renderThreatBack();
   return [
     { front: referenceFace("A", BOX_REFERENCE), back: referenceFace("B", BOX_REFERENCE) },
-    ...BOX_NEMESES.flatMap((nemesis) => {
-      const cards = boxThreats(nemesis.threats);
-      const total = cards.reduce((sum, c) => sum + c.qty, 0);
-      let first = 1;
-      return cards.flatMap((card) => {
-        const number = { collection: nemesis.id, first, total };
-        first += card.qty;
-        return Array.from({ length: card.qty }, (_, copy) => ({ front: renderCard(card, copy, number), back }));
-      });
+    ...BOX_NEMESES.flatMap((nemesis) => numbered(nemesis.id, boxThreats(nemesis.threats), back)),
+    ...CHALLENGES.flatMap((deck) => {
+      const reference = CHALLENGE_DECKS[deck.id]?.reference;
+      if (!reference) throw new Error(`No reference card for ${deck.id}`);
+      const cards = challengeCards([...(deck.battlefield ?? []), ...deck.threats]);
+      return [{ front: referenceFace("A", reference), back: referenceFace("B", reference) }, ...numbered(deck.id, cards, back)];
     }),
   ];
 }

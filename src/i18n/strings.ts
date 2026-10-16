@@ -13,7 +13,7 @@ export interface Strings {
 
 export const STRINGS: Record<Locale, Strings> = {
   en: {
-    typeLabel: { creature: "Creature", instant: "Instant", sorcery: "Sorcery", aura: "Aura", spell: "Spell" },
+    typeLabel: { creature: "Creature", instant: "Instant", sorcery: "Sorcery", aura: "Aura", spell: "Spell", artifact: "Artifact", enchantment: "Enchantment" },
     threatPrefix: "Threat · ",
     face: "Face",
     reference: "Quick reference",
@@ -23,7 +23,7 @@ export const STRINGS: Record<Locale, Strings> = {
     backs: "Card backs",
   },
   es: {
-    typeLabel: { creature: "Criatura", instant: "Instantáneo", sorcery: "Conjuro", aura: "Aura", spell: "Hechizo" },
+    typeLabel: { creature: "Criatura", instant: "Instantáneo", sorcery: "Conjuro", aura: "Aura", spell: "Hechizo", artifact: "Artefacto", enchantment: "Encantamiento" },
     threatPrefix: "Amenaza · ",
     face: "Cara",
     reference: "Referencia rápida",

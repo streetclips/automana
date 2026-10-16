@@ -1,7 +1,7 @@
 import { GRIMOIRES, NEMESES } from "../../content";
 import type { Card, HalfGrimoire, Nemesis } from "../../content/types";
 
-export type Kind = "creature" | "instant" | "sorcery" | "aura" | "spell";
+export type Kind = "creature" | "instant" | "sorcery" | "aura" | "spell" | "artifact" | "enchantment";
 export type NemesisId = "vorthrax" | "vaskara" | "morwen" | "mirror-archmage";
 
 export const FLYING = 1;

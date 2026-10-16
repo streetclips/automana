@@ -2,7 +2,7 @@ export type Locale = "en" | "es";
 
 export type Color = "R" | "G" | "W" | "U" | "B" | "T";
 
-export type CardType = "creature" | "instant" | "sorcery" | "aura" | "spell";
+export type CardType = "creature" | "instant" | "sorcery" | "aura" | "spell" | "artifact" | "enchantment";
 
 export interface CardText {
   name: string;
