@@ -12,7 +12,7 @@ import {
 import { DEFAULT_DECK_ID, expandDeck, resolveDeck, type DeckSpec } from './decks';
 import { defaultPlayerNames, refusalText } from './describe';
 import { resolveTopOfStack } from './effects';
-import { afterCast, arrangeThreatDeck, nemesisDrawStep, syncNemesisLife } from './nemesis';
+import { afterCast, arrangeThreatDeck, nemesisDrawStep } from './nemesis';
 import { parseCost } from './mana';
 import { getCardDef, hasCardDef } from './registry';
 import type { Refusal } from './refusals';
@@ -598,7 +598,6 @@ function endGame(s: GameState, winner: PlayerId | null, reason: GameOverReason):
 function runStateBasedActions(s: GameState): void {
   if (s.pending?.kind === 'gameOver') return;
   for (let guard = 0; guard < 100; guard++) {
-    syncNemesisLife(s);
     const reasons = s.players.map(losingReason);
     const losers = ([0, 1] as const).filter((player) => reasons[player] !== null);
     const firstLoser = losers[0];

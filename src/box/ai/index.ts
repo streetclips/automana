@@ -1,17 +1,20 @@
 import {
+  applyAction,
   canAttack,
   getCardDef,
   getLegalActions,
   isLand,
   type Action,
   type CardDef,
+  type Effect,
   type GameState,
   type PlayerId,
 } from '../engine';
 import { feedCounter, hideFaceDownThreats } from '../nemesis/mind';
-import { chooseAttackers, chooseBlocks } from './combat';
+import { chooseAttackers, chooseBlocks, planAttack } from './combat';
+import { evaluateAhead } from './forecast';
 import { chooseCardsToBottom, chooseCardsToDiscard, chooseLand, shouldKeep } from './heuristics';
-import { actionValue, bestAction, repeatedActionValue } from './rollout';
+import { actionValue, bestAction, repeatedActionValue, rollout } from './rollout';
 
 export { chooseAttackers, chooseBlocks } from './combat';
 export { rollout } from './rollout';
@@ -61,6 +64,25 @@ function extraLandValue(s: GameState, action: Action): number {
   return lands > playsLeft ? EXTRA_LAND_VALUE : 0;
 }
 
+const ATTACK_SETUPS: ReadonlySet<Effect['kind']> = new Set(['pump', 'pumpTeam', 'unblockable', 'cantBlock', 'tap']);
+
+function setsUpAttack(s: GameState, action: Action): boolean {
+  if (action.type === 'activate') {
+    const effects = getCardDef(s.cards[action.card]?.def ?? '').activated?.[action.ability]?.effects ?? [];
+    return effects.some((effect) => ATTACK_SETUPS.has(effect.kind));
+  }
+  if (action.type !== 'cast') return false;
+  const def = getCardDef(s.cards[action.card]?.def ?? '');
+  return def.types.includes('sorcery') && (def.spell?.effects ?? []).some((effect) => ATTACK_SETUPS.has(effect.kind));
+}
+
+function plannedValue(s: GameState, action: Action, player: PlayerId): number {
+  const next = rollout(applyAction(s, action), 0, s);
+  const pending = next.pending;
+  if (pending?.kind !== 'declareAttackers' || pending.player !== player) return evaluateAhead(next, player);
+  return planAttack(next, player).value;
+}
+
 function choosePriorityAction(s: GameState, player: PlayerId): Action {
   const pass: Action = { type: 'pass', player };
   const legal = getLegalActions(s);
@@ -77,11 +99,13 @@ function choosePriorityAction(s: GameState, player: PlayerId): Action {
   if (beforeCombat) candidates = candidates.filter((action) => !waitsForCombat(s, action));
   if (candidates.length === 0) return pass;
 
+  const planned = beforeCombat && candidates.some((action) => setsUpAttack(s, action));
   let best: Action = pass;
-  let bestValue = actionValue(s, pass, player) + MIN_GAIN;
+  let bestValue = (planned ? plannedValue(s, pass, player) : actionValue(s, pass, player)) + MIN_GAIN;
   for (const action of candidates) {
-    const value =
-      action.type === 'activate'
+    const value = planned
+      ? plannedValue(s, action, player) + extraLandValue(s, action)
+      : action.type === 'activate'
         ? repeatedActionValue(s, action, player)
         : actionValue(s, action, player) + extraLandValue(s, action);
     if (value > bestValue) {

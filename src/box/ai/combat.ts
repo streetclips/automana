@@ -12,7 +12,8 @@ import {
 } from '../engine';
 import { nemesisBlocks } from '../nemesis/mind';
 import { creatureValue, evaluate, WIN_SCORE } from './evaluate';
-import { rollout } from './rollout';
+import { evaluateAhead } from './forecast';
+import { combatValue, rollout } from './rollout';
 
 const MIN_GAIN = 0.01;
 const MAX_ENUMERATED_ATTACKERS = 5;
@@ -40,6 +41,11 @@ interface Plan {
 
 interface Attempt extends Plan {
   damage: number;
+}
+
+interface AttackPlan {
+  attackers: CardId[];
+  value: number;
 }
 
 type Preference = (a: Defense, b: Defense) => boolean;
@@ -77,7 +83,7 @@ function gainKey(s: GameState, blocks: Block[], candidate: Candidate): string {
 
 function blockScore(s: GameState, player: PlayerId, blocks: Block[]): number {
   if (blocksError(s, blocks)) return Number.NEGATIVE_INFINITY;
-  return evaluate(rollout(applyAction(s, { type: 'declareBlockers', player, blocks }), 1), player);
+  return combatValue(applyAction(s, { type: 'declareBlockers', player, blocks }), player);
 }
 
 function completeBlock(
@@ -239,13 +245,13 @@ export function chooseBlocks(s: GameState, player: PlayerId): Block[] {
 }
 
 export function attackValue(s: GameState, player: PlayerId, attackers: CardId[]): number {
-  let t = rollout(applyAction(s, { type: 'declareAttackers', player, attackers }), 1);
+  const t = rollout(applyAction(s, { type: 'declareAttackers', player, attackers }), 1);
   if (t.pending?.kind === 'declareBlockers') {
     const defender = t.pending.player;
     const blocks = t.players[defender].nemesis ? nemesisBlocks(t, defender) : chooseBlocks(t, defender);
-    t = rollout(applyAction(t, { type: 'declareBlockers', player: defender, blocks }), 1);
+    return combatValue(applyAction(t, { type: 'declareBlockers', player: defender, blocks }), player);
   }
-  return evaluate(t, player);
+  return evaluateAhead(t, player);
 }
 
 function allNonEmptySubsets(items: CardId[]): CardId[][] {
@@ -256,28 +262,20 @@ function allNonEmptySubsets(items: CardId[]): CardId[][] {
   return result;
 }
 
-function improveAttack(
-  s: GameState,
-  player: PlayerId,
-  eligible: CardId[],
-  start: CardId[],
-  startValue: number,
-): CardId[] {
+function improveAttack(s: GameState, player: PlayerId, eligible: CardId[], start: AttackPlan): AttackPlan {
   let current = start;
-  let currentValue = startValue;
   for (let round = 0; round < eligible.length * 2; round++) {
     let improved = false;
     let tried = new Set<string>();
     for (const id of eligible) {
-      const attacking = current.includes(id);
+      const attacking = current.attackers.includes(id);
       const key = `${signature(s, id)}${attacking ? '-' : '+'}`;
       if (tried.has(key)) continue;
       tried.add(key);
-      const next = attacking ? current.filter((other) => other !== id) : [...current, id];
+      const next = attacking ? current.attackers.filter((other) => other !== id) : [...current.attackers, id];
       const value = attackValue(s, player, next);
-      if (value > currentValue + MIN_GAIN) {
-        current = next;
-        currentValue = value;
+      if (value > current.value + MIN_GAIN) {
+        current = { attackers: next, value };
         improved = true;
         tried = new Set<string>();
       }
@@ -287,25 +285,22 @@ function improveAttack(
   return current;
 }
 
-export function chooseAttackers(s: GameState, player: PlayerId): CardId[] {
+export function planAttack(s: GameState, player: PlayerId): AttackPlan {
   const eligible = eligibleAttackers(s);
-  if (eligible.length === 0) return [];
-  let best: CardId[] = [];
-  let bestValue = attackValue(s, player, []);
+  let best: AttackPlan = { attackers: [], value: attackValue(s, player, []) };
+  if (eligible.length === 0) return best;
   if (eligible.length > MAX_ENUMERATED_ATTACKERS) {
     const allIn = attackValue(s, player, eligible);
-    if (allIn > bestValue) {
-      best = [...eligible];
-      bestValue = allIn;
-    }
-    return improveAttack(s, player, eligible, best, bestValue);
+    if (allIn > best.value) best = { attackers: [...eligible], value: allIn };
+    return improveAttack(s, player, eligible, best);
   }
   for (const attackers of allNonEmptySubsets(eligible)) {
     const value = attackValue(s, player, attackers);
-    if (value > bestValue + MIN_GAIN) {
-      best = attackers;
-      bestValue = value;
-    }
+    if (value > best.value + MIN_GAIN) best = { attackers, value };
   }
   return best;
+}
+
+export function chooseAttackers(s: GameState, player: PlayerId): CardId[] {
+  return eligibleAttackers(s).length === 0 ? [] : planAttack(s, player).attackers;
 }

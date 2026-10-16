@@ -138,9 +138,9 @@ export function creatureValue(s: GameState, id: CardId): number {
 }
 
 const TREASURE_VALUE = 0.8;
-const EQUIPMENT_VALUE = 1;
-const ENCHANTMENT_VALUE = 1.5;
-const MANA_ROCK_VALUE = 1.5;
+const EQUIPMENT_VALUE = 3;
+const ENCHANTMENT_VALUE = 3;
+const MANA_ROCK_VALUE = 3.5;
 
 function permanentValue(s: GameState, id: CardId): number {
   const def = getCardDef(s.cards[id]?.def ?? '');
@@ -165,7 +165,7 @@ function sideScore(s: GameState, player: PlayerId): number {
     } else score += permanentValue(s, id);
   }
   score += ps.hand.length * CARD_IN_HAND_VALUE;
-  if (ps.library.length < 4) score -= (4 - ps.library.length) * 3;
+  if (!ps.nemesis && ps.library.length < 4) score -= (4 - ps.library.length) * 3;
   return score;
 }
 

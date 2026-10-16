@@ -128,7 +128,7 @@ export function nemesisAttackers(s: GameState, player: PlayerId): CardId[] {
   );
 }
 
-function unblockedDamage(s: GameState, attackers: CardId[], blocks: Block[]): number {
+export function unblockedDamage(s: GameState, attackers: CardId[], blocks: Block[]): number {
   let total = 0;
   for (const attacker of attackers) {
     const power = Math.max(0, getPower(s, attacker));
@@ -276,10 +276,11 @@ export function hideFaceDownThreats(s: GameState): GameState {
   const seat = nemesisSeat(s);
   if (seat === null) return s;
   const library = s.players[seat].library;
-  if (library.length <= 2) return s;
+  if (library.length <= 1) return s;
   const view = cloneState(s);
-  const faceDown = library.slice(1).sort(compareIds);
-  shuffleInPlace(view, faceDown);
-  view.players[seat].library = [library[0] as CardId, ...faceDown];
+  const sorted = [...library].sort(compareIds);
+  const tiers = [1, 2, 3].map((tier) => sorted.filter((id) => (defOf(s, id).threat?.tier ?? 3) === tier));
+  for (const tier of tiers) shuffleInPlace(view, tier);
+  view.players[seat].library = tiers.flat();
   return view;
 }

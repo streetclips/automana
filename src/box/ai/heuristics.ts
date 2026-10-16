@@ -57,14 +57,13 @@ export function chooseLand(s: GameState, player: PlayerId, landActions: Action[]
   const have = sourcesByColor(s, player);
   const need = pipsInHand(s, player);
   const plays = landActions.filter((action) => action.type === 'playLand');
-  const tempo = new Set(plays.map((action) => getCardDef(defId(s, action.card)).entersTapped === true)).size > 1;
   let best = landActions[0] as Action;
   let bestScore = Number.NEGATIVE_INFINITY;
   for (const action of plays) {
     const def = getCardDef(defId(s, action.card));
     const colors = def.mana ?? [];
     let score = Math.max(-10, ...colors.map((color) => need[color] - have[color] * 1.5));
-    if (tempo) score += castableAfter(s, player, action) * 4 + (def.entersTapped ? 1 : 0);
+    score += castableAfter(s, player, action) * 4 + (def.entersTapped ? 1 : 0);
     if (score > bestScore) {
       best = action;
       bestScore = score;

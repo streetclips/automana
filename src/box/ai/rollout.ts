@@ -1,21 +1,20 @@
 import {
   applyAction,
-  defOf,
-  getCard,
   getLegalActions,
-  getToughness,
+  isCreature,
   isPlayerTarget,
-  triggeredAbility,
+  priorityActions,
   tryApplyAction,
   type Action,
-  type Effect,
   type GameState,
   type PlayerId,
   type Step,
-  type Target,
 } from '../engine';
-import { creatureValue, evaluate } from './evaluate';
+import { nemesisBlocks } from '../nemesis/mind';
+import { evaluate } from './evaluate';
+import { evaluateAhead } from './forecast';
 import { chooseCardsToDiscard } from './heuristics';
+import { quickTargets } from './targets';
 
 const MAX_ROLLOUT_ACTIONS = 80;
 const COMBAT_STEPS: ReadonlySet<Step> = new Set([
@@ -59,56 +58,16 @@ export function rollout(start: GameState, depth = 0, from: Pick<GameState, 'turn
   return s;
 }
 
-function controllerOf(s: GameState, target: Target): PlayerId {
-  return isPlayerTarget(target) ? target.player : getCard(s, target.card).controller;
-}
-
-function targetImpact(s: GameState, player: PlayerId, effect: Effect, targets: Target[]): number {
-  const index = 'to' in effect && typeof effect.to === 'number' ? effect.to : null;
-  const target = index === null ? undefined : targets[index];
-  if (!target) return 0;
-  const side = controllerOf(s, target) === player ? -1 : 1;
-  if (isPlayerTarget(target)) return effect.kind === 'damage' ? side * effect.amount * 0.5 : 0;
-  const value = creatureValue(s, target.card);
-  const remaining = getToughness(s, target.card) - getCard(s, target.card).damage;
-  switch (effect.kind) {
-    case 'damage':
-      return side * (effect.amount >= remaining ? value : effect.amount * 0.3);
-    case 'destroy':
-    case 'bounce':
-    case 'exile':
-      return side * value;
-    case 'pump':
-      if (effect.toughness < 0 && -effect.toughness >= remaining) return side * value;
-      return -side * (effect.power + effect.toughness) * 0.5;
-    case 'addCounters':
-      return -side * effect.amount * 2.5;
-    default:
-      return 0;
-  }
-}
-
-function quickTargets(s: GameState, player: PlayerId): Action {
-  const pending = s.pending;
-  const trigger =
-    pending?.kind === 'chooseTargets' ? s.triggers.find((candidate) => candidate.id === pending.trigger) : undefined;
-  const effects = trigger ? (triggeredAbility(defOf(s, trigger.source), trigger.ability)?.effects ?? []) : [];
-  let best: Action | undefined;
-  let bestScore = Number.NEGATIVE_INFINITY;
-  for (const action of getLegalActions(s)) {
-    const targets = action.type === 'chooseTargets' ? action.targets : [];
-    const score = effects.reduce((sum, effect) => sum + targetImpact(s, player, effect, targets), 0);
-    if (score > bestScore) {
-      best = action;
-      bestScore = score;
-    }
-  }
-  if (!best) throw new Error('no legal action available');
-  return best;
+function settledValue(end: GameState, player: PlayerId): number {
+  const pending = end.pending;
+  if (pending?.kind !== 'declareBlockers' || !end.players[pending.player].nemesis) return evaluateAhead(end, player);
+  const blocks = nemesisBlocks(end, pending.player);
+  return combatValue(applyAction(end, { type: 'declareBlockers', player: pending.player, blocks }), player);
 }
 
 export function actionValue(s: GameState, action: Action, player: PlayerId, depth = 0): number {
-  return evaluate(rollout(applyAction(s, action), depth, s), player);
+  const end = rollout(applyAction(s, action), depth, s);
+  return depth === 0 ? settledValue(end, player) : evaluate(end, player);
 }
 
 export function bestAction(s: GameState, player: PlayerId, actions: Action[], depth = 0): Action {
@@ -122,6 +81,38 @@ export function bestAction(s: GameState, player: PlayerId, actions: Action[], de
     }
   }
   if (!best) throw new Error('bestAction needs at least one action');
+  return best;
+}
+
+function combatTricks(s: GameState, player: PlayerId): Action[] {
+  const combat = s.combat;
+  if (!combat) return [];
+  const fighters = new Set([...combat.attackers, ...combat.blocks.map((block) => block.blocker)]);
+  return priorityActions(s, player).filter(
+    (action) =>
+      (action.type === 'activate' || (action.type === 'cast' && !isCreature(s, action.card))) &&
+      action.targets.every((target) => !isPlayerTarget(target) && fighters.has(target.card)),
+  );
+}
+
+export function combatValue(blocked: GameState, player: PlayerId): number {
+  let s = blocked;
+  while (
+    s.pending?.kind === 'priority' &&
+    s.pending.player !== player &&
+    s.stack.length === 0 &&
+    s.step === 'declareBlockers'
+  ) {
+    s = applyAction(s, { type: 'pass', player: s.pending.player });
+  }
+  let best = evaluateAhead(rollout(s, 1), player);
+  const pending = s.pending;
+  if (pending?.kind !== 'priority' || pending.player !== player || s.step !== 'declareBlockers' || s.stack.length > 0) {
+    return best;
+  }
+  for (const trick of combatTricks(s, player)) {
+    best = Math.max(best, evaluateAhead(rollout(applyAction(s, trick), 1), player));
+  }
   return best;
 }
 
@@ -142,7 +133,7 @@ export function repeatedActionValue(s: GameState, action: Action, player: Player
     const result = tryApplyAction(state, action);
     if (!result.ok) break;
     state = settleStack(result.state);
-    best = Math.max(best, evaluate(rollout(state, 0, s), player));
+    best = Math.max(best, evaluateAhead(rollout(state, 0, s), player));
     const pending = state.pending;
     if (pending?.kind === 'priority' && pending.player !== player && state.stack.length === 0) {
       const passed = tryApplyAction(state, { type: 'pass', player: pending.player });

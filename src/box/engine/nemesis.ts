@@ -27,20 +27,6 @@ export function nemesisSeat(s: GameState): PlayerId | null {
   return s.players[0].nemesis ? 0 : null;
 }
 
-export function omenOf(s: GameState, player: PlayerId): CardId | undefined {
-  return s.players[player].library[0];
-}
-
-export function faceDownCount(s: GameState, player: PlayerId): number {
-  return Math.max(0, s.players[player].library.length - 1);
-}
-
-export function syncNemesisLife(s: GameState): void {
-  for (const player of [0, 1] as const) {
-    if (isNemesis(s, player)) s.players[player].life = faceDownCount(s, player);
-  }
-}
-
 export function arrangeThreatDeck(s: GameState, player: PlayerId): void {
   const ps = s.players[player];
   const tierOf = (id: CardId): number => defOf(s, id).threat?.tier ?? 3;
@@ -49,36 +35,6 @@ export function arrangeThreatDeck(s: GameState, player: PlayerId): void {
   ps.kept = true;
   ps.bottomed = true;
   ps.overflows = 0;
-  ps.life = faceDownCount(s, player);
-}
-
-function burn(s: GameState, player: PlayerId, amount: number): void {
-  for (let i = 0; i < amount; i++) {
-    const card = s.players[player].library[1];
-    if (card === undefined) return;
-    moveCard(s, card, 'graveyard');
-  }
-}
-
-function recover(s: GameState, player: PlayerId, amount: number): void {
-  for (let i = 0; i < amount; i++) {
-    const card = s.players[player].graveyard.at(-1);
-    if (card === undefined) return;
-    moveCard(s, card, 'library', { toBottom: true });
-  }
-}
-
-export function changeNemesisLife(s: GameState, player: PlayerId, delta: number): void {
-  const before = faceDownCount(s, player);
-  if (delta < 0) burn(s, player, -delta);
-  else recover(s, player, delta);
-  const ps = s.players[player];
-  ps.life = faceDownCount(s, player);
-  if (ps.life !== before) s.events.push({ t: 'life', player, delta: ps.life - before, life: ps.life });
-}
-
-export function millNemesis(s: GameState, player: PlayerId, amount: number): void {
-  changeNemesisLife(s, player, -amount);
 }
 
 export function nemesisDestination(
@@ -117,10 +73,10 @@ function enterOrOverflow(s: GameState, player: PlayerId, card: CardId): boolean 
 }
 
 export function nemesisDrawStep(s: GameState, player: PlayerId): void {
-  const omen = omenOf(s, player);
-  if (omen === undefined) return;
-  if (isCreatureDef(defOf(s, omen)) && creaturesOf(s, player).length >= NEMESIS_CREATURE_LIMIT) {
-    overflow(s, player, omen);
+  const next = s.players[player].library[0];
+  if (next === undefined) return;
+  if (isCreatureDef(defOf(s, next)) && creaturesOf(s, player).length >= NEMESIS_CREATURE_LIMIT) {
+    overflow(s, player, next);
     return;
   }
   drawCards(s, player, 1);
@@ -204,7 +160,7 @@ function runThreatEffect(s: GameState, effect: ThreatEffect, item: StackItem, ta
       return;
     }
     case 'reveal': {
-      const revealed = s.players[player].library.slice(1, 1 + effect.count);
+      const revealed = s.players[player].library.slice(0, effect.count);
       for (const card of revealed) {
         if (isCreatureDef(defOf(s, card))) enterOrOverflow(s, player, card);
         else moveCard(s, card, 'library', { toBottom: true });
@@ -253,6 +209,9 @@ export function resolveThreatSpell(s: GameState, item: StackItem): boolean {
 
 export function nemesisDiscard(s: GameState, player: PlayerId, amount: number): boolean {
   if (!isNemesis(s, player)) return false;
-  millNemesis(s, player, amount);
+  for (const card of s.players[player].library.slice(0, amount)) {
+    moveCard(s, card, 'graveyard');
+    s.events.push({ t: 'mill', card, player });
+  }
   return true;
 }

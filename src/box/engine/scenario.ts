@@ -1,6 +1,5 @@
 import { defaultPlayerNames } from './describe';
 import { advance, emptyState } from './game';
-import { syncNemesisLife } from './nemesis';
 import { getCardDef, hasCardDef } from './registry';
 import { isRelicDef } from './state';
 import type { CardId, CardInstance, GameState, PlayerId, Zone } from './types';
@@ -130,7 +129,6 @@ export function createScenario(spec: ScenarioSpec): GameState {
     for (const entry of ps.relics ?? []) place(player, 'command', entry);
     if (ps.nemesis) state.nemesis = true;
   }
-  syncNemesisLife(s);
 
   advance(s);
   return s;

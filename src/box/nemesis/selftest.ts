@@ -15,7 +15,7 @@ import {
   type ScenarioSpec,
 } from '../engine';
 import { nemesisDrawStep } from '../engine/nemesis';
-import { nemesisAction, nemesisAttackers, nemesisBlocks, nemesisTargets } from './mind';
+import { hideFaceDownThreats, nemesisAction, nemesisAttackers, nemesisBlocks, nemesisTargets } from './mind';
 import { NEMESES, getNemesis } from './threats';
 
 const TEST_CARDS: CardDef[] = [
@@ -94,6 +94,7 @@ const PINNED_THREATS: Record<string, [number, number]> = {
   nm_wandering_skeleton: [1, 2],
   nm_water_elemental: [3, 5],
   nm_refraction_golem: [1, 5],
+  nm_inferno_charger: [5, 7],
 };
 
 for (const [id, [power, toughness]] of Object.entries(PINNED_THREATS))
@@ -146,11 +147,11 @@ function resolveStack(s: GameState): GameState {
   return passAll(s, (state) => state.stack.length === 0 && state.pending?.kind === 'priority');
 }
 
-test('the Threat deck is the Nemesis life: 19 face-down cards, tiers from the top', () => {
+test('the Nemesis has 20 life and a Threat deck in tiers from the top', () => {
   const nemesis = getNemesis('vorthrax');
   const s = createGame({ seed: 7, players: [{ deck: Array.from({ length: 40 }, () => 'zz_land') }, { deck: nemesis.threats, nemesis: true }] });
   assert.equal(s.players[1].library.length, 20);
-  assert.equal(s.players[1].life, 19);
+  assert.equal(s.players[1].life, 20);
   assert.equal(s.players[1].hand.length, 0);
   const tiers = s.players[1].library.map((id) => getCardDef(getCard(s, id).def).threat?.tier ?? 0);
   assert.deepEqual(tiers, [...tiers].sort((a, b) => a - b));
@@ -169,17 +170,16 @@ test('the player takes the first turn and skips that draw', () => {
   assert.equal(s.players[1].hand.length, 0);
 });
 
-test('damage moves the cards right behind the Omen to the Ruin', () => {
+test('damage lowers the Nemesis life and leaves its Threat deck alone', () => {
   let s = scenario({
     players: [{ hand: ['zz_bolt'], battlefield: ['zz_land'] }, { library: ['zt_ash_imp', 'zt_cinderclaw_brute', 'zt_lava_behemoth', 'zt_scorch_fiend'] }],
   });
-  assert.equal(s.players[1].life, 3);
-  const [omen, first, second, third] = s.players[1].library;
+  const library = [...s.players[1].library];
   s = act(s, { type: 'cast', player: 0, card: idOf(s, 'zz_bolt'), targets: [{ player: 1 }] });
   s = resolveStack(s);
-  assert.deepEqual(s.players[1].library, [omen, third]);
-  assert.deepEqual(s.players[1].graveyard, [first, second]);
-  assert.equal(s.players[1].life, 1);
+  assert.equal(s.players[1].life, 18);
+  assert.deepEqual(s.players[1].library, library);
+  assert.deepEqual(s.players[1].graveyard, []);
 });
 
 test('Nemesis spells go face-down to the bottom after resolving', () => {
@@ -192,7 +192,7 @@ test('Nemesis spells go face-down to the bottom after resolving', () => {
   assert.equal(s.stack.length, 1);
   s = resolveStack(s);
   assert.equal(s.players[1].library.at(-1), breath);
-  assert.equal(s.players[1].life, 2);
+  assert.equal(s.players[1].life, 20);
   assert.equal(s.players[0].battlefield.includes(idOf(s, 'zz_bear')), false);
 });
 
@@ -251,15 +251,9 @@ test('trade blocks the strongest attacker it can kill even if it dies', () => {
 });
 
 test('desperation chump-blocks only when the damage would be lethal', () => {
-  const lethal = attackWith(
-    { players: [{ battlefield: ['zz_giant'] }, { battlefield: ['zt_ash_imp'], library: ['zt_ash_imp', 'zt_ash_imp', 'zt_ash_imp'] }] },
-    ['zz_giant'],
-  );
+  const lethal = attackWith({ players: [{ battlefield: ['zz_giant'] }, { life: 4, battlefield: ['zt_ash_imp'] }] }, ['zz_giant']);
   assert.deepEqual(nemesisBlocks(lethal, 1), [{ blocker: idOf(lethal, 'zt_ash_imp'), attacker: idOf(lethal, 'zz_giant') }]);
-  const safe = attackWith(
-    { players: [{ battlefield: ['zz_giant'] }, { battlefield: ['zt_ash_imp'], library: Array.from({ length: 12 }, () => 'zt_ash_imp') }] },
-    ['zz_giant'],
-  );
+  const safe = attackWith({ players: [{ battlefield: ['zz_giant'] }, { battlefield: ['zt_ash_imp'] }] }, ['zz_giant']);
   assert.deepEqual(nemesisBlocks(safe, 1), []);
 });
 
@@ -272,28 +266,29 @@ test('Nemesis targets: the strongest creature it can target, else the player', (
   assert.deepEqual(nemesisTargets(s, 1, [{ kind: 'any' }]), [{ card: idOf(s, 'zz_bear') }]);
 });
 
-test('bouncing a Nemesis creature makes it the new Omen', () => {
+test('bouncing a Nemesis creature puts it on top of its Threat deck', () => {
   let s = scenario({
     players: [{ hand: ['zz_unsummon'], battlefield: ['zz_land'] }, { battlefield: ['zt_lava_behemoth'], library: ['zt_ash_imp', 'zt_cinderclaw_brute'] }],
   });
   const behemoth = idOf(s, 'zt_lava_behemoth');
-  const [omen] = s.players[1].library;
+  const [top] = s.players[1].library;
   s = act(s, { type: 'cast', player: 0, card: idOf(s, 'zz_unsummon'), targets: [{ card: behemoth }] });
   s = resolveStack(s);
   assert.equal(s.players[1].library[0], behemoth);
-  assert.equal(s.players[1].library[1], omen);
-  assert.equal(s.players[1].life, 2);
+  assert.equal(s.players[1].library[1], top);
+  assert.equal(s.players[1].life, 20);
 });
 
-test('making the Nemesis discard sends the cards behind the Omen to the Ruin', () => {
+test('making the Nemesis discard sends its top Threats to the Ruin', () => {
   let s = scenario({
     players: [{ hand: ['zz_mind_rot'], battlefield: ['zz_land'] }, { library: ['zt_ash_imp', 'zt_cinderclaw_brute', 'zt_scorch_fiend', 'zt_lava_behemoth'] }],
   });
-  const [omen, first, second, third] = s.players[1].library;
+  const [first, second, third, fourth] = s.players[1].library;
   s = act(s, { type: 'cast', player: 0, card: idOf(s, 'zz_mind_rot'), targets: [] });
   s = resolveStack(s);
-  assert.deepEqual(s.players[1].library, [omen, third]);
+  assert.deepEqual(s.players[1].library, [third, fourth]);
   assert.deepEqual(s.players[1].graveyard, [first, second]);
+  assert.equal(s.players[1].life, 20);
 });
 
 test('Counterspell waits for the next spell, counters it, then goes to the bottom', () => {
@@ -338,7 +333,7 @@ test('Refraction Golem: the first spell each turn costs 1 more', () => {
 test('Brood executes the creatures it reveals and sends the rest to the bottom', () => {
   let s = scenario({
     activePlayer: 1,
-    players: [{}, { hand: ['nm_brood'], library: ['zt_ash_imp', 'zt_armored_drone', 'nm_pheromones', 'zt_darting_wasp'] }],
+    players: [{}, { hand: ['nm_brood'], library: ['zt_armored_drone', 'nm_pheromones', 'zt_darting_wasp', 'zt_ash_imp'] }],
   });
   const drone = idOf(s, 'zt_armored_drone');
   const pheromones = idOf(s, 'nm_pheromones');
@@ -347,11 +342,11 @@ test('Brood executes the creatures it reveals and sends the rest to the bottom',
   s = resolveStack(s);
   assert.equal(getCard(s, drone).zone, 'battlefield');
   assert.deepEqual(s.players[1].library.slice(-2), [pheromones, brood]);
-  assert.equal(s.players[1].library[1], idOf(s, 'zt_darting_wasp'));
+  assert.equal(s.players[1].library[0], idOf(s, 'zt_darting_wasp'));
 });
 
 test('Egg Laying executes one creature, or sends a spell to the bottom', () => {
-  let s = scenario({ activePlayer: 1, players: [{}, { hand: ['nm_egg_laying'], library: ['zt_ash_imp', 'nm_insect_plague', 'zt_armored_drone'] }] });
+  let s = scenario({ activePlayer: 1, players: [{}, { hand: ['nm_egg_laying'], library: ['nm_insect_plague', 'zt_ash_imp', 'zt_armored_drone'] }] });
   const plague = idOf(s, 'nm_insect_plague');
   s = act(s, nemesisAction(s, 1));
   s = resolveStack(s);
@@ -374,21 +369,19 @@ test('Uprising returns the two strongest creatures from the Ruin; Exhume with an
   assert.equal(s.players[0].life, 18);
 });
 
-test('Nemesis lifelink brings Ruin cards back face-down', () => {
+test('Nemesis lifelink gains it life', () => {
   let s = scenario({
     activePlayer: 1,
-    players: [{}, { battlefield: ['zt_ravenous_larva'], graveyard: ['zt_cinderclaw_brute'], library: ['zt_ash_imp', 'zt_ash_imp'] }],
+    players: [{}, { life: 10, battlefield: ['zt_ravenous_larva'], library: ['zt_ash_imp', 'zt_ash_imp'] }],
   });
-  const brute = idOf(s, 'zt_cinderclaw_brute');
   s = passAll(s, (state) => state.pending?.kind === 'declareAttackers');
   s = act(s, nemesisAction(s, 1));
   s = passAll(s, (state) => state.step === 'main2');
   assert.equal(s.players[0].life, 19);
-  assert.equal(s.players[1].library.at(-1), brute);
-  assert.equal(s.players[1].life, 2);
+  assert.equal(s.players[1].life, 11);
 });
 
-test('Wandering Skeleton goes face-down to the bottom when it dies', () => {
+test('Wandering Skeleton goes to the bottom of its Threat deck when it dies', () => {
   let s = scenario({
     players: [{ hand: ['zz_bolt'], battlefield: ['zz_land'] }, { battlefield: ['zt_wandering_skeleton'], library: ['zt_ash_imp', 'zt_ash_imp'] }],
   });
@@ -397,15 +390,65 @@ test('Wandering Skeleton goes face-down to the bottom when it dies', () => {
   s = resolveStack(s);
   assert.equal(s.players[1].library.at(-1), skeleton);
   assert.equal(s.players[1].graveyard.length, 0);
-  assert.equal(s.players[1].life, 2);
+  assert.equal(s.players[1].life, 20);
 });
 
-test('the AI decides the same whatever the order of the face-down Threats', () => {
+function chosenDef(s: GameState, action: Action): string | undefined {
+  return action.type === 'cast' || action.type === 'playLand' ? s.cards[action.card]?.def : undefined;
+}
+
+test('the AI plays the land that lets it cast a spell this turn', () => {
+  const s = scenario({
+    players: [{ hand: ['plains', 'mountain', 'swab_goblin', 'moment_of_triumph', 'jazal_goldmane'], battlefield: ['plains'] }, {}],
+  });
+  assert.equal(chosenDef(s, chooseAction(s, 0)), 'mountain');
+});
+
+test('the AI casts an enchantment when it has mana to spare', () => {
+  const s = scenario({ step: 'main2', players: [{ hand: ['goblin_oriflamme'], battlefield: ['zz_land', 'zz_land'] }, {}] });
+  assert.equal(chosenDef(s, chooseAction(s, 0)), 'goblin_oriflamme');
+});
+
+test('the AI attacks into a safe block when a trick in hand wins the fight', () => {
+  let s = scenario({
+    players: [
+      { hand: ['giant_growth'], battlefield: ['zz_land', 'zz_bear'] },
+      { battlefield: ['zt_water_elemental'], library: Array.from({ length: 12 }, () => 'zt_ash_imp') },
+    ],
+  });
+  s = passAll(s, (state) => state.pending?.kind === 'declareAttackers');
+  assert.deepEqual(chooseAction(s, 0), { type: 'declareAttackers', player: 0, attackers: [idOf(s, 'zz_bear')] });
+});
+
+test('the AI keeps a blocker home when the next Threat could attack for lethal damage', () => {
+  const library = (threat: string): string[] => Array.from({ length: 6 }, () => threat);
+  let s = scenario({ players: [{ life: 4, battlefield: ['zz_knight'] }, { library: library('zt_inferno_charger') }] });
+  s = passAll(s, (state) => state.pending?.kind === 'declareAttackers');
+  assert.deepEqual(chooseAction(s, 0), { type: 'declareAttackers', player: 0, attackers: [] });
+  s = scenario({ players: [{ life: 4, battlefield: ['zz_knight'] }, { library: library('zt_cinderclaw_brute') }] });
+  s = passAll(s, (state) => state.pending?.kind === 'declareAttackers');
+  assert.deepEqual(chooseAction(s, 0), { type: 'declareAttackers', player: 0, attackers: [idOf(s, 'zz_knight')] });
+});
+
+test('the AI sees the same Threat deck whatever its order', () => {
+  const s = scenario({
+    step: 'main2',
+    players: [
+      { hand: ['zz_bear', 'zz_knight'], battlefield: ['zz_land', 'zz_giant'] },
+      { library: ['zt_inferno_charger', 'zt_ash_imp', 'nm_searing_breath', 'zt_cinderclaw_brute', 'zt_lava_behemoth'] },
+    ],
+  });
+  const reversed = cloneState(s);
+  reversed.players[1].library.reverse();
+  assert.deepEqual(hideFaceDownThreats(s).players[1].library, hideFaceDownThreats(reversed).players[1].library);
+  assert.deepEqual(chooseAction(s, 0), chooseAction(reversed, 0));
+});
+
+test('the AI decides the same whatever the order of the Threat deck', () => {
   const nemesis = getNemesis('vaskara');
   const s = createGame({ seed: 11, players: [{ deck: 'cats+goblins' }, { deck: nemesis.threats, nemesis: true }] });
   const shuffled = cloneState(s);
-  const [omen, ...rest] = shuffled.players[1].library;
-  shuffled.players[1].library = [omen as string, ...rest.reverse()];
+  shuffled.players[1].library.reverse();
   assert.deepEqual(chooseAction(s, 0), chooseAction(shuffled, 0));
 });
 

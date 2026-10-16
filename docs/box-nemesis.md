@@ -72,12 +72,36 @@ Creatures keep their Palmwalker names, effects and quantities. Their sizes were 
 | All | 45–55% | 51.9% | 7.6 | 9.6 | 9.9 |
 
 5. **The deck decides a lot.** The 45 pairs run from 30.0% (Wizards + Goblins) to 77.2% (Cats + Healing), and 17 of them fall more than 10 points from the average. Average over the 9 pairs of each deck: Healing 64.7%, Elves 62.2%, Cats 58.6%, Primal 55.4%, Wizards 51.7%, Undead 48.6%, Inferno 48.5%, Vampires 47.5%, Pirates 44.8%, Goblins 37.3%. Other Threat shapes don't narrow the spread: +2/+0 and +2/+1 on Vorthrax, Vaskara and Morwen give a standard deviation across pairs of 13.9 and 15.1 points, against 12.9 for the tuned sizes on the same seed.
+6. **The player's AI got stronger after this tuning,** so these sizes need a new pass. With the AI below, the same seed and games give the player 59.9% (+8.0 points ± 0.7, paired games): Vorthrax 64.7%, Vaskara 65.0%, Morwen 58.6%, Mirror Archmage 51.4%. The pairs now run from 41.5% (Pirates + Goblins) to 77.3% (Elves + Primal), with a standard deviation of 9.8 points: part of the old spread was the AI misplaying some decks, Goblins most of all (37.3% → 48.9%). The batch runs at about 30 games/s, against 152 before.
 
 ## The player's AI
 
-1. **Blocks:** when it plans an attack, it predicts the Nemesis's blocks with the Nemesis rules, which are public and deterministic.
-2. **Hidden order:** it decides on a copy of the game where the face-down Threats are re-shuffled from a fixed order, so the real order never changes its decisions. A selftest checks this.
-3. **Waiting Counterspell:** it feeds the Counterspell its cheapest castable spell in its main phase. Without this rule, the AI never cast again once a Counterspell waited. In a 224-game run against mana-duel's decks, the Mirror Archmage then won 80% of its games; with the rule it won 5%.
+1. **Blocks:** when it plans an attack, it predicts the Nemesis's blocks with the Nemesis rules, which are public and deterministic. Any spell or trigger it weighs during its own attack, such as Frenzied Goblin's, is scored after those blocks and the combat.
+2. **Combat tricks:** every attack and every block it weighs includes its best instant or ability once blockers are declared, on the creatures in that combat. It attacks into a blocker when a pump saves its creature, and blocks a bigger attacker when a trick kills it.
+3. **The Omen:** it scores its attacks, its spells after combat and its answers on the Nemesis turn after playing out the rest of that Nemesis turn (`src/box/ai/forecast.ts`): the Omen resolves, the Nemesis attacks by its rules, and the player answers with its instants and blocks: blocks that kill and survive, trades into stronger creatures, and chump blocks only against lethal damage. So it keeps a blocker home before Inferno Charger and flashes creatures in on the Nemesis turn.
+4. **Set-ups before combat:** when it can cast a sorcery or activate an ability that pumps, taps, or stops a creature from blocking or being blocked (Joraga Invocation, Goblin Smuggler, Dropkick Bomber), it plans the whole attack after each option before choosing one.
+5. **Permanents:** an artifact or enchantment on the battlefield is worth more than the same card in hand, so it casts Goblin Oriflamme, Quick-Draw Katana or Carnelian Orb of Dragonkind when it has mana to spare.
+6. **Lands:** it plays the land that lets it cast its most expensive spell this turn, then the one whose colour its hand needs most.
+7. **Hidden order:** it decides on a copy of the game where the face-down Threats are re-shuffled from a fixed order within each tier, so the real order never changes its decisions but the tiers it knows from the setup still hold. A selftest checks this. With no Omen (`BOX_OMEN=0`), it plays the Nemesis turn out with three different guesses for the top Threat and averages them.
+8. **Waiting Counterspell:** it feeds the Counterspell its cheapest castable spell in its main phase. Without this rule, the AI never cast again once a Counterspell waited. In a 224-game run against mana-duel's decks, the Mirror Archmage then won 80% of its games; with the rule it won 5%.
+
+Each rule from 1 to 6 raised the player's win rate in paired games on seed 11 (7,200 games, 40 per pair and Nemesis):
+
+| Rule | Player wins | Change |
+|---|---:|---:|
+| None (the AI tuned against) | 51.1% | — |
+| Lands and permanents | 51.8% | +0.7 ± 0.5 |
+| Combat tricks | 53.7% | +1.9 ± 0.6 |
+| The Omen, with blocks only | 55.4% | +1.8 ± 0.9 |
+| The Omen, with instants on the Nemesis turn | 56.8% | +1.5 ± 0.5 |
+| Spells and triggers scored after the Nemesis blocks | 57.4% | +0.7 ± 0.4 |
+| Set-ups before combat | 58.7% | +1.3 ± 0.3 |
+
+What it still doesn't do:
+
+1. Cast card-neutral spells for their quality: Opt, and Cemetery Recruitment on a non-Zombie, stay in hand.
+2. Look past the next Nemesis combat, or plan its own turn as a whole: it chooses one action at a time.
+3. Use tricks in the blocks it imagines for the Nemesis turn.
 
 ## Decisions and deviations
 
@@ -107,7 +131,8 @@ Creatures keep their Palmwalker names, effects and quantities. Their sizes were 
 | `npm run box -- --games 100 --seed 1 [--decks a,b] [--nemeses vorthrax,morwen] [--workers N]` | Games per deck × Nemesis in worker threads. Prints the win-rate table and the metrics per Nemesis, and writes `dist/box/box-seed<S>-g<N>.{md,json}`. Every game has its own seed, so results don't depend on the worker count. |
 | `npm run box:trace -- <seed> <deck> <nemesis>` | The log of one game. |
 | `npm run pnp:box` | The print-and-play PDFs of the box mode. |
-| `npm run box:test:nemesis` | The rules above as 20 scenario tests, on Threats pinned to fixed sizes so tuning never breaks them. |
+| `npm run box:test:nemesis` | The rules above as 25 scenario tests, on Threats pinned to fixed sizes so tuning never breaks them; 6 of them check the player's AI. |
 | `BOX_THREAT_SIZES=vorthrax=1/2,morwen=0/-1 npm run box` | Adds power/toughness to every creature of the named Nemeses, to probe sizes without editing the deck lists. |
+| `BOX_OMEN=0 npm run box` | No Omen: each Nemesis turn reveals the top Threat and executes it. Every face-down Threat is life (20 at the start), and damage, discards, Brood and Egg Laying take the top cards. |
 
 The player decks are the 45 pairs of Beginner Box decks (`src/box/nemesis/decks.ts`).

@@ -1,5 +1,5 @@
 import { canPay, choosePayment, manaValue, parseCost, type ManaSource } from './mana';
-import { changeNemesisLife, nemesisDestination, recursOnDeath, spellTax } from './nemesis';
+import { nemesisDestination, recursOnDeath, spellTax } from './nemesis';
 import { getCardDef, getCost } from './registry';
 import {
   COLORS,
@@ -591,10 +591,6 @@ export function drawCards(s: GameState, player: PlayerId, count: number): void {
 export function changeLife(s: GameState, player: PlayerId, delta: number): void {
   if (delta === 0) return;
   const ps = s.players[player];
-  if (ps.nemesis) {
-    changeNemesisLife(s, player, delta);
-    return;
-  }
   ps.life += delta;
   if (delta < 0) ps.lostLifeThisTurn = true;
   s.events.push({ t: 'life', player, delta, life: ps.life });
