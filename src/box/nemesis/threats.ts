@@ -13,7 +13,6 @@ export interface NemesisDeck {
   threats: string[];
   rules?: ChallengeKind;
   battlefield?: string[];
-  creatureLimit?: number;
   headStart?: number;
 }
 

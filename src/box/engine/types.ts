@@ -348,7 +348,6 @@ export interface PlayerState {
   spellsCastThisTurn?: number;
   overflows?: number;
   challenge?: ChallengeKind;
-  creatureLimit?: number;
   turnRules?: TurnRule[];
   turnsBeforeFirst?: number;
   extraTurns?: number;

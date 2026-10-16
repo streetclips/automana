@@ -1,5 +1,4 @@
 import { applyDamage, sourceHasKeyword, type DamageAssignment, type EffectContext } from './effects';
-import { overflow } from './nemesis';
 import {
   changeLife,
   creaturesOf,
@@ -46,12 +45,11 @@ export function arrangeChallenge(
   s: GameState,
   player: PlayerId,
   kind: ChallengeKind,
-  options: { creatureLimit?: number; headStart?: number } = {},
+  options: { headStart?: number } = {},
 ): void {
   const ps = s.players[player];
   ps.nemesis = true;
   ps.challenge = kind;
-  if (options.creatureLimit !== undefined) ps.creatureLimit = options.creatureLimit;
   ps.kept = true;
   ps.bottomed = true;
   ps.turnRules = [];
@@ -86,20 +84,9 @@ export function subtypeCount(s: GameState, subtype: string): number {
   return count;
 }
 
-function hasRoom(s: GameState, player: PlayerId): boolean {
-  const ps = s.players[player];
-  if (ps.creatureLimit === undefined) return true;
-  const coming = ps.hand.filter((id) => isCreatureDef(defOf(s, id))).length;
-  return creaturesOf(s, player).length + coming < ps.creatureLimit;
-}
-
 export function revealCards(s: GameState, player: PlayerId, count: number): void {
   const ps = s.players[player];
   for (const card of ps.library.slice(0, count)) {
-    if (isCreatureDef(defOf(s, card)) && !hasRoom(s, player)) {
-      overflow(s, player, card);
-      continue;
-    }
     moveCard(s, card, 'hand');
     s.events.push({ t: 'draw', player, card });
   }
@@ -267,7 +254,7 @@ export function runChallengeEffect(s: GameState, effect: ChallengeEffect, ctx: E
         const dead = s.players[player].graveyard.filter((id) => isCreatureDef(defOf(s, id)));
         const ranked = [...dead].sort((a, b) => value(b) - value(a));
         const pick = player === foe ? ranked[0] : ranked.at(-1);
-        if (!pick || (player === seat && !hasRoom(s, seat))) continue;
+        if (!pick) continue;
         moveCard(s, pick, 'battlefield', { controller: player });
         s.events.push({ t: 'return', player, card: pick });
       }
@@ -285,7 +272,7 @@ export function runChallengeEffect(s: GameState, effect: ChallengeEffect, ctx: E
     }
     case 'returnNamed': {
       const found = s.players[seat].graveyard.filter((id) => getCard(s, id).def === effect.card).slice(0, effect.count);
-      for (const card of found) if (hasRoom(s, seat)) moveCard(s, card, 'battlefield', { controller: seat });
+      for (const card of found) moveCard(s, card, 'battlefield', { controller: seat });
       return;
     }
     case 'silence':

@@ -135,17 +135,6 @@ test("the player takes the Stampede's head-start turns before its first turn", (
   assert.equal(s.turn, (stampede.headStart ?? 0) + 2);
 });
 
-test('a creature revealed beyond the creature limit deals its power to the player and goes to the bottom', () => {
-  const s = scenario('horde', {
-    players: [{}, { battlefield: ['ch_hornbound_whelp'], library: ['ch_warlords_chosen', 'ch_hornbound_whelp', 'ch_blood_frenzy'] }],
-  });
-  s.players[1].creatureLimit = 2;
-  challengeDrawStep(s, 1, 'horde');
-  assert.deepEqual(s.players[1].hand.map((id) => s.cards[id]?.def), ['ch_warlords_chosen']);
-  assert.equal(s.players[0].life, 18);
-  assert.equal(s.cards[s.players[1].library.at(-1) ?? '']?.def, 'ch_hornbound_whelp');
-});
-
 test('the Horde reveals two cards and one more for each of its artifacts', () => {
   const s = scenario('horde', {
     players: [{}, { battlefield: ['ch_looted_idol'], library: Array(6).fill('ch_hornbound_whelp') }],

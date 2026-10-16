@@ -26,7 +26,6 @@ export function startNemesisGame(seed: number, deck: string[], nemesis: NemesisD
         nemesis: true,
         challenge: nemesis.rules,
         battlefield: nemesis.battlefield,
-        creatureLimit: nemesis.creatureLimit,
         headStart: nemesis.headStart,
       },
     ],

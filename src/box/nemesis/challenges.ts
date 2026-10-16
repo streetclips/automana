@@ -101,7 +101,7 @@ const CARDS: CardDef[] = [
     name: 'The Revel King',
     types: ['enchantment', 'creature'],
     subtypes: ['God'],
-    power: 5,
+    power: 3,
     toughness: 5,
     challenge: { anchor: true },
   }),
@@ -120,19 +120,19 @@ const CARDS: CardDef[] = [
     name: 'Frenzied Piper',
     subtypes: ['Satyr', 'Reveler'],
     power: 2,
-    toughness: 2,
+    toughness: 1,
     triggers: [on('enters', rule({ kind: 'turnRule', rule: { kind: 'mustAttack', subtype: 'God' } })), on('dies', gain(2))],
   }),
-  creature({ id: 'ch_wildband_centaur', name: 'Wildband Centaur', subtypes: ['Centaur', 'Reveler'], power: 4, toughness: 4, triggers: [on('dies', draw)] }),
+  creature({ id: 'ch_wildband_centaur', name: 'Wildband Centaur', subtypes: ['Centaur', 'Reveler'], power: 4, toughness: 2, triggers: [on('dies', draw)] }),
   creature({
     id: 'ch_drunken_throng',
     name: 'Drunken Throng',
     subtypes: ['Human', 'Reveler'],
     power: 1,
-    toughness: 3,
+    toughness: 1,
     triggers: [on('enters', rule({ kind: 'revealCast', count: 1 }))],
   }),
-  creature({ id: 'ch_viper_dancers', name: 'Viper Dancers', subtypes: ['Human', 'Reveler'], power: 2, toughness: 4, keywords: ['deathtouch'], triggers: [on('dies', draw)] }),
+  creature({ id: 'ch_viper_dancers', name: 'Viper Dancers', subtypes: ['Human', 'Reveler'], power: 2, toughness: 2, keywords: ['deathtouch'], triggers: [on('dies', draw)] }),
   creature({ id: 'ch_howling_maenads', name: 'Howling Maenads', subtypes: ['Human', 'Reveler'], power: 3, toughness: 1, keywords: ['firstStrike'], triggers: [on('dies', gain(3))] }),
   sorcery('ch_reckless_rush', 'Reckless Rush', { kind: 'turnRule', rule: { kind: 'mustAttack', subtype: 'Reveler', haste: true } }),
   sorcery('ch_wild_smashing', 'Wild Smashing', { kind: 'sacrificeOrDamage', types: ['artifact', 'enchantment'], amount: 3 }),
@@ -151,14 +151,14 @@ const CARDS: CardDef[] = [
     statics: [{ kind: 'anthem', subtypes: ['Reveler'], keywords: ['haste'], ifCount: 5 }],
   }),
 
-  creature({ id: 'ch_lesser_head', name: 'Lesser Head', subtypes: ['Head'], power: 0, toughness: 3, triggers: [on('dies', gain(2))] }),
-  creature({ id: 'ch_brute_head', name: 'Brute Head', subtypes: ['Head'], power: 0, toughness: 6, challenge: { elite: true }, triggers: [on('dies', gain(2), draw)] }),
+  creature({ id: 'ch_lesser_head', name: 'Lesser Head', subtypes: ['Head'], power: 0, toughness: 2, triggers: [on('dies', gain(2))] }),
+  creature({ id: 'ch_brute_head', name: 'Brute Head', subtypes: ['Head'], power: 0, toughness: 2, challenge: { elite: true }, triggers: [on('dies', gain(2), draw)] }),
   creature({
     id: 'ch_frenzy_head',
     name: 'Frenzy Head',
     subtypes: ['Head'],
     power: 0,
-    toughness: 8,
+    toughness: 4,
     challenge: { elite: true },
     triggers: [on('endStep', rule({ kind: 'revealCast', count: 1 })), on('dies', gain(4), draw)],
   }),
@@ -167,7 +167,7 @@ const CARDS: CardDef[] = [
     name: 'Screaming Head',
     subtypes: ['Head'],
     power: 0,
-    toughness: 8,
+    toughness: 4,
     challenge: { elite: true },
     triggers: [on('endStep', { kind: 'discard', amount: 1, who: 'opponent' }), on('dies', gain(4), draw)],
   }),
@@ -176,7 +176,7 @@ const CARDS: CardDef[] = [
     name: 'Fang Head',
     subtypes: ['Head'],
     power: 0,
-    toughness: 8,
+    toughness: 4,
     challenge: { elite: true },
     triggers: [on('endStep', rule({ kind: 'damagePlayer', amount: 1 })), on('dies', gain(4), draw)],
   }),
@@ -192,7 +192,20 @@ const CARDS: CardDef[] = [
   sorcery('ch_all_heads_lunge', 'All-Heads Lunge', { kind: 'damagePlayer', amount: 0, perHead: true }),
 ];
 
-for (const def of CARDS) registerCard(def);
+interface Override {
+  headStart?: number;
+  battlefield?: string[];
+  copies?: Record<string, number>;
+  sizes?: Record<string, [number, number]>;
+}
+
+const OVERRIDES: Record<string, Override> = JSON.parse(process.env.BOX_CHALLENGE || '{}');
+const SIZES = new Map(Object.values(OVERRIDES).flatMap((override) => Object.entries(override.sizes ?? {})));
+
+for (const def of CARDS) {
+  const size = SIZES.get(def.id);
+  registerCard(size ? { ...def, power: size[0], toughness: size[1] } : def);
+}
 
 function copies(entries: [string, number][]): string[] {
   return entries.flatMap(([id, count]) => Array.from({ length: count }, () => id));
@@ -203,13 +216,12 @@ const DECKS: NemesisDeck[] = [
     id: 'stampede',
     name: 'The Stampede',
     rules: 'horde',
-    creatureLimit: 5,
-    headStart: 3,
+    headStart: 2,
     threats: copies([
-      ['ch_hornbound_raider', 10],
-      ['ch_hornbound_whelp', 15],
+      ['ch_hornbound_raider', 5],
+      ['ch_hornbound_whelp', 6],
       ['ch_warlords_chosen', 4],
-      ['ch_hornbound_reaver', 10],
+      ['ch_hornbound_reaver', 5],
       ['ch_frenzied_charger', 4],
       ['ch_blood_frenzy', 2],
       ['ch_hunt_the_weak', 2],
@@ -227,16 +239,14 @@ const DECKS: NemesisDeck[] = [
     id: 'revel',
     name: 'The Revel King',
     rules: 'god',
-    creatureLimit: 6,
-    headStart: 2,
-    battlefield: ['ch_revel_king', 'ch_drunken_throng', 'ch_drunken_throng'],
+    battlefield: ['ch_revel_king', 'ch_drunken_throng'],
     threats: copies([
       ['ch_crazed_nymph', 2],
-      ['ch_frenzied_piper', 16],
-      ['ch_wildband_centaur', 4],
-      ['ch_drunken_throng', 4],
-      ['ch_viper_dancers', 2],
-      ['ch_howling_maenads', 2],
+      ['ch_frenzied_piper', 6],
+      ['ch_wildband_centaur', 2],
+      ['ch_drunken_throng', 2],
+      ['ch_viper_dancers', 1],
+      ['ch_howling_maenads', 1],
       ['ch_reckless_rush', 7],
       ['ch_wild_smashing', 2],
       ['ch_encore', 4],
@@ -251,36 +261,25 @@ const DECKS: NemesisDeck[] = [
     id: 'hydra',
     name: 'The Hydra',
     rules: 'hydra',
-    headStart: 2,
     battlefield: ['ch_lesser_head', 'ch_lesser_head', 'ch_lesser_head'],
     threats: copies([
-      ['ch_lesser_head', 8],
-      ['ch_brute_head', 4],
+      ['ch_lesser_head', 3],
+      ['ch_brute_head', 2],
       ['ch_frenzy_head', 1],
       ['ch_screaming_head', 1],
       ['ch_fang_head', 1],
       ['ch_dazing_gaze', 5],
       ['ch_bait_the_beast', 5],
-      ['ch_regrowth', 4],
-      ['ch_iron_scales', 4],
+      ['ch_iron_scales', 2],
       ['ch_tangled_necks', 3],
       ['ch_toxic_breath', 4],
       ['ch_weak_spot', 2],
       ['ch_swallowed_whole', 5],
-      ['ch_divided_fury', 4],
-      ['ch_all_heads_lunge', 6],
+      ['ch_divided_fury', 2],
+      ['ch_all_heads_lunge', 2],
     ]),
   },
 ];
-
-interface Override {
-  creatureLimit?: number;
-  headStart?: number;
-  battlefield?: string[];
-  copies?: Record<string, number>;
-}
-
-const OVERRIDES: Record<string, Override> = JSON.parse(process.env.BOX_CHALLENGE || '{}');
 
 function overridden(deck: NemesisDeck): NemesisDeck {
   const override = OVERRIDES[deck.id];
@@ -290,7 +289,6 @@ function overridden(deck: NemesisDeck): NemesisDeck {
   for (const [id, count] of Object.entries(override.copies ?? {})) counts.set(id, count);
   return {
     ...deck,
-    creatureLimit: override.creatureLimit ?? deck.creatureLimit,
     headStart: override.headStart ?? deck.headStart,
     battlefield: override.battlefield ?? deck.battlefield,
     threats: copies([...counts]),

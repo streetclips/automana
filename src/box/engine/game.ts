@@ -97,7 +97,6 @@ export interface PlayerSetup {
   drawOnFirstTurn?: boolean;
   nemesis?: boolean;
   challenge?: ChallengeKind;
-  creatureLimit?: number;
   headStart?: number;
 }
 
