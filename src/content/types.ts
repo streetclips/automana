@@ -1,8 +1,6 @@
 export type Locale = "en" | "es";
 
-export type Color = "R" | "G" | "W" | "U" | "B" | "T";
-
-export type CardType = "creature" | "instant" | "sorcery" | "aura" | "spell" | "artifact" | "enchantment";
+export type CardType = "creature" | "sorcery" | "spell" | "artifact" | "enchantment";
 
 export interface CardText {
   name: string;
@@ -11,34 +9,22 @@ export interface CardText {
   flavor?: string;
 }
 
-export interface Card {
-  id: string;
-  color: Color;
-  cost?: number;
+export interface PrintedCard {
   type: CardType;
-  qty: number;
-  pt?: string;
-  threat?: boolean;
-  tier?: 1 | 2 | 3;
-  art: string;
+  art?: string;
   en: CardText;
   es: CardText;
 }
 
-export interface HalfGrimoire {
+export interface Card extends PrintedCard {
   id: string;
-  color: Exclude<Color, "T">;
-  en: { name: string };
-  es: { name: string };
-  cards: Card[];
+  qty: number;
+  pt?: string;
 }
 
-export interface Nemesis {
-  id: string;
-  color: Exclude<Color, "T">;
+export interface DeckName {
   en: { name: string };
   es: { name: string };
-  threats: Card[];
 }
 
 export interface ReferenceSide {

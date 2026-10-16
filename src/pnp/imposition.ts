@@ -1,4 +1,7 @@
-import type { PrintCard } from "./deck";
+export interface PrintCard {
+  front: string;
+  back: string;
+}
 
 const SHEET = { w: 210, h: 297 };
 const TRIM = { w: 63, h: 88 };

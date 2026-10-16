@@ -6,15 +6,12 @@ import { setLocale, t } from "../i18n/locale";
 import { DIST, ensureDir, readCss } from "../lib/paths";
 import { artCss } from "../render/art";
 import { buildBoxDeck } from "./box";
-import { buildDeck } from "./deck";
 import { impose } from "./imposition";
 import { convertToCmyk, printToPdf } from "./pdf";
 
-const BOX = process.argv[2] === "box";
-
 function buildPnp(locale: Locale): string {
   setLocale(locale);
-  const deck = BOX ? buildBoxDeck() : buildDeck();
+  const deck = buildBoxDeck();
   const css = [readCss("render/card.css", "render/faces.css", "pnp/pnp.css"), artCss()].join("\n");
   const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><title>${t().sheetTitle}</title><style>${css}</style></head>
 <body>${impose(deck).join("")}</body></html>`;
@@ -24,7 +21,7 @@ function buildPnp(locale: Locale): string {
     const rgbPath = join(tmp, "deck-rgb.pdf");
     writeFileSync(htmlPath, html, "utf8");
     printToPdf(htmlPath, rgbPath);
-    const path = join(ensureDir(DIST), `palmwalker-${BOX ? "box-" : ""}pnp-${locale}.pdf`);
+    const path = join(ensureDir(DIST), `palmwalker-box-pnp-${locale}.pdf`);
     convertToCmyk(rgbPath, path);
     return `${path} (${deck.length} cards)`;
   } finally {

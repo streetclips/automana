@@ -1,4 +1,4 @@
-export type IconName = "T" | "X";
+export type IconName = "X";
 
 function polar(r: number, turn: number): string {
   const a = turn * 2 * Math.PI;
@@ -17,19 +17,12 @@ const path = (d: string, rotate = 0) => `<path${rotate ? ` transform="rotate(${r
 
 const BURST = path(star(12, 11.2, 7));
 
-const MARK = path(circle(12, 12, 11.4) + circle(12, 12, 10.3) + star(4, 9.2, 2.1) + circle(12, 12, 1.3)) + path(star(4, 6.2, 2.1) + circle(12, 12, 1.3), 45);
 
 const ICONS: Record<IconName, string> = {
-  T: path("M10.3 2.6h3.4v9.8h4.9L12 21l-6.6-8.6h4.9Z"),
   X: BURST,
 };
 
 const COLLECTIONS: Record<string, string> = {
-  "dawnward-order": path("M7 14.2a5 5 0 0 1 10 0ZM1.54 10.8l4.78.04-.89 2.74ZM5.53 5.3l3.85 2.84-2.33 1.7ZM12 3.2l1.44 4.56h-2.88ZM18.47 5.3l-1.52 4.54-2.33-1.7ZM22.46 10.8l-3.89 2.78-.89-2.74ZM1.5 15.6h21v2.1h-21ZM5.5 19.3h13v1.9h-13Z"),
-  "arcane-tide": path([5.2, 10.6, 16].map((y) => `M2 ${y}q2.5-2.8 5 0t5 0 5 0 5 0v2.5q-2.5 2.8-5 0t-5 0-5 0-5 0Z`).join("")),
-  "grim-pact": path("M11.09 2.44A9.6 9.6 0 1 0 21.16 14.88 8 8 0 0 1 11.09 2.44Z"),
-  emberkin: path("M10.2 1.6h3.6v1.8h-3.6ZM11 3.4h2v19.1h-2ZM13.6 5.2c3.4.4 6.8-1.6 8.4-3.4 1.2 4.2 1.2 8.8 0 13-1.6-1.8-5-3.4-8.4-3ZM10.4 5.2c-3.4.4-6.8-1.6-8.4-3.4-1.2 4.2-1.2 8.8 0 13 1.6-1.8 5-3.4 8.4-3Z"),
-  wildwood: path("M12 1.5c6.5 4 8.5 9.5 7 14-1.3 3.8-4.4 5.5-7 5.7-2.6-.2-5.7-1.9-7-5.7-1.5-4.5.5-10 7-14ZM11.4 6.5h1.2V23h-1.2ZM12.6 12.2 17 8.6l.4 1-4.8 4ZM12.6 16.4l4.6-3.2.4 1-5 3.6ZM11.4 12.2 7 8.6l-.4 1 4.8 4ZM11.4 16.4l-4.6-3.2-.4 1 5 3.6Z"),
   vorthrax: path(`M1 12c3.6-7.2 18.4-7.2 22 0-3.6 7.2-18.4 7.2-22 0Z${circle(12, 12, 5.2)}M12 7.6c1.6 2.4 1.6 6.4 0 8.8-1.6-2.4-1.6-6.4 0-8.8Z`),
   vaskara: path("M12 1.99l4.68 2.7v5.4L12 12.79l-4.68-2.7v-5.4ZM6.67 11.21l4.68 2.7v5.4l-4.68 2.7L2 19.31v-5.4ZM17.33 11.21 22 13.91v5.4l-4.67 2.7-4.68-2.7v-5.4Z"),
   morwen: path(`M3 8.6l4.6 4.8L12 6.2l4.4 7.2L21 8.6l-1.6 9.8H4.6ZM4.4 19.8h15.2V22H4.4Z${circle(3, 6.8, 1.7)}${circle(12, 4.2, 1.9)}${circle(21, 6.8, 1.7)}`),
@@ -45,10 +38,6 @@ function svg(body: string): string {
 
 export function icon(name: IconName): string {
   return svg(ICONS[name]);
-}
-
-export function grimoireMark(): string {
-  return svg(MARK);
 }
 
 export function collectionIcon(collection: string): string {

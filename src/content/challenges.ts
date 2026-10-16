@@ -1,15 +1,4 @@
-import type { CardText, CardType } from "./types";
-
-export interface ChallengeCard {
-  type: CardType;
-  en: CardText;
-  es: CardText;
-}
-
-export interface ChallengeDeck {
-  en: { name: string };
-  es: { name: string };
-}
+import type { CardType, DeckName, PrintedCard } from "./types";
 
 const REWARD = { en: "<b>Hero's Reward</b> — When it leaves the battlefield,", es: "<b>Recompensa del héroe</b> — Al salir del campo de batalla," };
 const RELIC = {
@@ -26,7 +15,7 @@ function reward(en: string, es: string): { en: string; es: string } {
   return { en: `${REWARD.en} ${en}`, es: `${REWARD.es} ${es}` };
 }
 
-function card(type: CardType, en: [string, string, string?], es: [string, string, string?]): ChallengeCard {
+function card(type: CardType, en: [string, string, string?], es: [string, string, string?]): PrintedCard {
   return { type, en: { name: en[0], text: en[1], sub: en[2] }, es: { name: es[0], text: es[1], sub: es[2] } };
 }
 
@@ -36,7 +25,7 @@ const draw = reward("you draw a card.", "robas una carta.");
 const gain2Draw = reward("you gain 2 life and draw a card.", "ganas 2 vidas y robas una carta.");
 const gain4Draw = reward("you gain 4 life and draw a card.", "ganas 4 vidas y robas una carta.");
 
-export const CHALLENGE_CARDS: Record<string, ChallengeCard> = {
+export const CHALLENGE_CARDS: Record<string, PrintedCard> = {
   ch_hornbound_raider: card("creature", ["Hornbound Raider", ATTACKS.en, MINOTAUR.en], ["Asaltante Astado", ATTACKS.es, MINOTAUR.es]),
   ch_hornbound_whelp: card("creature", ["Hornbound Whelp", ATTACKS.en, MINOTAUR.en], ["Cachorro Astado", ATTACKS.es, MINOTAUR.es]),
   ch_warlords_chosen: card(
@@ -227,7 +216,7 @@ export const CHALLENGE_CARDS: Record<string, ChallengeCard> = {
   ),
 };
 
-export const CHALLENGE_DECKS: Record<string, ChallengeDeck> = {
+export const CHALLENGE_DECKS: Record<string, DeckName> = {
   stampede: { en: { name: "The Stampede" }, es: { name: "La Estampida" } },
   revel: { en: { name: "The Revel King" }, es: { name: "El Rey de la Juerga" } },
   hydra: { en: { name: "The Hydra" }, es: { name: "La Hidra" } },

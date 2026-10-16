@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { ALL_CARDS } from "../content";
+import { PRINTED_CARDS } from "../content";
 import { artPath } from "../lib/paths";
 
 export function hasArt(cardId: string): boolean {
@@ -11,7 +11,8 @@ function dataUrl(cardId: string): string {
 }
 
 export function artCss(url: (cardId: string) => string = dataUrl): string {
-  return ALL_CARDS.filter((c) => hasArt(c.id))
-    .map((c) => `.art-${c.id} { background-image: url(${url(c.id)}); }`)
+  return Object.keys(PRINTED_CARDS)
+    .filter(hasArt)
+    .map((id) => `.art-${id} { background-image: url(${url(id)}); }`)
     .join("\n");
 }

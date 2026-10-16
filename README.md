@@ -1,19 +1,32 @@
 # Palmwalker
 
-A solo, in-hand dueling card game. This repo holds the complete game: the rules in `docs/rulebook.md` and the card data in `src/content/`, plus a live preview of every card, a browser version to playtest it and the print-and-play PDFs.
+Seven Nemesis decks to play solo against the decks of the Magic: The Gathering Foundations Beginner Box. You shuffle two box decks together and fight a Nemesis that plays itself: it reveals a card each turn, attacks and blocks by a few fixed rules, and has 20 life on a counter. This repo holds the rules engine and its balance simulator, the card data, a live preview of every card and the print-and-play PDFs.
+
+| Nemesis | Cards | Player win rate |
+|---|---|---|
+| Vorthrax, the Ash Tyrant | 20 | 55.3% |
+| Vaskara, the Brood Mother | 20 | 55.6% |
+| Morwen, the Lich Queen | 20 | 46.1% |
+| The Mirror Archmage | 20 | 44.8% |
+| The Stampede | 43 | 46.6% |
+| The Revel King | 46 | 54.4% |
+| The Hydra | 38 | 47.6% |
+
+Win rates over the 45 box deck pairs, 1,800 games per Nemesis. The rules, the decks and how they were tuned are in `docs/box-nemesis.md`; the box decks in the engine in `docs/box.md`.
 
 ## Commands
 
 | Command | Output |
 |---|---|
 | `npm run typecheck` | Type-checks everything in `src/` |
+| `npm run box -- --games 100 --seed 1` | Win rates of every box deck pair against every Nemesis, in `dist/box/`; `--nemeses revel,hydra` and `--decks` filter |
+| `npm run box:trace -- 1 cats+healing revel` | One game, turn by turn |
+| `npm run box:test`, `box:test:nemesis`, `box:test:challenges` | Scenario tests: box cards (38), Nemesis rules (26), Challenge deck cards (8) |
+| `npm run box:cards` | Engine card texts compared with Scryfall's oracle |
 | `npm run preview` | Card preview at `http://localhost:4400`, reloaded on every save |
-| `npm run pnp` | `dist/palmwalker-pnp-en.pdf` and `palmwalker-pnp-es.pdf`: print-and-play PDFs for [Imprenta Soriano](https://imprentasoriano.com/producto/baraja-de-cartas) |
+| `npm run pnp` | `dist/palmwalker-box-pnp-en.pdf` and `-es.pdf`: print-and-play PDFs for [Imprenta Soriano](https://imprentasoriano.com/producto/baraja-de-cartas) |
 | `npm run build` | `typecheck`, then `pnp` |
-| `npm run art` | `art/{card id}.jpg`: AI illustrations for the cards with no image yet. `npm run art -- brood uprising` regenerates those cards |
-| `npm run sim` | Balance simulation: win rate of every colour pair against every Nemesis, in `dist/sim/` |
-| `npm run sim:trace` | One simulated game, turn by turn, with the AI's hand and board |
-| `npm run sim:test` | Rules self-test of the simulator |
+| `npm run art` | `art/{card id}.jpg`: AI illustrations for the cards with an art scene and no image yet. `npm run art -- nm_brood nm_uprising` regenerates those cards |
 
 Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`. `npm run art` needs `OPENROUTER_API_KEY`.
 
@@ -21,7 +34,7 @@ Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrom
 
 `npm run preview` serves the cards at `http://localhost:4400` (`PORT` changes it), rendered from `src/` on every request:
 
-1. `cards` shows every card once, one section per component: the quick reference, the two backs, the five half-grimoires and the four Threat decks, with each card's id and number of copies under it: `dawn-squire ×2`.
+1. `cards` shows every card once, one section per component: the rules card, the back and the seven Nemesis decks, with each card's id and number of copies under it: `nm_ash_imp ×2`.
 2. `pnp` shows the A4 sheets of `npm run pnp`, fronts and backs, without Chrome or Ghostscript: colours are RGB, before the CMYK conversion.
 3. `en` and `es` switch the language and keep the scroll position.
 4. Saving reloads the page. A change in `src/content/` or the render code restarts the server; a CSS change or a new image in `art/` only reloads the page.
@@ -29,9 +42,9 @@ Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrom
 
 ## Print and play
 
-`npm run pnp` lays out every physical card (141) for Imprenta Soriano's poker deck:
+`npm run pnp` lays out every physical card (208: the rules card and the seven decks) for Imprenta Soriano's poker deck:
 
-1. A4 pages, 9 cards per sheet (3 × 3), crop marks in the margins.
+1. A4 pages, 9 cards per sheet (3 × 3), crop marks in the margins: 24 sheets, 48 pages.
 2. Cards at 63 × 88 mm with 3 mm bleed per side (69 × 94 mm); text kept 3 mm inside the cut.
 3. Odd pages are fronts, even pages are backs, mirrored for long-edge duplex.
 4. Square corners: order the 3 mm rounded corners option instead.
@@ -39,7 +52,7 @@ Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrom
 6. No blurred shadows: some PDF viewers draw them as solid dark patches over the card.
 7. Each cell is frame black underneath, so the hairline gaps the CMYK conversion leaves at the frame edge print black, not white.
 
-Backs: Grimoire cards share the Palmwalker back, a gold compass rose drawn in SVG; the quick reference shows its Face B; Threat cards share a plain back.
+Every card shares the plain Threat back; the rules card shows its Face B.
 
 ### Ordering at Imprenta Soriano
 
@@ -48,7 +61,7 @@ Upload the PDF to [Baraja de Cartas](https://imprentasoriano.com/producto/baraja
 | Option | Value |
 |---|---|
 | ¿Quieres que la montemos nosotros? | No (ya están montadas) |
-| Cantidad de páginas | 32 per deck: 16 sheets, front and back |
+| Cantidad de páginas | 48 per set: 24 sheets, front and back |
 | Numero de cartas por hoja | 9 |
 | Grosor del papel | Especial para barajar cartas (300 g, Black Core) |
 | Cortar | Sí |
@@ -56,108 +69,49 @@ Upload the PDF to [Baraja de Cartas](https://imprentasoriano.com/producto/baraja
 
 1. Black Core card is made for shuffling and is opaque: the face of the top card does not show through its back.
 2. Take 3 mm corners: the cards have square corners, and the shop advises 4 mm only when the rounding is printed.
-3. Several decks: multiply the pages by the number of decks and write the number of decks in the Mostrador field.
+3. Several sets: multiply the pages by the number of sets and write the number of sets in the Mostrador field.
 4. The English and Spanish PDFs have the same cut, so they can go in one order without the 15 € fee for each extra cut.
-5. One deck of the previous version, 28 pages, cost 34.30 € with these options on 13 October 2026, shipping not included. The shop does not say whether VAT is included.
+5. One set, 48 pages, cut, cost 33.27 € on Black Core card and 34.68 € on the 310 g embossed card on 16 October 2026, shipping not included. The form has no rounded corners option; ask for them in Mostrador. The shop does not say whether VAT is included.
 
 ## Card art
 
 `npm run art` illustrates cards with [Gemini 3.1 Flash Lite Image](https://openrouter.ai/google/gemini-3.1-flash-lite-image) through OpenRouter, 4 at a time, about 10 s per image:
 
-1. Every card describes its scene in its `art` field, for example `art: "a swarm of insect hatchlings bursting out of a cluster of glowing eggs in a dark hive chamber"`.
+1. A card with an illustration describes its scene in its `art` field, for example `art: "a swarm of insect hatchlings bursting out of a cluster of glowing eggs in a dark hive chamber"`. The 43 cards of the four Palmwalker decks have one; the Challenge deck cards have none yet.
 2. `src/art/generate.ts` wraps it in the shared style: `Art illustration in the old Magic: The Gathering style of {art}, like a classic {type} card. Match the painting style, palette and level of detail of the reference images, which are other cards of the same set. No border, frame or text.`
-3. The illustrations of the first 3 other cards of its half-grimoire or Threat deck go with the prompt as style references.
+3. The illustrations of the first 3 other cards of its Nemesis deck go with the prompt as style references.
 4. Images are 1152 × 928 JPEGs in `art/`, named by card id. Commit them: the model takes no seed, so a new run gives a different image. The older ones are 1088 × 960, from Ming Image 0.1 Design, which OpenRouter no longer serves; the card frame crops both sizes to fit.
 5. Each image cost $0.034 on 14 October 2026: $0.0336 for the image and less than $0.001 for the prompt and its 3 references. The script prints the cost of every image and the total.
-6. The preview and the PDFs show `art/{id}.jpg` when it exists and a plain glow in the card's colour otherwise.
+6. The preview and the PDFs show `art/{id}.jpg` when it exists and a plain glow otherwise.
 7. Look at every new image and regenerate any with a border, text or the wrong scene: `npm run art -- {id}`.
-
-## Balance simulator
-
-`npm run sim` plays a seeded batch of games for each of the 40 configurations (10 colour pairs × 4 Nemeses) on all CPU cores and reports the win rates.
-
-```
-npm run sim -- --games 1000 --seed 1                      # 40,000 games, about half a minute
-npm run sim -- --games 200 --pairs W/U,R/G --nemeses morwen
-npm run sim:trace -- --pair B/G --nemesis vaskara --seed 1 --game 7 --explain 4
-```
-
-| Option | Default | Meaning |
-|---|---|---|
-| `--games` | 1000 | Games per configuration |
-| `--seed` | 1 | Batch seed. Same seed and games, same results, whatever the number of workers |
-| `--workers` | all cores | Worker threads |
-| `--pairs`, `--nemeses` | all | Filters: `W/U`, `vorthrax` |
-
-Output: the tables on screen plus `dist/sim/sim-seed{seed}-g{games}.{md,csv,json}`. Game `n` of every configuration shares its shuffles with the same game of the other configurations (same Grimoire order for a pair, same Threat order for a Nemesis), so differences between cells come from the cards, not from the luck of the draw.
-
-`sim:trace` options: `--pair`, `--nemesis`, `--seed`, `--game`, and `--explain N` to list the best plans the AI scored in round N.
-
-`npm run sim:tune -- --games 60 --rounds 2` re-tunes the AI's evaluation weights (`src/sim/ai/values.ts`) by paired win-rate comparisons; run it after big card changes and copy the accepted values into `W`.
-
-### How the player AI decides
-
-1. **Its own turn:** a depth-first search over the whole turn (spells before combat, attackers, tricks after the Nemesis's blocks, spells after combat). Each plan is scored by playing out the next Nemesis turn three times with different guesses for the hidden cards and evaluating the result: life on both sides, boards, hand, the mana kept for the Nemesis turn, the Omen, danger and lethal threats.
-2. **The Nemesis turn:** every response window (before the Omen, against a Nemesis spell, before attacks, after blocks, at end of turn) and every block assignment is chosen by the same simulate-and-evaluate search.
-3. **Fair play:** the AI never looks at hidden cards. It knows only what a player knows: cards it scried or returned, and which Threats went to the bottom of the deck.
-4. **Tuned:** the evaluation weights in `src/sim/ai/values.ts` were tuned for the current rules by paired win-rate comparisons and validated on a separate seed. On seed 77, never used for tuning, it wins 50.6% of 40,000 games.
-
-### Rule interpretations
-
-Where the rulebook is silent, the simulator assumes:
-
-1. The hand keeps draw order: new cards go to the right, so "the leftmost card" (Mind Theft, Rebound) is the oldest one.
-2. A creature returning from the Ruin (Uprising, Exhume, Cinder Rebirth) to a full Nemesis Table stays in the Ruin. Overflow only applies when a creature is executed, Brood and Egg Laying included.
-3. Brood takes both cards before executing either. If that leaves no face-down card, you win; otherwise its creatures enter front to back.
-4. Auras are cast like sorceries. Cinder Hound's entry damage is mandatory (it can target itself).
-5. Bend Fate cannot answer the Omen that is being executed; cast it before, at the start of the Nemesis turn.
-6. A blocked attacker whose blocker leaves combat deals no damage, unless it has Trample.
-7. Rising Tide puts the old Omen face-down right behind the returned creatures.
-8. Lifelink gains the damage dealt, also on creatures; Deathtouch plus Trample needs only 1 damage on the blocker.
-9. A countered spell is still paid, and it still counts as your first spell of the turn for Refraction Golem's tax.
-
-The simulator reads costs, power, toughness and keywords from `src/content/`. Card effects are coded in `src/sim/engine/`, and on start it checks every card text against the rule it implements: if a text changes, it stops and names the card to update.
 
 ## Structure
 
 ```
-docs/rulebook.md        the rules and design reference (components, rules, Nemeses, example game, card lists)
+docs/box.md             the Beginner Box decks in the engine and their approximations
+docs/box-nemesis.md     the Nemesis seat: rules, mind, the seven decks, tuning, the player's AI
 art/                    card illustrations, one {card id}.jpg each
 src/
-├── content/            game data, bilingual (en/es), no rendering
-│   ├── types.ts        Card, HalfGrimoire, Nemesis, Reference…
-│   ├── grimoires/      the 5 half-grimoires: white, blue, black, red, green
-│   ├── nemeses/        the 4 Nemeses and their 20-card Threat decks
-│   ├── reference.ts    the quick reference card
-│   ├── box-reference.ts the quick reference card of the Beginner Box mode
-│   └── index.ts        catalog: GRIMOIRES, NEMESES, ALL_CARDS, getCard(id)
+├── box/                Magic engine and AI (from mana-duel), the 10 box decks, the Nemesis seat and its simulator
+│   ├── engine/         rules engine, the Nemesis turn and the Challenge card effects
+│   ├── ai/             player AI
+│   └── nemesis/        the seven Nemesis decks, the Nemesis mind, the simulator and its tests
+├── content/            printed card data, bilingual (en/es), no rendering
+│   ├── threats.ts      names, texts and art scenes of the four Palmwalker decks
+│   ├── challenges.ts   names and texts of the three Challenge decks
+│   ├── box-reference.ts the rules card
+│   └── index.ts        catalog: PRINTED_CARDS, DECK_NAMES, getPrintedCard(id)
 ├── i18n/               UI strings per locale + current locale
-├── render/             HTML components: card.ts (Grimoire and Threat cards and their backs), faces.ts (the two-face reference card), art.ts (card illustrations), icons.ts (SVG tap and Threat symbols, collection symbols and the Grimoire back's compass rose)
+├── render/             HTML components: card.ts (cards and their back), faces.ts (the two-face rules card), art.ts (illustrations), icons.ts (Threat burst and collection symbols)
 ├── preview/            serves the live card preview: pages and web server
-├── pnp/                builds the print-and-play PDFs for the print shop, Palmwalker's and the Beginner Box mode's (box.ts)
+├── pnp/                builds the print-and-play PDFs: box.ts (the deck), imposition.ts (A4 sheets), pdf.ts (Chrome and Ghostscript)
 ├── art/                generates the card illustrations with OpenRouter
-├── box/                Beginner Box mode: mana-duel's Magic engine and AI, the 10 box decks, the Nemesis seat and its simulator (docs/box-nemesis.md)
-├── sim/                balance simulator
-│   ├── engine/         rules engine: card rules and text checks, state, turn flow, combat, the Nemesis mind
-│   ├── ai/             player AI: turn planner, response and block search, evaluation, card values
-│   ├── batch/          seeded batches on worker threads, reports, weight tuner
-│   ├── trace.ts        one game, turn by turn
-│   └── selftest.ts     rules scenarios
 └── lib/                filesystem helpers
 ```
 
-## Product
-
-| Qty | Component |
-|---|---|
-| 5 × 12 | Half-grimoires: Dawnward Order, Arcane Tide, Grim Pact, Emberkin, Wildwood |
-| 4 × 20 | Threat decks: Vorthrax, Vaskara, Morwen, the Mirror Archmage |
-| 1 | Quick reference |
-
 ## Changing content
 
-1. Edit the card in `src/content/` with a unique `id`, both `en` and `es` texts and an `art` scene for its illustration (`npm run art`).
-2. Update its row in the card lists of `docs/rulebook.md` (section 17), and any rule it touches. Card numbers follow the order of `src/content/`: adding, moving or removing a card, or changing its `qty`, renumbers its collection, so update the `No.` column too.
-3. Check it in `npm run preview` and run `npm run typecheck`.
-4. Run `npm run sim:test`. If you changed a rule or a number, update `src/sim/engine/` until it passes.
-5. Run `npm run build` when you need new PDFs.
+1. Rules and sizes live in the engine: `src/box/nemesis/threats.ts` and `src/box/nemesis/challenges.ts`. Printed names and texts live in `src/content/`, keyed by the same card id, in both `en` and `es`.
+2. Check it in `npm run preview` and run `npm run typecheck`.
+3. Run the three `box:test` suites, then `npm run box -- --nemeses {id}` to check the win rate against its target in `docs/box-nemesis.md`.
+4. Run `npm run build` when you need new PDFs.

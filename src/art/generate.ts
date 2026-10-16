@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { relative } from "node:path";
-import { ALL_CARDS, GRIMOIRES, NEMESES, getCard } from "../content";
 import type { Card } from "../content/types";
 import { ART, ROOT, artPath, ensureDir } from "../lib/paths";
+import { BOX_DECKS } from "../pnp/box";
 
 const API = "https://openrouter.ai/api/v1/images";
 const MODEL = "google/gemini-3.1-flash-lite-image";
@@ -17,7 +17,15 @@ interface ImageResponse {
   error?: { message: string };
 }
 
-const COLLECTIONS: Card[][] = [...GRIMOIRES.map((g) => g.cards), ...NEMESES.map((n) => n.threats)];
+const COLLECTIONS: Card[][] = BOX_DECKS.map((deck) => deck.cards);
+
+const ALL_CARDS = COLLECTIONS.flat().filter((card) => card.art);
+
+function getCard(id: string): Card {
+  const card = ALL_CARDS.find((c) => c.id === id);
+  if (!card) throw new Error(`No art prompt for ${id}`);
+  return card;
+}
 
 function references(card: Card): string[] {
   const siblings = COLLECTIONS.find((cards) => cards.includes(card)) ?? [];

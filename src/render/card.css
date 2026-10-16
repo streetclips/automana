@@ -37,16 +37,7 @@
 .pw-card.pw-back .c-art { inset: .4em; }
 .pw-card.pw-back .c-glow { font-size: 7.5em; color: #ffb15c; }
 .pw-card.pw-back .c-glow .icon { position: relative; top: -5%; }
-.pw-card.grimoire-back { --c-p: #6e3f1f; --c-s: #c98a4b; --c-d: #24130a; --f-1: #7a4a2a; --f-2: #3a2012; }
-.pw-card.grimoire-back .c-glow { flex-direction: column; gap: .14em; color: #f0cf7a; }
-.pw-card.grimoire-back .c-glow .icon { top: 0; width: 1.25em; height: 1.25em; }
-.pw-card.grimoire-back .c-mark { font: bold .2em/1 Copperplate, serif; letter-spacing: .12em; text-transform: uppercase; }
 
-.col-R { --c-p: #d8452b; --c-s: #f2a541; --c-d: #3d0f05; --f-1: #e8714a; --f-2: #8e2010; --f-bar: #f7d9c8; --f-box: #f6e6db; }
-.col-G { --c-p: #3c8d3f; --c-s: #a6d36b; --c-d: #10301a; --f-1: #63a65e; --f-2: #1c4d25; --f-bar: #d9e9cf; --f-box: #e5efdc; }
-.col-W { --c-p: #c9a43c; --c-s: #fff1c4; --c-d: #5a4720; --f-1: #f5efdc; --f-2: #c7b78c; --f-bar: #fbf7eb; --f-box: #f7f3e8; }
-.col-U { --c-p: #2f6fb5; --c-s: #7fc4f0; --c-d: #0b1f3a; --f-1: #5f9dd8; --f-2: #12447b; --f-bar: #d4e5f4; --f-box: #e2edf6; }
-.col-B { --c-p: #5b3f78; --c-s: #a98bc9; --c-d: #120a18; --f-1: #5d4d6a; --f-2: #292033; --f-bar: #ded7e5; --f-box: #e7e2eb; }
 .col-T { --c-p: #9b1f0c; --c-s: #ff8a3d; --c-d: #1a0604; --f-1: #6e2012; --f-2: #3c1916; --f-bar: #3b1610; --f-box: #f0e2d6;
   --f-ink: #f6dcc4; --f-mark: #ffb15c; --f-sheen: .2; --f-emboss: rgba(0,0,0,.6); }
 
@@ -55,8 +46,4 @@
   font-size: .82em; font-weight: bold; font-family: Palatino, "Book Antiqua", Georgia, serif; color: #222; vertical-align: -0.18em; margin: 0 .05em;
   box-shadow: 0 0 0 .08em rgba(0,0,0,.55); }
 .pip .icon { width: 76%; height: 76%; margin: 12%; }
-.pip-N { background: #cfc6b5; }
-.pip-T { background: #d9c296; color: #3a2a10; }
 .pip-X { background: #2a1612; color: #ffb15c; }
-.pip-tier { display: inline-flex; align-items: center; justify-content: center; }
-.pip-tier b { font-size: .62em; letter-spacing: -.04em; }

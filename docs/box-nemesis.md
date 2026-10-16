@@ -118,13 +118,13 @@ What it still doesn't do:
 
 ## Print and play
 
-`npm run pnp:box` writes `dist/palmwalker-box-pnp-en.pdf` and `-es.pdf`: 208 cards on 24 A4 sheets, in the same format as Palmwalker's PnP (63 × 88 mm like Magic cards, 3 mm bleed, odd pages fronts, even pages backs mirrored for long-edge duplex, CMYK).
+`npm run pnp` writes `dist/palmwalker-box-pnp-en.pdf` and `-es.pdf`: 208 cards on 24 A4 sheets (63 × 88 mm like Magic cards, 3 mm bleed, odd pages fronts, even pages backs mirrored for long-edge duplex, CMYK). The README has the layout and the print shop order.
 
 1. **One rules card** for all seven Nemeses (`src/content/box-reference.ts`): setup and starting cards, the Nemesis turn, its mind, and how the player's cards work against it, with Bite and Regrow.
-2. **The 4 Palmwalker decks**, 20 cards each, with the plain Threat back. Sizes come from `src/box/nemesis/threats.ts`, the names, art and flavour from Palmwalker's content, and the box wording from `src/pnp/box.ts`.
+2. **The 4 Palmwalker decks**, 20 cards each, with the plain Threat back. Sizes come from `src/box/nemesis/threats.ts`; names, texts and art scenes from `src/content/threats.ts`.
 3. **The 3 Challenge decks** after them: the Stampede (43 cards), the Revel King (46, its 3 starting cards included) and the Hydra (38, its 2 starting Heads included). Their names and texts are in `src/content/challenges.ts`, their sizes and copies come from `src/box/nemesis/challenges.ts`, and they have no art yet: the art box shows the Threat glow.
 4. **No tier mark:** every Threat shows the Threat burst where a Magic card shows its mana cost.
-5. **Wording for Magic:** "the battlefield" for Palmwalker's Table, the official Spanish keywords (*Vuela*, *Arrolla*), a random discard for Rebound and Mind Theft, "tap" for Mass Illusion, and the graveyard instead of Palmwalker's face-down bottom and Ruin for Egg Laying, Brood, Wandering Skeleton, Soul Drain, Exhume, Uprising and Cinder Rebirth.
+5. **Wording for Magic:** "the battlefield", the official Spanish keywords (*Vuela*, *Arrolla*), a random discard for Rebound and Mind Theft, "tap" for Mass Illusion, and the graveyard for Egg Laying, Brood, Wandering Skeleton, Soul Drain, Exhume, Uprising and Cinder Rebirth.
 
 ## Tools
 
@@ -132,7 +132,7 @@ What it still doesn't do:
 |---|---|
 | `npm run box -- --games 100 --seed 1 [--decks a,b] [--nemeses vorthrax,morwen] [--workers N]` | Games per deck × Nemesis in worker threads, against all 7 Nemeses unless `--nemeses` names some (`vorthrax`, `vaskara`, `morwen`, `mirror-archmage`, `stampede`, `revel`, `hydra`). Prints the win-rate table and the metrics per Nemesis, and writes `dist/box/box-seed<S>-g<N>.{md,json}`. Every game has its own seed, so results don't depend on the worker count. |
 | `npm run box:trace -- <seed> <deck> <nemesis>` | The log of one game. |
-| `npm run pnp:box` | The print-and-play PDFs of the box mode. |
+| `npm run pnp` | The print-and-play PDFs. |
 | `npm run box:test:nemesis` | The Nemesis rules as 26 scenario tests, on Threats pinned to fixed sizes so tuning never breaks them; 6 of them check the player's AI. |
 | `npm run box:test:challenges` | The Challenge deck cards as 8 scenario tests. |
 | `BOX_THREAT_SIZES=vorthrax=1/2,nm_ash_imp=0/-1 npm run box` | Adds power/toughness to every creature of the named Nemeses or to named Threats, to probe sizes without editing the deck lists. |

@@ -1,12 +1,12 @@
 import { statSync } from "node:fs";
-import { GRIMOIRES, NEMESES } from "../content";
+import { BOX_REFERENCE, DECK_NAMES } from "../content";
 import type { Card, Locale } from "../content/types";
 import { setLocale, t } from "../i18n/locale";
 import { artPath, readCss } from "../lib/paths";
-import { buildDeck } from "../pnp/deck";
+import { BOX_DECKS, buildBoxDeck } from "../pnp/box";
 import { impose } from "../pnp/imposition";
 import { artCss } from "../render/art";
-import { renderCard, renderGrimoireBack, renderThreatBack } from "../render/card";
+import { renderCard, renderThreatBack } from "../render/card";
 import { referenceFace, type Face } from "../render/faces";
 
 export type View = "cards" | "pnp";
@@ -41,8 +41,14 @@ function slot(html: string, label: string): string {
   return `<figure>${html}<figcaption>${label}</figcaption></figure>`;
 }
 
-function cardSlot(card: Card): string {
-  return slot(renderCard(card), card.qty > 1 ? `${card.id} ×${card.qty}` : card.id);
+function cardSlots(collection: string, cards: Card[]): string[] {
+  const total = cards.reduce((sum, c) => sum + c.qty, 0);
+  let first = 1;
+  return cards.map((card) => {
+    const html = renderCard(card, 0, { collection, first, total });
+    first += card.qty;
+    return slot(html, card.qty > 1 ? `${card.id} ×${card.qty}` : card.id);
+  });
 }
 
 function faceSlots(name: string, render: (face: Face) => string): string[] {
@@ -52,10 +58,9 @@ function faceSlots(name: string, render: (face: Face) => string): string[] {
 function sections(locale: Locale): Section[] {
   const s = t();
   return [
-    { id: "reference", title: s.reference, slots: faceSlots("reference", referenceFace) },
-    { id: "backs", title: s.backs, slots: [slot(renderGrimoireBack(), "grimoire-back"), slot(renderThreatBack(), "threat-back")] },
-    ...GRIMOIRES.map((g) => ({ id: g.id, title: `${s.halfGrimoire} · ${g[locale].name}`, slots: g.cards.map(cardSlot) })),
-    ...NEMESES.map((n) => ({ id: n.id, title: `${n[locale].name} · ${s.threatDeck}`, slots: n.threats.map(cardSlot) })),
+    { id: "reference", title: s.reference, slots: faceSlots("reference", (face) => referenceFace(face, BOX_REFERENCE)) },
+    { id: "backs", title: s.backs, slots: [slot(renderThreatBack(), "threat-back")] },
+    ...BOX_DECKS.map((d) => ({ id: d.id, title: `${DECK_NAMES[d.id][locale].name} · ${s.threatDeck}`, slots: cardSlots(d.id, d.cards) })),
   ];
 }
 
@@ -69,7 +74,7 @@ function cardsBody(locale: Locale): Body {
 }
 
 function pnpBody(): Body {
-  const pages = impose(buildDeck()).map((sheet, i) => `<figure class="page">${sheet}<figcaption>sheet ${Math.floor(i / 2) + 1} · ${i % 2 ? "back" : "front"}</figcaption></figure>`);
+  const pages = impose(buildBoxDeck()).map((sheet, i) => `<figure class="page">${sheet}<figcaption>sheet ${Math.floor(i / 2) + 1} · ${i % 2 ? "back" : "front"}</figcaption></figure>`);
   return { css: readCss("render/card.css", "render/faces.css", "pnp/pnp.css", "preview/preview.css"), nav: "", main: pages.join("") };
 }
 
