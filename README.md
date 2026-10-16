@@ -1,4 +1,4 @@
-# Palmwalker
+# Automana
 
 Seven Nemesis decks to play solo against the decks of the Magic: The Gathering Foundations Beginner Box. You shuffle two box decks together and fight a Nemesis that plays itself: it reveals a card each turn, attacks and blocks by a few fixed rules, and has 20 life on a counter. This repo holds the rules engine and its balance simulator, the card data, a live preview of every card and the print-and-play PDFs.
 
@@ -24,7 +24,7 @@ Win rates over the 45 box deck pairs, 1,800 games per Nemesis. The rules, the de
 | `npm run box:test`, `box:test:nemesis`, `box:test:challenges` | Scenario tests: box cards (38), Nemesis rules (26), Challenge deck cards (8) |
 | `npm run box:cards` | Engine card texts compared with Scryfall's oracle |
 | `npm run preview` | Card preview at `http://localhost:4400`, reloaded on every save |
-| `npm run pnp` | `dist/palmwalker-box-pnp-en.pdf` and `-es.pdf`: print-and-play PDFs for [Imprenta Soriano](https://imprentasoriano.com/producto/baraja-de-cartas) |
+| `npm run pnp` | `dist/automana-box-pnp-en.pdf` and `-es.pdf`: print-and-play PDFs for [Imprenta Soriano](https://imprentasoriano.com/producto/baraja-de-cartas) |
 | `npm run build` | `typecheck`, then `pnp` |
 | `npm run art` | `art/{card id}.jpg`: AI illustrations for the cards with an art scene and no image yet. `npm run art -- nm_brood nm_uprising` regenerates those cards |
 
@@ -52,7 +52,7 @@ Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrom
 6. No blurred shadows: some PDF viewers draw them as solid dark patches over the card.
 7. Each cell is frame black underneath, so the hairline gaps the CMYK conversion leaves at the frame edge print black, not white.
 
-Every card shares the plain Threat back; the rules card shows its Face B.
+Every card shares the Threat back; the rules card shows its Face B.
 
 ### Ordering at Imprenta Soriano
 
@@ -73,16 +73,33 @@ Upload the PDF to [Baraja de Cartas](https://imprentasoriano.com/producto/baraja
 4. The English and Spanish PDFs have the same cut, so they can go in one order without the 15 € fee for each extra cut.
 5. One set, 48 pages, cut, cost 33.27 € on Black Core card and 34.68 € on the 310 g embossed card on 16 October 2026, shipping not included. The form has no rounded corners option; ask for them in Mostrador. The shop does not say whether VAT is included.
 
+## Card frame
+
+Every card uses the modern Magic frame in its Nemesis's colour, as if it were a mana colour:
+
+| Colour | Nemeses |
+|---|---|
+| Red | Vorthrax, the Stampede |
+| Green | Vaskara, the Hydra |
+| Black | Morwen |
+| Blue | the Mirror Archmage |
+| Gold | the Revel King |
+
+1. The frame is in `src/render/card.css`; colours and set codes are in `SETS` in `src/render/card.ts`.
+2. Under the text box: the collector number, the set code and the language, `12/20` and `VOR • EN`, next to a holo stamp with the Threat burst.
+3. Names and type lines shrink with their length to fit their bar; long rules texts shrink a little.
+4. The rules card uses the same frame in grey.
+
 ## Card art
 
 `npm run art` illustrates cards with [Gemini 3.1 Flash Lite Image](https://openrouter.ai/google/gemini-3.1-flash-lite-image) through OpenRouter, 4 at a time, about 10 s per image:
 
-1. A card with an illustration describes its scene in its `art` field, for example `art: "a swarm of insect hatchlings bursting out of a cluster of glowing eggs in a dark hive chamber"`. The 43 cards of the four Palmwalker decks have one; the Challenge deck cards have none yet.
+1. A card with an illustration describes its scene in its `art` field, for example `art: "a swarm of insect hatchlings bursting out of a cluster of glowing eggs in a dark hive chamber"`. The 43 cards of the four Automana decks have one; the Challenge deck cards have none yet.
 2. `src/art/generate.ts` wraps it in the shared style: `Art illustration in the old Magic: The Gathering style of {art}, like a classic {type} card. Match the painting style, palette and level of detail of the reference images, which are other cards of the same set. No border, frame or text.`
 3. The illustrations of the first 3 other cards of its Nemesis deck go with the prompt as style references.
 4. Images are 1152 × 928 JPEGs in `art/`, named by card id. Commit them: the model takes no seed, so a new run gives a different image. The older ones are 1088 × 960, from Ming Image 0.1 Design, which OpenRouter no longer serves; the card frame crops both sizes to fit.
 5. Each image cost $0.034 on 14 October 2026: $0.0336 for the image and less than $0.001 for the prompt and its 3 references. The script prints the cost of every image and the total.
-6. The preview and the PDFs show `art/{id}.jpg` when it exists and a plain glow otherwise.
+6. The preview and the PDFs show `art/{id}.jpg` when it exists and the deck's symbol on its frame colour otherwise.
 7. Look at every new image and regenerate any with a border, text or the wrong scene: `npm run art -- {id}`.
 
 ## Structure
@@ -97,12 +114,12 @@ src/
 │   ├── ai/             player AI
 │   └── nemesis/        the seven Nemesis decks, the Nemesis mind, the simulator and its tests
 ├── content/            printed card data, bilingual (en/es), no rendering
-│   ├── threats.ts      names, texts and art scenes of the four Palmwalker decks
+│   ├── threats.ts      names, texts and art scenes of the four Automana decks
 │   ├── challenges.ts   names and texts of the three Challenge decks
 │   ├── box-reference.ts the rules card
 │   └── index.ts        catalog: PRINTED_CARDS, DECK_NAMES, getPrintedCard(id)
 ├── i18n/               UI strings per locale + current locale
-├── render/             HTML components: card.ts (cards and their back), faces.ts (the two-face rules card), art.ts (illustrations), icons.ts (Threat burst and collection symbols)
+├── render/             HTML components: card.ts (cards and their back), faces.ts (the two-face rules card), art.ts (illustrations), icons.ts (Threat burst and collection symbols), textures.ts (frame grain and mottle, generated as PNG)
 ├── preview/            serves the live card preview: pages and web server
 ├── pnp/                builds the print-and-play PDFs: box.ts (the deck), imposition.ts (A4 sheets), pdf.ts (Chrome and Ghostscript)
 ├── art/                generates the card illustrations with OpenRouter

@@ -78,7 +78,7 @@ const everything = sumOf([...tallies.values()]);
 const margin = (1.96 * Math.sqrt(0.25 / games) * 100).toFixed(1);
 
 const lines: string[] = [];
-lines.push('# Palmwalker Nemeses against Magic decks', '');
+lines.push('# Automana Nemeses against Magic decks', '');
 lines.push(
   `seed ${seed} · ${games} games per deck and Nemesis · ${decks.length} decks × ${nemeses.length} Nemeses · ${total} games · ${Math.min(workers, jobs.length)} workers · ${seconds.toFixed(0)} s · ${(total / seconds).toFixed(0)} games/s`,
   '',

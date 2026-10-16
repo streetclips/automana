@@ -1,9 +1,9 @@
 {
-  "name": "palmwalker",
+  "name": "automana",
   "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "Palmwalker: Nemesis decks to play solo against Magic Beginner Box decks. Engine, balance simulation, card preview and print-and-play PDFs.",
+  "description": "Automana: Nemesis decks to play solo against Magic Beginner Box decks. Engine, balance simulation, card preview and print-and-play PDFs.",
   "scripts": {
     "typecheck": "tsc --noEmit",
     "preview": "tsx watch src/preview/server.ts",

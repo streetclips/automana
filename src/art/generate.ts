@@ -44,7 +44,7 @@ async function generate(card: Card, apiKey: string): Promise<{ image: Buffer; co
   const refs = references(card);
   const res = await fetch(API, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "X-Title": "Palmwalker" },
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json", "X-Title": "Automana" },
     body: JSON.stringify({
       model: MODEL,
       prompt: prompt(card, refs.length > 0),

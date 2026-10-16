@@ -5,6 +5,7 @@ import type { Locale } from "../content/types";
 import { setLocale, t } from "../i18n/locale";
 import { DIST, ensureDir, readCss } from "../lib/paths";
 import { artCss } from "../render/art";
+import { textureCss } from "../render/textures";
 import { buildBoxDeck } from "./box";
 import { impose } from "./imposition";
 import { convertToCmyk, printToPdf } from "./pdf";
@@ -12,16 +13,16 @@ import { convertToCmyk, printToPdf } from "./pdf";
 function buildPnp(locale: Locale): string {
   setLocale(locale);
   const deck = buildBoxDeck();
-  const css = [readCss("render/card.css", "render/faces.css", "pnp/pnp.css"), artCss()].join("\n");
+  const css = [readCss("render/card.css", "render/faces.css", "pnp/pnp.css"), textureCss(), artCss()].join("\n");
   const html = `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><title>${t().sheetTitle}</title><style>${css}</style></head>
 <body>${impose(deck).join("")}</body></html>`;
-  const tmp = mkdtempSync(join(tmpdir(), "palmwalker-pnp-"));
+  const tmp = mkdtempSync(join(tmpdir(), "automana-pnp-"));
   try {
     const htmlPath = join(tmp, "deck.html");
     const rgbPath = join(tmp, "deck-rgb.pdf");
     writeFileSync(htmlPath, html, "utf8");
     printToPdf(htmlPath, rgbPath);
-    const path = join(ensureDir(DIST), `palmwalker-box-pnp-${locale}.pdf`);
+    const path = join(ensureDir(DIST), `automana-box-pnp-${locale}.pdf`);
     convertToCmyk(rgbPath, path);
     return `${path} (${deck.length} cards)`;
   } finally {

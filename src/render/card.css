@@ -1,49 +1,53 @@
 .pw-card { position: relative; width: 25em; height: 35em; border: 1em solid #0d0b0a; border-radius: 1.2em; overflow: hidden; flex: none; box-sizing: border-box; font-size: 2.4mm;
   box-shadow: 0 .8em 2em rgba(0,0,0,.42); font-family: Palatino, "Book Antiqua", Georgia, serif; color: #17110c; text-align: left; line-height: 1.3;
-  background: radial-gradient(ellipse 65% 28% at 28% 16%, rgba(255,255,255,.3), transparent), radial-gradient(ellipse 50% 24% at 80% 50%, rgba(255,255,255,.16), transparent),
-    radial-gradient(ellipse 45% 30% at 10% 66%, rgba(0,0,0,.16), transparent), radial-gradient(ellipse 85% 30% at 50% 92%, rgba(0,0,0,.24), transparent), linear-gradient(165deg, var(--f-1), var(--f-2)); }
+  --ink: #fff8ee; --rim: color-mix(in srgb, var(--k-1) 45%, #fff);
+  background-color: var(--k-2); background-image: var(--grain), var(--mottle), linear-gradient(160deg, var(--k-1), var(--k-2) 48%, var(--k-3));
+  background-size: 9em 9em, cover, cover; background-blend-mode: overlay, soft-light, normal; }
+.pw-card::before { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 .1em rgba(0,0,0,.5), inset 0 0 0 .2em rgba(255,255,255,.16); }
 .pw-card > div { position: absolute; box-sizing: border-box; }
-.pw-card .c-name, .pw-card .c-type, .pw-card .c-pt, .pw-face .hhead { background: linear-gradient(rgba(255,255,255,var(--f-sheen, .6)), rgba(255,255,255,0) 45%, rgba(0,0,0,.1)), var(--f-bar);
-  color: var(--f-ink, #17110c); border: .09em solid #120d09; box-shadow: 0 0 0 .1em rgba(255,255,255,.7), .06em .16em .26em rgba(0,0,0,.55), inset 0 0 0 .06em rgba(255,255,255,.35); z-index: 1; }
-.pw-card .c-name, .pw-card .c-type { display: flex; align-items: center; padding: 0 .6em; white-space: nowrap; overflow: hidden; }
-.pw-card .c-name span, .pw-card .c-type span { position: relative; top: .07em; }
-.pw-card .c-name { top: .4em; height: 2.1em; }
-.pw-card .c-name span { font-size: 1.45em; font-weight: bold; letter-spacing: .01em; }
-.pw-card.long .c-name span { font-size: 1.3em; }
-.pw-card.xlong .c-name span { font-size: 1.15em; }
-.pw-card .c-type { bottom: 11em; height: 1.95em; }
-.pw-card .c-type span { font-size: 1.15em; font-weight: bold; }
-.pw-card.type-long .c-type span { font-size: 1.02em; }
-.pw-card.type-xlong .c-type span { font-size: .92em; }
-.pw-card .c-name .c-cost { margin-left: auto; padding-left: .4em; display: flex; align-items: center; gap: .15em; font-size: 1.35em; }
-.pw-card .c-pt { right: .4em; bottom: .15em; height: 2.2em; min-width: 4.6em; padding: 0 .5em; display: flex; align-items: center; justify-content: center; z-index: 2; }
-.pw-card .c-pt span { font: 800 1.55em/1 "Avenir Next Condensed", "Avenir Next", sans-serif; text-shadow: 0 .03em 0 var(--f-emboss, rgba(255,255,255,.7)); }
-.pw-card .c-art, .pw-card .c-text, .pw-face .hbody { border: .09em solid #0b0807; box-shadow: 0 0 0 .1em rgba(255,255,255,.7); }
-.pw-card .c-text, .pw-face .hbody { background: radial-gradient(ellipse 70% 55% at 25% 25%, rgba(255,255,255,.6), transparent), radial-gradient(ellipse 60% 50% at 80% 80%, rgba(0,0,0,.06), transparent), var(--f-box); }
-.pw-card .c-name, .pw-card .c-type, .pw-card .c-art, .pw-card .c-text { left: .4em; right: .4em; }
-.pw-card .c-art { top: 3em; bottom: 13.45em; overflow: hidden; }
-.pw-card .c-art::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 1em rgba(0,0,0,.45); }
-.pw-card .c-glow { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(circle at 50% 45%, var(--c-s), var(--c-p) 60%, var(--c-d)); }
+.pw-card p { margin: 0; text-wrap: pretty; }
+.pw-card .c-name, .pw-card .c-type, .pw-card .c-pt, .pw-face .hhead { background: linear-gradient(172deg, rgba(255,255,255,.55), rgba(255,255,255,0) 46%, rgba(0,0,0,.16)), var(--k-plate);
+  border: .1em solid #120d0a; border-radius: .7em / 1.1em; box-shadow: 0 0 0 .12em var(--rim), .05em .1em 0 .12em rgba(0,0,0,.45); color: #111; z-index: 1; }
+.pw-card .c-name, .pw-card .c-type { display: flex; align-items: center; gap: .4em; white-space: nowrap; }
+.pw-card .c-title, .pw-card .c-line { overflow: hidden; }
+.pw-card .c-name { top: .5em; left: .5em; right: .5em; height: 2.2em; padding: 0 .5em 0 .75em; }
+.pw-card .c-title { font: bold min(1.42em, calc(39em / var(--name-len)))/1 Optima, "Avenir Next", sans-serif; letter-spacing: -.005em; }
+.pw-card .c-name .pip { margin-left: auto; font-size: 1.35em; }
+.pw-card .c-art { top: 3.05em; left: .95em; right: .95em; height: 16.25em; border: .12em solid #0e0b09; box-shadow: 0 0 0 .1em rgba(255,255,255,.28); background: #000; }
 .pw-card .c-img { width: 100%; height: 100%; background-size: cover; background-position: center; }
-.pw-card .c-text { bottom: .5em; height: 10em; padding: .6em; display: flex; flex-direction: column; justify-content: safe center; gap: .45em; }
-.pw-card .c-text p { margin: 0; font-size: 1.1em; line-height: 1.28; text-wrap: pretty; }
-.pw-card .c-flavor { font-style: italic; color: #4b3d2f; }
-.pw-card .c-text .c-flavor { font-size: 1.02em; }
-.pw-card.no-flavor .c-flavor { display: none; }
-.pw-card.has-pt .c-text { padding-bottom: 2em; }
-.pw-card .c-set { position: absolute; left: .8em; bottom: .45em; display: flex; align-items: center; gap: .3em; font: 600 .75em/1 "Avenir Next", "Helvetica Neue", sans-serif; color: var(--c-d); opacity: .6; }
-.pw-card .c-set .icon { width: 1.5em; height: 1.5em; }
-.pw-card.pw-back .c-art { inset: .4em; }
-.pw-card.pw-back .c-glow { font-size: 7.5em; color: #ffb15c; }
-.pw-card.pw-back .c-glow .icon { position: relative; top: -5%; }
+.pw-card .c-glow { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 8.5em; color: rgba(255,255,255,.2); background-color: var(--k-2);
+  background-image: var(--mottle), radial-gradient(circle at 50% 45%, var(--k-1), var(--k-2) 55%, var(--k-3)); background-size: cover; background-blend-mode: soft-light, normal; }
+.pw-card .c-type { top: 19.55em; left: .5em; right: .5em; height: 2.05em; padding: 0 .55em 0 .75em; }
+.pw-card .c-line { font: bold min(1.12em, calc(37.5em / var(--type-len)))/1 Optima, "Avenir Next", sans-serif; }
+.pw-card .c-sym { margin-left: auto; flex: none; font-size: 1.35em; color: #e8652b; }
+.pw-card .c-sym .icon { stroke: #1b0d06; stroke-width: 1.6px; paint-order: stroke; }
+.pw-card .c-text, .pw-face .hbody { border: .1em solid #120d0a; box-shadow: 0 0 0 .1em rgba(255,255,255,.28); background-color: var(--k-box);
+  background-image: var(--grain), radial-gradient(ellipse 80% 70% at 30% 25%, rgba(255,255,255,.65), transparent); background-size: 9em 9em, cover; background-blend-mode: soft-light, normal; }
+.pw-card .c-text { top: 21.85em; left: .95em; right: .95em; bottom: 1.75em; padding: .55em .7em; display: flex; flex-direction: column; justify-content: safe center; gap: .45em; }
+.pw-card.has-pt .c-text { padding-bottom: .9em; }
+.pw-card .c-rules { font-size: clamp(.95em, calc(168em / var(--text-len)), 1.12em); line-height: 1.24; }
+.pw-card .c-flavor { font-style: italic; }
+.pw-card .c-pt { right: .5em; bottom: .35em; min-width: 4.7em; height: 2.2em; display: flex; align-items: center; justify-content: center; padding: 0 .5em; }
+.pw-card .c-pt span { font: bold 1.48em/1 Optima, "Avenir Next", sans-serif; }
+.pw-card .c-stamp { display: flex; align-items: center; justify-content: center; left: 50%; bottom: .45em; width: 2.9em; height: 1.75em; margin-left: -1.45em; border-radius: 50%;
+  background: radial-gradient(ellipse at 40% 35%, var(--k-1), var(--k-3)); border: .13em solid #d8b45c; box-shadow: 0 0 0 .07em #1a120a; color: #f6d68a; }
+.pw-card .c-stamp .icon { width: 1.05em; height: 1.05em; }
+.pw-card .c-info { display: flex; flex-direction: column; left: 1em; bottom: .3em; font: 600 .6em/1.18 "Avenir Next Condensed", "Avenir Next", sans-serif; letter-spacing: .04em; color: var(--ink); }
 
-.col-T { --c-p: #9b1f0c; --c-s: #ff8a3d; --c-d: #1a0604; --f-1: #6e2012; --f-2: #3c1916; --f-bar: #3b1610; --f-box: #f0e2d6;
-  --f-ink: #f6dcc4; --f-mark: #ffb15c; --f-sheen: .2; --f-emboss: rgba(0,0,0,.6); }
+.pw-back { background-color: #2a0b06; background-image: var(--grain), var(--mottle), radial-gradient(circle at 50% 46%, #a8361f, #5a160b 45%, #1a0604 80%); }
+.pw-back .b-frame { inset: .7em; border: .12em solid #d8b45c; border-radius: .7em; box-shadow: inset 0 0 0 .1em #1a0604, 0 0 0 .1em #1a0604; }
+.pw-back .b-seal { left: 50%; top: 46%; width: 11em; height: 11em; margin: -5.5em 0 0 -5.5em; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #ffb15c;
+  background: radial-gradient(circle at 40% 35%, #5c1a0d, #1d0705 75%); border: .3em solid #d8b45c; box-shadow: 0 0 0 .14em #1a0604, inset 0 0 0 .14em #1a0604, inset 0 0 0 .6em rgba(216,180,92,.18); }
+.pw-back .b-seal .icon { width: 7em; height: 7em; }
+.pw-back .b-word { left: 0; right: 0; bottom: 2.6em; text-align: center; font: bold 1.9em/1 Optima, "Avenir Next", sans-serif; letter-spacing: .32em; text-indent: .32em; text-transform: uppercase; color: #f3dca6; }
+
+.k-red   { --k-1: #d2603f; --k-2: #a8361f; --k-3: #4e140b; --k-box: #f2e0d4; --k-plate: #f6e4d8; }
+.k-green { --k-1: #58985a; --k-2: #2b6b39; --k-3: #102e18; --k-box: #e1e8d7; --k-plate: #e5ecdb; }
+.k-black { --k-1: #5f5651; --k-2: #34302d; --k-3: #0f0d0c; --k-box: #ddd6d1; --k-plate: #dfd8d3; }
+.k-blue  { --k-1: #4a90cc; --k-2: #1f5f9a; --k-3: #0a2643; --k-box: #dbe6f0; --k-plate: #e0ebf4; }
+.k-gold  { --k-1: #e6c56b; --k-2: #b48d36; --k-3: #4d3810; --k-box: #f4ebcf; --k-plate: #f7eed3; --ink: #2a1b05; }
 
 .icon { display: block; width: 1em; height: 1em; fill: currentColor; }
-.pip { display: inline-block; overflow: hidden; width: 1.3em; height: 1.3em; border-radius: 50%; flex: none; text-align: center; line-height: 1.3em;
-  font-size: .82em; font-weight: bold; font-family: Palatino, "Book Antiqua", Georgia, serif; color: #222; vertical-align: -0.18em; margin: 0 .05em;
-  box-shadow: 0 0 0 .08em rgba(0,0,0,.55); }
-.pip .icon { width: 76%; height: 76%; margin: 12%; }
-.pip-X { background: #2a1612; color: #ffb15c; }
+.pip { display: inline-flex; align-items: center; justify-content: center; width: 1.3em; height: 1.3em; border-radius: 50%; flex: none;
+  background: radial-gradient(circle at 35% 30%, #4a2a20, #1d0d09); color: #ffad55; box-shadow: -.06em .08em 0 rgba(0,0,0,.75); }
+.pip .icon { width: 78%; height: 78%; }

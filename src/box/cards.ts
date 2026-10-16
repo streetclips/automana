@@ -25,7 +25,7 @@ async function fetchOracle(names: string[]): Promise<Oracle[]> {
   for (let i = 0; i < names.length; i += BATCH) {
     const res = await fetch(API, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'palmwalker-box/0.1' },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'User-Agent': 'automana-box/0.1' },
       body: JSON.stringify({ identifiers: names.slice(i, i + BATCH).map((name) => ({ name })) }),
     });
     const json = (await res.json()) as { data: Oracle[]; not_found?: { name: string }[] };

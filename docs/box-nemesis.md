@@ -1,8 +1,8 @@
 # Nemesis mode on the Magic engine
 
-The box pilot asks one question before anything is bought or printed: do Palmwalker's Nemeses give a fair fight to normal Magic decks? `src/box/engine` is mana-duel's Magic engine; this document describes the Nemesis seat added on top of it, as implemented.
+The box pilot asks one question before anything is bought or printed: do Automana's Nemeses give a fair fight to normal Magic decks? `src/box/engine` is mana-duel's Magic engine; this document describes the Nemesis seat added on top of it, as implemented.
 
-There are seven Nemeses. Four are Palmwalker's (Vorthrax, Vaskara, Morwen and the Mirror Archmage); three are inspired by the Challenge Decks Wizards printed for the Theros block (the Stampede, the Revel King and the Hydra). All seven play by the same rules; a deck's character comes from its cards' text.
+There are seven Nemeses. Four are Automana's (Vorthrax, Vaskara, Morwen and the Mirror Archmage); three are inspired by the Challenge Decks Wizards printed for the Theros block (the Stampede, the Revel King and the Hydra). All seven play by the same rules; a deck's character comes from its cards' text.
 
 ## Seats
 
@@ -51,7 +51,7 @@ It never responds and never activates abilities. `src/box/nemesis/mind.ts`:
 
 ## The seven decks
 
-Creature sizes sit in the range of Magic creatures; a Nemesis's strength comes from its abilities. Data: `src/box/nemesis/threats.ts` (Palmwalker) and `src/box/nemesis/challenges.ts` (Challenge decks).
+Creature sizes sit in the range of Magic creatures; a Nemesis's strength comes from its abilities. Data: `src/box/nemesis/threats.ts` (Automana) and `src/box/nemesis/challenges.ts` (Challenge decks).
 
 | Nemesis | Cards | Deck |
 |---|---:|---|
@@ -67,7 +67,7 @@ Creature sizes sit in the range of Magic creatures; a Nemesis's strength comes f
 
 Targets: 52–58% for the player against Vorthrax and Vaskara, 42–48% against Morwen and the Mirror Archmage, 45–55% against the Challenge decks.
 
-1. **The common rules made the Palmwalker Nemeses much harder.** Without tiers a 6- or 7-power creature could come on the first turn, and without the creature limit nothing stopped a board from growing. With the old sizes the player won 14.7% against Vorthrax, 21.6% against Vaskara, 16.0% against Morwen and 30.4% against the Archmage (seed 1, 10 games per pair and Nemesis).
+1. **The common rules made the Automana Nemeses much harder.** Without tiers a 6- or 7-power creature could come on the first turn, and without the creature limit nothing stopped a board from growing. With the old sizes the player won 14.7% against Vorthrax, 21.6% against Vaskara, 16.0% against Morwen and 30.4% against the Archmage (seed 1, 10 games per pair and Nemesis).
 2. **Power is the knob for them.** −1 power on every creature moved them by 7 to 23 points, −2 by 24 to 55. The tuned decks take −2 power on every Vorthrax creature and −1 more on its six biggest; −1 on every Vaskara and Morwen creature and −1 more on their biggest (Mantis Queen, Shieldbreaker Beetle, Darting Wasp; Crypt Horror, Deathless Knight, Vampire Bat); −1 on every Archmage creature.
 3. **The Revel King was all about its extra reveal.** With the King revealing one more card from its first turn, the player won about 20%; without it and with 2 War Drums, 88%. Each War Drums moved the rate by 3 to 4 points. The middle came from the King's own text: one more reveal only with three or more Revelers, with the printed normal setup of 2 Throngs and 2 War Drums.
 4. **Revelers and Heads needed their printed passivity back.** With the common attack rule the King, which can't die while a Reveler stays, attacked every turn: 9.3 damage per game. "Attacks only when a card says so" on the King and the Revelers, and "can't block" on the King, restore the original, where they only attacked on a card's orders.
@@ -118,11 +118,11 @@ What it still doesn't do:
 
 ## Print and play
 
-`npm run pnp` writes `dist/palmwalker-box-pnp-en.pdf` and `-es.pdf`: 208 cards on 24 A4 sheets (63 × 88 mm like Magic cards, 3 mm bleed, odd pages fronts, even pages backs mirrored for long-edge duplex, CMYK). The README has the layout and the print shop order.
+`npm run pnp` writes `dist/automana-box-pnp-en.pdf` and `-es.pdf`: 208 cards on 24 A4 sheets (63 × 88 mm like Magic cards, 3 mm bleed, odd pages fronts, even pages backs mirrored for long-edge duplex, CMYK). The README has the layout and the print shop order.
 
 1. **One rules card** for all seven Nemeses (`src/content/box-reference.ts`): setup and starting cards, the Nemesis turn, its mind, and how the player's cards work against it, with Bite and Regrow.
-2. **The 4 Palmwalker decks**, 20 cards each, with the plain Threat back. Sizes come from `src/box/nemesis/threats.ts`; names, texts and art scenes from `src/content/threats.ts`.
-3. **The 3 Challenge decks** after them: the Stampede (43 cards), the Revel King (46, its 3 starting cards included) and the Hydra (38, its 2 starting Heads included). Their names and texts are in `src/content/challenges.ts`, their sizes and copies come from `src/box/nemesis/challenges.ts`, and they have no art yet: the art box shows the Threat glow.
+2. **The 4 Automana decks**, 20 cards each, with the Threat back. Sizes come from `src/box/nemesis/threats.ts`; names, texts and art scenes from `src/content/threats.ts`.
+3. **The 3 Challenge decks** after them: the Stampede (43 cards), the Revel King (46, its 3 starting cards included) and the Hydra (38, its 2 starting Heads included). Their names and texts are in `src/content/challenges.ts`, their sizes and copies come from `src/box/nemesis/challenges.ts`, and they have no art yet: the art box shows the deck's symbol.
 4. **No tier mark:** every Threat shows the Threat burst where a Magic card shows its mana cost.
 5. **Wording for Magic:** "the battlefield", the official Spanish keywords (*Vuela*, *Arrolla*), a random discard for Rebound and Mind Theft, "tap" for Mass Illusion, and the graveyard for Egg Laying, Brood, Wandering Skeleton, Soul Drain, Exhume, Uprising and Cinder Rebirth.
 

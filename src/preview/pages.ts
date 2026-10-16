@@ -8,6 +8,7 @@ import { impose } from "../pnp/imposition";
 import { artCss } from "../render/art";
 import { renderCard, renderThreatBack } from "../render/card";
 import { referenceFace, type Face } from "../render/faces";
+import { textureCss } from "../render/textures";
 
 export type View = "cards" | "pnp";
 
@@ -91,7 +92,7 @@ export function renderPage(view: View, locale: Locale): string {
   const { css, nav, main } = view === "cards" ? cardsBody(locale) : pnpBody();
   const views = VIEWS.map((v) => link(pagePath(v, locale), v, v === view)).join("");
   const locales = LOCALES.map((l) => link(pagePath(view, l), l, l === locale)).join("");
-  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><title>${t().sheetTitle}</title><link rel="icon" href="data:,"><style>${css}\n${artCss(artUrl)}</style></head>
-<body><header><b>Palmwalker</b><nav>${views}</nav><nav class="locales">${locales}</nav><nav>${nav}</nav></header>
+  return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><title>${t().sheetTitle}</title><link rel="icon" href="data:,"><style>${css}\n${textureCss()}\n${artCss(artUrl)}</style></head>
+<body><header><b>Automana</b><nav>${views}</nav><nav class="locales">${locales}</nav><nav>${nav}</nav></header>
 <main>${main}</main>${KEEP_SCROLL}</body></html>`;
 }

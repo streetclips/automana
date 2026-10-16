@@ -9,25 +9,41 @@ export interface CollectorNumber {
   total: number;
 }
 
+type FrameColor = "red" | "green" | "black" | "blue" | "gold";
+
+const SETS: Record<string, { code: string; color: FrameColor }> = {
+  vorthrax: { code: "VOR", color: "red" },
+  vaskara: { code: "VAS", color: "green" },
+  morwen: { code: "MOR", color: "black" },
+  "mirror-archmage": { code: "MIR", color: "blue" },
+  stampede: { code: "STA", color: "red" },
+  revel: { code: "REV", color: "gold" },
+  hydra: { code: "HYD", color: "green" },
+};
+
+const plainLength = (html: string) => html.replace(/<[^>]+>/g, "").length;
+
 export function renderCard(card: Card, copy: number, number: CollectorNumber): string {
-  const set = `<div class="c-set">${collectionIcon(number.collection)}<span>${number.first + copy}/${number.total}</span></div>`;
+  const set = SETS[number.collection];
+  if (!set) throw new Error(`No set code for collection ${number.collection}`);
   const tx = card[getLocale()];
   const strings = t();
-  const cost = `<span class="pip pip-X">${icon("X")}</span>`;
+  const symbol = collectionIcon(number.collection);
   const type = strings.threatPrefix + strings.typeLabel[card.type] + (tx.sub ? ` — ${tx.sub}` : "");
-  const fit = tx.name.length > 20 ? "xlong" : tx.name.length > 16 ? "long" : "";
-  const typeFit = type.length > 33 ? "type-xlong" : type.length > 30 ? "type-long" : "";
-  const cls = ["pw-card", "col-T", tx.flavor ? "" : "no-flavor", card.pt ? "has-pt" : "", fit, typeFit].filter(Boolean).join(" ");
-  const art = hasArt(card.id) ? `<div class="c-img art-${card.id}"></div>` : `<div class="c-glow"></div>`;
-  return `<div class="${cls}">
+  const cls = ["pw-card", `k-${set.color}`, card.pt ? "has-pt" : ""].filter(Boolean).join(" ");
+  const fit = `--name-len:${tx.name.length};--type-len:${type.length};--text-len:${Math.max(1, plainLength(tx.text))}`;
+  const art = hasArt(card.id) ? `<div class="c-img art-${card.id}"></div>` : `<div class="c-glow">${symbol}</div>`;
+  return `<div class="${cls}" style="${fit}">
   <div class="c-art">${art}</div>
-  <div class="c-name"><span>${tx.name}</span><div class="c-cost">${cost}</div></div>
-  <div class="c-type"><span>${type}</span></div>
-  <div class="c-text"><p class="c-rules">${tx.text || "&nbsp;"}</p><p class="c-flavor">${tx.flavor ?? ""}</p>${set}</div>
+  <div class="c-name"><span class="c-title">${tx.name}</span><span class="pip">${icon("X")}</span></div>
+  <div class="c-type"><span class="c-line">${type}</span><span class="c-sym">${symbol}</span></div>
+  <div class="c-text"><p class="c-rules">${tx.text}</p>${tx.flavor ? `<p class="c-flavor">${tx.flavor}</p>` : ""}</div>
   ${card.pt ? `<div class="c-pt"><span>${card.pt}</span></div>` : ""}
+  <div class="c-info"><span>${number.first + copy}/${number.total}</span><span>${set.code} • ${getLocale().toUpperCase()}</span></div>
+  <div class="c-stamp">${icon("X")}</div>
 </div>`;
 }
 
 export function renderThreatBack(): string {
-  return `<div class="pw-card pw-back col-T"><div class="c-art"><div class="c-glow">${icon("X")}</div></div></div>`;
+  return `<div class="pw-card pw-back"><div class="b-frame"></div><div class="b-seal">${icon("X")}</div><div class="b-word">Automana</div></div>`;
 }

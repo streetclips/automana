@@ -14,7 +14,7 @@ const LIVE_RELOAD = `<script>
 })(300);
 </script>`;
 const PAGE_ROUTE = new RegExp(`^/(${LOCALES.join("|")})(?:/(pnp))?$`);
-const ART_ROUTE = /^\/art\/([a-z0-9-]+)\.jpg$/;
+const ART_ROUTE = /^\/art\/([a-z0-9_-]+)\.jpg$/;
 const RELOAD_ON = /\.(css|jpg)$/;
 const HTML_HEADERS = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" };
 
@@ -74,4 +74,4 @@ process.on("SIGTERM", () => {
 
 watch(SRC, { recursive: true }, reloadClients);
 watch(ART, reloadClients);
-server.listen(PORT, () => console.log(`Palmwalker preview: http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`Automana preview: http://localhost:${PORT}`));

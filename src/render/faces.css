@@ -1,13 +1,10 @@
-.pw-face .halves { left: .4em; right: .4em; top: .4em; bottom: 1.45em; display: flex; flex-direction: column; gap: .5em; }
-.pw-face .half { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .5em; }
-.pw-face .hhead { flex: none; height: 1.9em; display: flex; align-items: center; gap: .45em; padding: 0 .6em; white-space: nowrap; overflow: hidden; }
-.pw-face .hhead .state { font-family: Copperplate, serif; font-weight: bold; font-size: 1.4em; color: var(--c-d); }
-.pw-face.reference .hhead .state { font-size: 1.15em; }
+.pw-face .halves { left: .5em; right: .5em; top: .5em; bottom: 1.5em; display: flex; flex-direction: column; gap: .55em; }
+.pw-face .half { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .45em; }
+.pw-face .hhead { position: relative; flex: none; height: 2em; display: flex; align-items: center; gap: .45em; padding: 0 .75em; white-space: nowrap; overflow: hidden; }
+.pw-face .hhead .state { font: bold 1.1em/1 Optima, "Avenir Next", sans-serif; letter-spacing: .06em; }
 .pw-face .hhead .hname { font-size: 1em; font-style: italic; overflow: hidden; text-overflow: ellipsis; }
-.pw-face .hbody { flex: 1; min-height: 0; padding: .4em .6em; font-size: 1.12em; line-height: 1.22; }
-.pw-face .hbody p { margin: 0 0 .3em; text-wrap: pretty; }
-.pw-face.reference .hbody { font-size: .98em; }
-.pw-face.reference .hbody p { margin: 0 0 .15em; }
-.pw-face .facetag { left: 0; right: 0; bottom: .15em; text-align: center; font-family: Copperplate, serif; font-size: .9em; letter-spacing: .12em; color: #fff3d9; text-shadow: 0 .05em .15em rgba(0,0,0,.6); }
+.pw-face .hbody { flex: 1; min-height: 0; margin: 0 .45em; padding: .4em .6em; font-size: .98em; line-height: 1.22; }
+.pw-face .hbody p { margin: 0 0 .15em; text-wrap: pretty; }
+.pw-face .facetag { left: 0; right: 0; bottom: .35em; text-align: center; font: 600 .7em/1 "Avenir Next Condensed", "Avenir Next", sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--ink); }
 
-.pw-face.reference { --c-d: #3b342b; --f-1: #ddd5c6; --f-2: #5d564b; --f-bar: #f4f0e7; --f-box: #f7f4ee; }
+.pw-face.reference { --k-1: #c3c7ca; --k-2: #868c91; --k-3: #2f3336; --k-box: #f2f1ed; --k-plate: #eef0f1; }
