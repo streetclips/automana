@@ -6,5 +6,3 @@
 .pw-face .hbody { flex: 1; min-height: 0; margin: 0 .45em; padding: .4em .6em; font-size: .98em; line-height: 1.22; }
 .pw-face .hbody p { margin: 0 0 .15em; text-wrap: pretty; }
 .pw-face .facetag { left: 0; right: 0; bottom: .35em; text-align: center; font: 600 .7em/1 "Avenir Next Condensed", "Avenir Next", sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--ink); }
-
-.pw-face.reference { --k-1: #c3c7ca; --k-2: #868c91; --k-3: #2f3336; --k-box: #f2f1ed; --k-plate: #eef0f1; }

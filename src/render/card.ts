@@ -9,7 +9,7 @@ export interface CollectorNumber {
   total: number;
 }
 
-type FrameColor = "red" | "green" | "black" | "blue" | "gold";
+export type FrameColor = "red" | "green" | "black" | "blue" | "gold";
 
 const SETS: Record<string, { code: string; color: FrameColor }> = {
   vorthrax: { code: "VOR", color: "red" },

@@ -51,6 +51,7 @@ Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrom
 5. CMYK, converted with Ghostscript.
 6. No blurred shadows: some PDF viewers draw them as solid dark patches over the card.
 7. Each cell is frame black underneath, so the hairline gaps the CMYK conversion leaves at the frame edge print black, not white.
+8. The textured surfaces (frame, back, text box and art placeholder) are one opaque PNG per colour, baked by `src/render/textures.ts`, not CSS gradients and blend modes: Ghostscript turns each gradient into a low-resolution image, and macOS Preview drew the blended layers with rectangular seams.
 
 Every card shares the Threat back; the rules card shows its Face B.
 
@@ -85,7 +86,7 @@ Every card uses the modern Magic frame in its Nemesis's colour, as if it were a 
 | Blue | the Mirror Archmage |
 | Gold | the Revel King |
 
-1. The frame is in `src/render/card.css`; colours and set codes are in `SETS` in `src/render/card.ts`.
+1. The frame is in `src/render/card.css`; each set's colour and code are in `SETS` in `src/render/card.ts`, and each colour's palette and textures in `PALETTES` in `src/render/textures.ts`.
 2. Under the text box: the collector number, the set code and the language, `12/20` and `VOR • EN`, next to a holo stamp with the Threat burst.
 3. Names and type lines shrink with their length to fit their bar; long rules texts shrink a little.
 4. The rules card uses the same frame in grey.
@@ -119,7 +120,7 @@ src/
 │   ├── box-reference.ts the rules card
 │   └── index.ts        catalog: PRINTED_CARDS, DECK_NAMES, getPrintedCard(id)
 ├── i18n/               UI strings per locale + current locale
-├── render/             HTML components: card.ts (cards and their back), faces.ts (the two-face rules card), art.ts (illustrations), icons.ts (Threat burst and collection symbols), textures.ts (frame grain and mottle, generated as PNG)
+├── render/             HTML components: card.ts (cards and their back), faces.ts (the two-face rules card), art.ts (illustrations), icons.ts (Threat burst and collection symbols), textures.ts (frame palettes, and their grain, mottle and gradients baked into PNGs)
 ├── preview/            serves the live card preview: pages and web server
 ├── pnp/                builds the print-and-play PDFs: box.ts (the deck), imposition.ts (A4 sheets), pdf.ts (Chrome and Ghostscript)
 ├── art/                generates the card illustrations with OpenRouter
