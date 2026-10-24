@@ -25,10 +25,11 @@ Win rates over the 45 box deck pairs, 1,800 games per Nemesis. The rules, the de
 | `npm run box:cards` | Engine card texts compared with Scryfall's oracle |
 | `npm run preview` | Card preview at `http://localhost:4400`, reloaded on every save |
 | `npm run pnp` | `dist/automana-box-pnp-en.pdf` and `-es.pdf`: print-and-play PDFs for [Imprenta Soriano](https://imprentasoriano.com/producto/baraja-de-cartas) |
-| `npm run build` | `typecheck`, then `pnp` |
+| `npm run rulebook` | `dist/automana-rulebook-en.pdf` and `-es.pdf`: the 28-page A5 rulebook for [Imprenta Soriano](https://imprentasoriano.com/producto/revistas-y-catalogos) |
+| `npm run build` | `typecheck`, then `pnp` and `rulebook` |
 | `npm run art` | `art/{card id}.jpg`: AI illustrations for the cards with an art scene and no image yet. `npm run art -- nm_brood nm_uprising` regenerates those cards |
 
-Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`. `npm run art` needs `OPENROUTER_API_KEY`, and macOS's `sips` when the model returns PNGs.
+Requirements: Node 22+. `npm run pnp`, `npm run rulebook` and `npm run build` also need Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`. `npm run art` needs `OPENROUTER_API_KEY`, and macOS's `sips` when the model returns PNGs.
 
 ## Card preview
 
@@ -36,9 +37,10 @@ Requirements: Node 22+. `npm run pnp` and `npm run build` also need Google Chrom
 
 1. `cards` shows every card once, one section per component: the rules card, the back and the seven Nemesis decks, with each card's id and number of copies under it: `nm_ash_imp ×2`.
 2. `pnp` shows the A4 sheets of `npm run pnp`, fronts and backs, without Chrome or Ghostscript: colours are RGB, before the CMYK conversion.
-3. `en` and `es` switch the language and keep the scroll position.
-4. Saving reloads the page. A change in `src/content/` or the render code restarts the server; a CSS change or a new image in `art/` only reloads the page.
-5. A render error shows its stack trace in the page, which reloads once you fix it.
+3. `rulebook` shows the 28 pages of `npm run rulebook`, also in RGB.
+4. `en` and `es` switch the language and keep the scroll position.
+5. Saving reloads the page. A change in `src/content/` or the render code restarts the server; a CSS change or a new image in `art/` only reloads the page.
+6. A render error shows its stack trace in the page, which reloads once you fix it.
 
 ## Print and play
 
@@ -73,6 +75,31 @@ Upload the PDF to [Baraja de Cartas](https://imprentasoriano.com/producto/baraja
 3. Several sets: multiply the pages by the number of sets and write the number of sets in the Mostrador field.
 4. The English and Spanish PDFs have the same cut, so they can go in one order without the 15 € fee for each extra cut.
 5. One set, 48 pages, cut, cost 33.27 € on Black Core card and 34.68 € on the 310 g embossed card on 16 October 2026, shipping not included. The form has no rounded corners option; ask for them in Mostrador. The shop does not say whether VAT is included.
+
+## Rulebook
+
+`npm run rulebook` writes `dist/automana-rulebook-en.pdf` and `-es.pdf`, a booklet that teaches the Nemesis rules with the real cards: setup, both turns, its mind, four block examples, a turn step by step, a glossary, questions and answers, a page per Nemesis, the deck lists and a quick reference.
+
+1. 28 A5 pages with 3 mm bleed (154 × 216 mm), single pages in reading order, CMYK: what Imprenta Soriano asks for magazines. Text and cards stay at least 6 mm inside the cut; the shop asks for 5.
+2. The text is in `src/content/rulebook.ts`, in `en` and `es`; the examples, the illustrations and each Nemesis's key cards in `src/rulebook/data.ts`.
+3. Every combat example is played on the engine as the rulebook is built (`src/box/nemesis/examples.ts`). If the Nemesis mind no longer attacks, blocks or targets as a page shows, the build stops and names the example.
+4. The build lays the pages out in Chrome first and stops if any text or figure runs past its page's margins.
+5. The rulebook teaches the rules only: no win rates, no board sizes and no tips on how to beat a Nemesis.
+
+### Ordering the rulebook
+
+Upload the PDF to [Revistas y catálogos](https://imprentasoriano.com/producto/revistas-y-catalogos):
+
+| Option | Value |
+|---|---|
+| Tamaño | A5 |
+| Papel que quieres utilizar en el interior | 150 GRS. Estucado |
+| Acabado | Mate |
+| Impresión | Color: 28 |
+| Cubiertas | Igual que el interior |
+
+1. 28 pages cost 13.30 € on 24 October 2026, shipping not included.
+2. A separate 250 g cover with matte lamination (Diferente del interior) took a 24-page quote from 12.99 € to 37.67 €.
 
 ## Card frame
 
@@ -113,16 +140,18 @@ src/
 ├── box/                Magic engine and AI (from mana-duel), the 10 box decks, the Nemesis seat and its simulator
 │   ├── engine/         rules engine, the Nemesis turn and the Challenge card effects
 │   ├── ai/             player AI
-│   └── nemesis/        the seven Nemesis decks, the Nemesis mind, the simulator and its tests
+│   └── nemesis/        the seven Nemesis decks, the Nemesis mind, the simulator, its tests and the rulebook's examples
 ├── content/            printed card data, bilingual (en/es), no rendering
 │   ├── threats.ts      names, texts and art scenes of the four Automana decks
 │   ├── challenges.ts   names, texts and art scenes of the three Challenge decks
 │   ├── box-reference.ts the rules card
+│   ├── rulebook.ts     the rulebook text
 │   └── index.ts        catalog: PRINTED_CARDS, DECK_NAMES, getPrintedCard(id)
 ├── i18n/               UI strings per locale + current locale
 ├── render/             HTML components: card.ts (cards and their back), faces.ts (the two-face rules card), art.ts (illustrations), icons.ts (Threat burst and collection symbols), textures.ts (frame palettes, and their grain, mottle and gradients baked into PNGs)
 ├── preview/            serves the live card preview: pages and web server
 ├── pnp/                builds the print-and-play PDFs: box.ts (the deck), imposition.ts (A4 sheets), pdf.ts (Chrome and Ghostscript)
+├── rulebook/           builds the rulebook: pages.ts (its 28 pages), diagrams.ts (cards and combat figures), data.ts (examples, illustrations, key cards), build.ts (layout check and PDF)
 ├── art/                generates the card illustrations with OpenRouter
 └── lib/                filesystem helpers
 ```

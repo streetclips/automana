@@ -13,3 +13,5 @@ figure { margin: 0; }
 figcaption { margin-top: 5px; text-align: center; font: 11px/1.3 Menlo, monospace; color: #5c4f40; }
 .page { width: 210mm; margin: 0 auto 28px; }
 .page .sheet { background: #fff; box-shadow: 0 2px 14px rgba(0,0,0,.35); }
+.page.booklet { width: 154mm; }
+.page .rb-page { box-shadow: 0 2px 14px rgba(0,0,0,.35); }

@@ -9,12 +9,13 @@ import { artCss } from "../render/art";
 import { renderCard, renderThreatBack } from "../render/card";
 import { referenceFace, type Face } from "../render/faces";
 import { textureCss } from "../render/textures";
+import { rulebookCss, rulebookPages } from "../rulebook/pages";
 
-export type View = "cards" | "pnp";
+export type View = "cards" | "pnp" | "rulebook";
 
 export const LOCALES: Locale[] = ["en", "es"];
 
-const VIEWS: View[] = ["cards", "pnp"];
+const VIEWS: View[] = ["cards", "pnp", "rulebook"];
 
 const KEEP_SCROLL = `<script>
 for (const a of document.querySelectorAll(".locales a")) a.onclick = () => sessionStorage.setItem("scrollY", String(scrollY));
@@ -79,6 +80,11 @@ function pnpBody(): Body {
   return { css: readCss("render/card.css", "render/faces.css", "pnp/pnp.css", "preview/preview.css"), nav: "", main: pages.join("") };
 }
 
+function rulebookBody(locale: Locale): Body {
+  const pages = rulebookPages(locale).map((page, i) => `<figure class="page booklet">${page}<figcaption>page ${i + 1}</figcaption></figure>`);
+  return { css: [rulebookCss(), readCss("preview/preview.css")].join("\n"), nav: "", main: pages.join("") };
+}
+
 function link(href: string, label: string, on: boolean): string {
   return `<a href="${href}"${on ? ' class="on"' : ""}>${label}</a>`;
 }
@@ -89,7 +95,7 @@ export function pagePath(view: View, locale: Locale): string {
 
 export function renderPage(view: View, locale: Locale): string {
   setLocale(locale);
-  const { css, nav, main } = view === "cards" ? cardsBody(locale) : pnpBody();
+  const { css, nav, main } = view === "cards" ? cardsBody(locale) : view === "pnp" ? pnpBody() : rulebookBody(locale);
   const views = VIEWS.map((v) => link(pagePath(v, locale), v, v === view)).join("");
   const locales = LOCALES.map((l) => link(pagePath(view, l), l, l === locale)).join("");
   return `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><title>${t().sheetTitle}</title><link rel="icon" href="data:,"><style>${css}\n${textureCss()}\n${artCss(artUrl)}</style></head>

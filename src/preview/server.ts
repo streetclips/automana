@@ -13,7 +13,7 @@ const LIVE_RELOAD = `<script>
   events.onerror = () => { events.close(); setTimeout(connect, delay, Math.min(delay * 2, 5000)); };
 })(300);
 </script>`;
-const PAGE_ROUTE = new RegExp(`^/(${LOCALES.join("|")})(?:/(pnp))?$`);
+const PAGE_ROUTE = new RegExp(`^/(${LOCALES.join("|")})(?:/(pnp|rulebook))?$`);
 const ART_ROUTE = /^\/art\/([a-z0-9_-]+)\.jpg$/;
 const RELOAD_ON = /\.(css|jpg)$/;
 const HTML_HEADERS = { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" };

@@ -36,6 +36,7 @@ const PALETTES: Record<FrameColor, Palette> = {
 const REFERENCE: Palette = { k1: "#c3c7ca", k2: "#868c91", k3: "#2f3336", box: "#f2f1ed", plate: "#eef0f1" };
 
 const CARD: Size = { w: 23, h: 33 };
+const BOOKLET_COVER: Size = { w: 61.11, h: 85.71 };
 const ART: Size = { w: 20.86, h: 16.01 };
 const TEXT_BOX: Size = { w: 20.9, h: 9.2 };
 const RULES_BOX: Size = { w: 21.33, h: 12.83 };
@@ -172,9 +173,9 @@ function bake({ w, h }: Size, paint: Paint<Rgb>): string {
   return rgbPng(width, height, data);
 }
 
-function frame(base: Paint<Rgb>): string {
-  const mottle = cover(MOTTLE, CARD);
-  return bake(CARD, (x, y) => blend(blend(base(x, y), softLight, mottle(x, y)), overlay, grain(x, y)));
+function frame(base: Paint<Rgb>, size: Size = CARD): string {
+  const mottle = cover(MOTTLE, size);
+  return bake(size, (x, y) => blend(blend(base(x, y), softLight, mottle(x, y)), overlay, grain(x, y)));
 }
 
 function artGlow(p: Palette): string {
@@ -208,4 +209,11 @@ const TEXTURE_CSS = [
 
 export function textureCss(): string {
   return TEXTURE_CSS;
+}
+
+let bookletCss: string | undefined;
+
+export function bookletCoverCss(): string {
+  bookletCss ??= `.rb-dark { background-image: url(${frame(radial(BOOKLET_COVER, 0.5, 0.42, [["#a8361f", 0], ["#5a160b", 0.42], ["#1a0604", 0.85]]), BOOKLET_COVER)}); }`;
+  return bookletCss;
 }

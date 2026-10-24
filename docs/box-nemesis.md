@@ -126,6 +126,16 @@ What it still doesn't do:
 4. **No tier mark:** every Threat shows the Threat burst where a Magic card shows its mana cost.
 5. **Wording for Magic:** "the battlefield", the official Spanish keywords (*Vuela*, *Arrolla*), a random discard for Rebound and Mind Theft, "tap" for Mass Illusion, and the graveyard for Egg Laying, Brood, Wandering Skeleton, Soul Drain, Exhume, Uprising and Cinder Rebirth.
 
+`npm run rulebook` writes the A5 rulebook, `dist/automana-rulebook-en.pdf` and `-es.pdf`. It states the mind's rules for play at the table:
+
+1. **Its row:** its creatures stand in the order they arrive, the oldest at the left; "oldest first" means from the left of the row.
+2. **One blocker per attacker,** never two on one attacker, except a menace attacker in desperation.
+3. **Desperation** blocks with every free creature it can, not just with enough to survive.
+4. **The attack check** looks at each of its creatures alone, so one of your creatures can keep several of them home.
+5. **Ties** between your attackers or your creatures as targets, after power and toughness, are the player's choice. The engine takes the oldest; the two only differ for creatures with different abilities.
+
+Its combat examples are played on the engine as it is built (`src/box/nemesis/examples.ts`): a change to the mind that makes a page wrong stops the build.
+
 ## Tools
 
 | Command | What it does |
@@ -133,6 +143,7 @@ What it still doesn't do:
 | `npm run box -- --games 100 --seed 1 [--decks a,b] [--nemeses vorthrax,morwen] [--workers N]` | Games per deck × Nemesis in worker threads, against all 7 Nemeses unless `--nemeses` names some (`vorthrax`, `vaskara`, `morwen`, `mirror-archmage`, `stampede`, `revel`, `hydra`). Prints the win-rate table and the metrics per Nemesis, and writes `dist/box/box-seed<S>-g<N>.{md,json}`. Every game has its own seed, so results don't depend on the worker count. |
 | `npm run box:trace -- <seed> <deck> <nemesis>` | The log of one game. |
 | `npm run pnp` | The print-and-play PDFs. |
+| `npm run rulebook` | The A5 rulebook PDFs. Stops if an example no longer matches the Nemesis mind or a page overflows. |
 | `npm run box:test:nemesis` | The Nemesis rules as 26 scenario tests, on Threats pinned to fixed sizes so tuning never breaks them; 6 of them check the player's AI. |
 | `npm run box:test:challenges` | The Challenge deck cards as 8 scenario tests. |
 | `BOX_THREAT_SIZES=vorthrax=1/2,nm_ash_imp=0/-1 npm run box` | Adds power/toughness to every creature of the named Nemeses or to named Threats, to probe sizes without editing the deck lists. |

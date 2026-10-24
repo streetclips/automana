@@ -11,7 +11,7 @@ export interface CollectorNumber {
 
 export type FrameColor = "red" | "green" | "black" | "blue" | "gold";
 
-const SETS: Record<string, { code: string; color: FrameColor }> = {
+export const SETS: Record<string, { code: string; color: FrameColor }> = {
   vorthrax: { code: "VOR", color: "red" },
   vaskara: { code: "VAS", color: "green" },
   morwen: { code: "MOR", color: "black" },
