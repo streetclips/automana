@@ -1,5 +1,7 @@
+<p align="right"><b>English</b> · <a href="README.es.md">Español</a></p>
+
 <p align="center">
-  <img src="docs/images/hero.jpg" alt="The Automana rulebook, open on a block example, next to a fan of Nemesis cards" width="100%">
+  <img src="docs/images/hero-en.jpg" alt="The Automana rulebook, open on a block example, next to a fan of Nemesis cards" width="100%">
 </p>
 
 <h1 align="center">Automana</h1>
@@ -26,7 +28,7 @@ You shuffle two of the ten Beginner Box decks together and play Magic as usual. 
 3. **Ready to print.** 208 cards and a 28-page A5 rulebook, laid out for a print shop. Besides them, you only need the Beginner Box.
 
 <p align="center">
-  <img src="docs/images/nemeses.jpg" alt="One card of each Nemesis: Vorthrax, Vaskara, Morwen, the Mirror Archmage, the Stampede, the Revel King and the Hydra" width="100%">
+  <img src="docs/images/nemeses-en.jpg" alt="One card of each Nemesis: Vorthrax, Vaskara, Morwen, the Mirror Archmage, the Stampede, the Revel King and the Hydra" width="100%">
 </p>
 
 | Nemesis | Cards | Its game |
@@ -124,7 +126,7 @@ Your Hinterland Sanctifier dies.
 Download the PDFs with the buttons at the top, or build them yourself. Both are laid out for [Imprenta Soriano](https://imprentasoriano.com), a Spanish online print shop, in standard formats: A4 sheets of 9 cards with crop marks, and A5 pages with bleed.
 
 <p align="center">
-  <img src="docs/images/rulebook.jpg" alt="Four rulebook pages: setup, its mind's blocks, a block example and the Vorthrax page" width="100%">
+  <img src="docs/images/rulebook-en.jpg" alt="Four rulebook pages: setup, its mind's blocks, a block example and the Vorthrax page" width="100%">
 </p>
 
 ### The cards
@@ -196,7 +198,7 @@ Upload the PDF to [Revistas y catálogos](https://imprentasoriano.com/producto/r
 | `npm run rulebook` | `dist/automana-rulebook-en.pdf` and `-es.pdf`: the 28-page A5 rulebook, for [Imprenta Soriano](https://imprentasoriano.com/producto/revistas-y-catalogos) |
 | `npm run build` | `typecheck`, then `pnp` and `rulebook` |
 | `npm run art` | `art/{card id}.jpg`: AI illustrations for the cards with an art scene and no image yet. `npm run art -- nm_brood nm_uprising` regenerates those cards |
-| `npm run readme:images` | `docs/images/*.jpg`: the pictures of this README, rendered from the cards and the rulebook |
+| `npm run readme:images` | `docs/images/*-en.jpg` and `*-es.jpg`: the pictures of this README and of `README.es.md`, rendered from the cards and the rulebook |
 
 Requirements: Node 22+. `npm run pnp`, `npm run rulebook`, `npm run build` and `npm run readme:images` also need Google Chrome and Ghostscript (`brew install ghostscript`); override their paths with `CHROME_PATH` and `GS_PATH`. The cards and the rulebook use macOS fonts: Optima, Palatino and Avenir Next. `npm run art` needs `OPENROUTER_API_KEY`; it and `npm run readme:images` use macOS's `sips` for JPEGs.
 
@@ -254,7 +256,7 @@ Every card uses the modern Magic frame in its Nemesis's colour, as if it were a 
 ```
 docs/box.md             the Beginner Box decks in the engine and their approximations
 docs/box-nemesis.md     the Nemesis seat: rules, mind, the seven decks, tuning, the player's AI
-docs/images/            the pictures of this README
+docs/images/            the pictures of this README and of README.es.md, in each language
 art/                    card illustrations, one {card id}.jpg each
 src/
 ├── box/                Magic engine and AI (from mana-duel), the 10 box decks, the Nemesis seat and its simulator

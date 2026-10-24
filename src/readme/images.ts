@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { ALL_NEMESES } from "../box/nemesis/all";
 import { DECK_NAMES } from "../content";
+import type { Locale } from "../content/types";
 import { setLocale } from "../i18n/locale";
 import { ROOT, artPath, ensureDir } from "../lib/paths";
 import { screenshot } from "../pnp/pdf";
@@ -49,10 +50,11 @@ function hero(pages: string[]): string {
   return [scaledPage(pages[9], 0.6, 360, 74, 5), scaledPage(pages[0], 0.6, 70, 66, -6), ...fan].join("");
 }
 
-function nemeses(): string {
+function nemeses(locale: Locale): string {
   return ALL_NEMESES.map(({ id }, i) => {
     const x = 33 + i * 176;
-    return `${card(FACES[id], 158, x, 26)}<div class="name" style="left:${x}px;top:264px">${DECK_NAMES[id].en.name.split(",")[0].replace(/^The /, "")}</div>`;
+    const name = DECK_NAMES[id][locale].name.split(",")[0].replace(/^(The|El|La) /, "");
+    return `${card(FACES[id], 158, x, 26)}<div class="name" style="left:${x}px;top:264px">${name}</div>`;
   }).join("");
 }
 
@@ -60,25 +62,27 @@ function rulebook(pages: string[]): string {
   return [3, 8, 9, 18].map((index, i) => scaledPage(pages[index], 0.5, 22 + i * 315, 40, 0)).join("");
 }
 
-function shoot(dir: string, name: string, width: number, height: number, stage: string): string {
+function shoot(dir: string, name: string, locale: Locale, width: number, height: number, stage: string): string {
   const html = join(dir, `${name}.html`);
   const png = join(dir, `${name}.png`);
   const css = `${rulebookCss()}\n${artCss((id) => pathToFileURL(artPath(id)).href)}\n${STAGE_CSS}`;
-  writeFileSync(html, `<!doctype html><html lang="en"><head><meta charset="utf-8"><style>${css}</style></head><body><div class="stage rb-dark" style="width:${width}px;height:${height}px">${stage}</div></body></html>`, "utf8");
+  writeFileSync(html, `<!doctype html><html lang="${locale}"><head><meta charset="utf-8"><style>${css}</style></head><body><div class="stage rb-dark" style="width:${width}px;height:${height}px">${stage}</div></body></html>`, "utf8");
   screenshot(html, png, width, height);
   const jpeg = join(IMAGES, `${name}.jpg`);
   execFileSync("sips", ["-s", "format", "jpeg", "-s", "formatOptions", JPEG_QUALITY, png, "--out", jpeg], { stdio: "ignore" });
   return jpeg;
 }
 
-setLocale("en");
 ensureDir(IMAGES);
-const pages = rulebookPages("en");
 const tmp = mkdtempSync(join(tmpdir(), "automana-readme-"));
 try {
-  console.log(shoot(tmp, "hero", 1280, 640, hero(pages)));
-  console.log(shoot(tmp, "nemeses", 1280, 300, nemeses()));
-  console.log(shoot(tmp, "rulebook", 1280, 488, rulebook(pages)));
+  for (const locale of ["en", "es"] as Locale[]) {
+    const pages = rulebookPages(locale);
+    setLocale(locale);
+    console.log(shoot(tmp, `hero-${locale}`, locale, 1280, 640, hero(pages)));
+    console.log(shoot(tmp, `nemeses-${locale}`, locale, 1280, 300, nemeses(locale)));
+    console.log(shoot(tmp, `rulebook-${locale}`, locale, 1280, 488, rulebook(pages)));
+  }
 } finally {
   rmSync(tmp, { recursive: true, force: true });
 }
