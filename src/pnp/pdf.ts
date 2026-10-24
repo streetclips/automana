@@ -15,6 +15,10 @@ export function printToPdf(htmlPath: string, pdfPath: string): void {
   execFileSync(CHROME, ["--headless", "--disable-gpu", "--no-pdf-header-footer", `--print-to-pdf=${pdfPath}`, pathToFileURL(htmlPath).href], { stdio: "ignore" });
 }
 
+export function screenshot(htmlPath: string, pngPath: string, width: number, height: number): void {
+  execFileSync(CHROME, ["--headless", "--disable-gpu", "--hide-scrollbars", "--allow-file-access-from-files", "--force-device-scale-factor=2", `--window-size=${width},${height}`, `--screenshot=${pngPath}`, pathToFileURL(htmlPath).href], { stdio: "ignore" });
+}
+
 export function dumpDom(htmlPath: string): string {
   return execFileSync(CHROME, ["--headless", "--disable-gpu", "--virtual-time-budget=5000", "--dump-dom", pathToFileURL(htmlPath).href], { maxBuffer: 1 << 30, stdio: ["ignore", "pipe", "ignore"] }).toString();
 }

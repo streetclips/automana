@@ -10,6 +10,7 @@
     "pnp": "tsx src/pnp/build.ts",
     "rulebook": "tsx src/rulebook/build.ts",
     "art": "tsx src/art/generate.ts",
+    "readme:images": "tsx src/readme/images.ts",
     "build": "npm run typecheck && npm run pnp && npm run rulebook",
     "box:cards": "tsx src/box/cards.ts",
     "box:test": "tsx src/box/selftest.ts",
